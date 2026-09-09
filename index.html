@@ -152,13 +152,13 @@ footer{display:flex;flex-direction:column;align-items:center;gap:0}
 .skilldef .skillchip{background:#1a1e28;border-color:#2c3345;opacity:.92}
 .skilldef .skillchip .sk-base{color:#7f879c}
 .skilldef:not([open]) .skillchips{display:none}
-/* 战斗属性九宫格 */
-.combattrgrid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px;margin:4px 0}
+/* 战斗属性九宫格：3×3 便于看清数值 */
+.combattrgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:4px 0}
 .combattrgrid .cat{background:#191d26;border:1px solid #2b3245;border-radius:7px;padding:3px 2px;text-align:center;min-width:0}
-.combattrgrid .cat em{display:block;font-style:normal;font-family:var(--mono);font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.combattrgrid .cat em{display:block;font-style:normal;font-family:var(--mono);font-size:10px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .combattrgrid .cat input{width:100%;min-width:0;padding:1px 0;text-align:center;font-size:13px;background:transparent;border:none;border-bottom:1px dashed #3a4258;border-radius:0}
 .combattrgrid .cat input:focus{border-bottom-color:var(--acc)}
-@media(max-width:820px){.combattrgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.adjrow .armorfoot{grid-column:1/-1;font-size:11px;color:var(--muted);line-height:1.4;padding:0 2px 2px}
 /* 三栏 */
 .cols3{display:grid;grid-template-columns:230px minmax(0,1fr) 250px;gap:14px;align-items:start}
 .cols3>div{min-width:0}
@@ -373,6 +373,124 @@ button,.btn,input,select,label,textarea{touch-action:manipulation;-webkit-tap-hi
   .npcmini .row{gap:3px}
   .npcmini button.small{padding:3px 6px;font-size:11px}
 }
+
+/* ================= 背景适配：自定义背景时让 UI 半透明融入 ================= */
+/* 开启自定义背景后，全部面板/卡/输入/画布底色都换成从背景色推导的整套色板 */
+body.bgcustom{background-attachment:fixed}
+body.bgcustom .topbar{background:var(--uic-nav)}
+body.bgcustom nav{background:var(--uic-nav)}
+body.bgcustom nav button.active{background:rgba(255,255,255,.04);border-bottom-color:var(--acc)}
+body.bgcustom .card{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .actorcard,body.bgcustom .pccard,body.bgcustom .npcmini{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .modal,body.bgcustom .floatpanel{background:var(--uic-b);border-color:var(--uic-line)}
+body.bgcustom .modal-head,body.bgcustom .floathead{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-bottom-color:var(--uic-line)}
+body.bgcustom input[type=text],body.bgcustom input[type=number],body.bgcustom input[type=file],
+body.bgcustom select,body.bgcustom textarea{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .log,body.bgcustom .note-editor,body.bgcustom #mapWrap,body.bgcustom .statusline,body.bgcustom .dicehist{background:var(--uic-d)}
+body.bgcustom .attrmini span,body.bgcustom .attrgrid .cell,body.bgcustom .skillchip,body.bgcustom .adjrow,
+body.bgcustom .combattrgrid .cat,body.bgcustom .actorpill,body.bgcustom .legcard,body.bgcustom .pccard .pctile,
+body.bgcustom .pccard .plotmini,body.bgcustom .listitem{background:var(--uic-d)}
+body.bgcustom .bar,body.bgcustom .npcmini .bar,body.bgcustom .adjrow .bar{background:rgba(0,0,0,.45);border-color:rgba(255,255,255,.08)}
+body.bgcustom .notice{background:var(--uic-d);border-color:rgba(201,162,94,.28)}
+body.bgcustom .scenebar,body.bgcustom .battlecanvas-wrap{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .zoomrow{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .loadout-mini .chip{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .tblwrap th,body.bgcustom .combattrgrid .cat em{color:var(--gold)}
+body.bgcustom tr:hover td{background:rgba(255,255,255,.03)}
+body.bgcustom .pchead .pcav{background:radial-gradient(120% 90% at 30% 20%,var(--uic-a) 0%,var(--uic-d) 70%)}
+body.bgcustom .avatar{box-shadow:0 1px 6px rgba(0,0,0,.35)}
+body.bgcustom .legcard>summary,.legcard{border-color:var(--uic-line)}
+
+/* ================= 折叠卡片（details） ================= */
+details.ccard>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+  padding:4px 0 8px;font-weight:600;color:var(--gold);user-select:none}
+details.ccard>summary::-webkit-details-marker{display:none}
+details.ccard>summary::after{content:'▸';margin-left:auto;color:var(--muted);font-size:12px;transition:transform .15s}
+details.ccard[open]>summary::after{transform:rotate(90deg)}
+details.ccard[open]>summary{border-bottom:1px dashed var(--line);margin-bottom:8px;padding-bottom:6px}
+.legcard{border:1px solid #2a3246;border-radius:9px;background:rgba(0,0,0,.10);margin:8px 0 0;padding:0}
+.legcard>summary{list-style:none;cursor:pointer;padding:7px 9px;display:flex;align-items:center;gap:8px;user-select:none}
+.legcard>summary::-webkit-details-marker{display:none}
+.legcard>summary::after{content:'▾';margin-left:auto;color:var(--muted);font-size:11px}
+.legcard[open]>summary::after{content:'▴'}
+.legcard>summary .lname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legcard .legbody{padding:2px 9px 9px}
+
+/* ================= 地图页：左素材 / 中间地图 / 右载具 ================= */
+.mapcols{display:grid;grid-template-columns:240px minmax(0,1fr) 290px;gap:14px;align-items:start}
+.mapcols>div{min-width:0}
+@media(max-width:1200px){.mapcols{grid-template-columns:240px minmax(0,1fr);grid-template-areas:'c1 c2' 'c3 c3'}}
+@media(max-width:1200px){.mapcols>div:nth-child(1){grid-area:c1}.mapcols>div:nth-child(2){grid-area:c2}.mapcols>div:nth-child(3){grid-area:c3}}
+@media(max-width:860px){.mapcols{grid-template-columns:1fr;grid-template-areas:'c1' 'c2' 'c3'}}
+.vehwide>summary{padding:8px 4px}
+.vehwide .row{margin:0 4px 8px}
+
+/* ================= 战斗页三栏：左详情/中战斗桌场景/右日志 ================= */
+.combcols{display:grid;grid-template-columns:minmax(260px,300px) minmax(0,1fr) minmax(250px,290px);gap:14px;align-items:start}
+.combcols>div{min-width:0}
+.comb-side .card{position:static;max-height:none;overflow:visible}
+.comb-mid .tblwrap{overflow:visible}
+@media(max-width:1280px){.combcols{grid-template-columns:minmax(240px,290px) minmax(0,1fr);grid-template-areas:'side main' 'log log'}}
+@media(max-width:1280px){.comb-side-left{grid-area:side}.comb-mid{grid-area:main}.comb-side-right{grid-area:log}}
+@media(max-width:980px){.combcols{grid-template-columns:1fr;grid-template-areas:'side' 'main' 'log'}}
+@media(max-width:1100px){.comb-mid .tblwrap{overflow-x:auto}}
+.comb-side .card h3{margin-top:0}
+
+/* ================= 悬浮面板（剧本/骰子） ================= */
+.floatpanel{position:fixed;left:50%;transform:translateX(-50%);z-index:80;width:min(1100px,calc(100vw - 16px));
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.55);overflow:hidden}
+.floatpanel .floathead{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#2b3040,#212634)}
+.floatpanel .floathead b{color:var(--gold);font-size:15px;letter-spacing:1px}
+.floatpanel .floatbody{padding:12px 14px;max-height:calc(100vh - 220px);overflow:auto}
+/* 剧本/笔记悬浮：约占 4/5 屏；骰子台也可更宽一些 */
+.floatpanel.script-on{width:min(1180px,calc(100vw - 16px));height:min(84vh,920px)}
+.floatpanel.dice-on{width:min(1040px,calc(100vw - 16px))}
+.floatpanel.script-on .floatbody{max-height:none;height:calc(min(84vh,920px) - 50px)}
+.floatpanel.dice-on .floatbody{max-height:none;height:calc(100vh - 140px)}
+.floatpanel.script-on .note-editor{min-height:52%}
+.note-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:0 0 9px;border-bottom:1px solid var(--line);margin-bottom:8px;align-items:center}
+.ntab{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:rgba(255,255,255,.02);font-size:12.5px}
+.ntab.on{border-color:rgba(201,162,94,.7);background:rgba(201,162,94,.13)}
+.ntabgo{border:none;background:transparent;color:var(--ink);padding:4px 11px;cursor:pointer;border-radius:0}
+.ntabren{border:none;background:transparent;color:var(--muted);padding:4px 8px;cursor:pointer;font-size:12px;opacity:.85}
+.ntab.on .ntabgo{color:var(--gold);font-weight:600}
+.ntabgo:hover{color:var(--gold)}
+.ntab .ntabren:hover{color:var(--acc);opacity:1}
+.fchip{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(201,162,94,.4);background:rgba(201,162,94,.10);
+  color:var(--gold);border-radius:18px;padding:2px 9px 2px 3px;font-size:12px;cursor:pointer;margin:2px;user-select:none;vertical-align:middle}
+.fchip .avatar.sm{width:20px;height:20px;font-size:12px;line-height:20px}
+.fchip:hover{border-color:var(--acc);background:rgba(201,162,94,.22)}
+.fchip.on{background:rgba(111,191,115,.16);border-color:#6fbf73;color:#bfe6c2}
+.note-editor{min-height:170px;border:1px solid var(--line);background:#171b25;border-radius:9px;padding:10px 12px;outline:none;
+  overflow:auto;font-size:14px;line-height:1.8;margin-top:8px}
+.note-editor:focus{border-color:var(--acc)}
+.fchip.nchip{border-color:var(--line);background:rgba(167,143,209,.16);color:#cdb6ee;padding:1px 8px;font-size:12px;line-height:1.6}
+.dice-big{font-family:var(--mono);font-size:44px;font-weight:800;color:var(--gold);line-height:1.1;text-align:center;padding:10px 0 4px}
+.dice-detail{font-family:var(--mono);text-align:center;color:var(--muted);font-size:13px;margin-bottom:8px;word-break:break-all}
+.dicehist{max-height:180px}
+.dice-num input{width:86px;text-align:center;font-size:16px}
+.note-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-bottom:1px dashed var(--line);padding-bottom:8px}
+/* 背景漂浮小装饰（小章鱼/手枪/笔记本等，永久漂浮，右上角可开关） */
+.decor-bit{position:fixed;left:0;top:0;z-index:6;pointer-events:none;user-select:none;line-height:1;
+  will-change:transform;text-shadow:0 2px 10px rgba(0,0,0,.35);
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+body.decoroff .decor-bit{display:none}
+button#decorToggle.on{border-color:rgba(201,162,94,.6);color:var(--gold)}
+@media(max-width:700px){
+  .floatpanel{width:calc(100vw - 8px);border-radius:10px}
+  .floatpanel .floatbody{max-height:calc(100vh - 170px)}
+  .note-editor{min-height:130px}
+  .floatpanel.script-on{width:calc(100vw - 8px);height:calc(100dvh - 14px);height:calc(100vh - 14px)}
+  .floatpanel.script-on .floatbody{max-height:none;height:calc(100dvh - 66px);height:calc(100vh - 66px);-webkit-overflow-scrolling:touch}
+  .floatpanel.script-on .note-editor{min-height:50vh}
+  .floatpanel.dice-on{width:calc(100vw - 8px)}
+  .floatpanel.dice-on .floatbody{max-height:none;height:calc(100dvh - 66px);height:calc(100vh - 66px)}
+}
+@media(max-width:980px){
+  .comb-side .card{position:static;max-height:none;overflow:visible}
+  .mapcols>div:first-child .card{width:100%}
+}
 </style>
 </head>
 <body>
@@ -385,6 +503,7 @@ button,.btn,input,select,label,textarea{touch-action:manipulation;-webkit-tap-hi
         <input type="file" accept=".json" id="fileRestore" style="display:none" onchange="restoreBackup(event)">
       </label>
       <button class="small ghost" onclick="openBgModal()">🎨 背景</button>
+      <button class="small ghost" id="decorToggle" onclick="toggleDecor()" title="开关背景上一直漂浮的小图标">🐙 装饰</button>
       <button class="small ghost" onclick="openHelp()">❔ 说明</button>
     </div>
   </header>
@@ -401,6 +520,7 @@ button,.btn,input,select,label,textarea{touch-action:manipulation;-webkit-tap-hi
   <div>数据保存在本机浏览器(可随时导出 json 备份)</div>
   <div>预祝大成功！问题联系：QQ460889415</div>
 </footer>
+<div class="floatpanel" id="floatPanel" hidden></div>
 <div class="modal-mask" id="actorModal" onclick="if(event.target===this)closeActorModal()"></div>
 <div class="modal-mask" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')"></div>
 <div class="modal-mask" id="bgModal" onclick="if(event.target===this)this.classList.remove('open')"></div>
@@ -1698,15 +1818,15 @@ function distBetween(m,a,b){ return Math.sqrt(Math.pow(m.points[a].x-m.points[b]
 function renderMapLists(){
   var m=currentMap(); var pc=$('mapPointsCard'), lc=$('mapLegsCard');
   if(!pc||!lc||!m){ if(pc)pc.innerHTML=''; if(lc)lc.innerHTML=''; return; }
-  pc.innerHTML='<div class="card"><h3>📍 地点（'+m.points.length+'）</h3>'+
+  pc.innerHTML='<details class="card ccard" data-coll="pts"'+(MAP_COLL&&MAP_COLL.pts?' open':'')+'><summary>📍 地点（'+m.points.length+'）</summary><div>'+
     (m.points.length?m.points.map(function(pt,i){
       return `<div class="listitem row" style="gap:6px">
         <input type="text" value="${esc(pt.icon||'')}" style="width:44px" title="图标 emoji" data-k="icon" data-p="${i}" oninput="onPointInput(this)">
         <input type="text" value="${esc(pt.name||'')}" placeholder="名称" style="flex:1;min-width:100px" data-k="name" data-p="${i}" oninput="onPointInput(this)">
         <input type="text" value="${esc(pt.desc||'')}" placeholder="备注" style="flex:1.4" data-k="desc" data-p="${i}" oninput="onPointInput(this)">
         <button class="small danger" onclick="delPoint(${i})">✕</button></div>`;
-    }).join(''):'<div class="hint">还没有地点：选「添加地点」后在图上点按。</div>')+'</div>';
-  lc.innerHTML='<div class="card"><h3>🛤 道路 / 路径（'+m.legs.length+'）</h3>'+
+    }).join(''):'<div class="hint">还没有地点：选「添加地点」后在图上点按。</div>')+'</div></details>';
+  lc.innerHTML='<details class="card ccard" data-coll="legs"'+(MAP_COLL&&MAP_COLL.legs?' open':'')+'><summary>🛤 道路 / 路径（'+m.legs.length+'）</summary><div>'+
     (m.legs.length?'':'<div class="hint">给两个地点加一条路：选起点终点、填距离 km。</div>')+
     `<div class="listitem row" style="background:#262b38">
       <select id="legNewA" style="flex:1">${m.points.map(function(pt,i){return '<option value="'+i+'">'+esc(pt.name)+'</option>';}).join('')}</select>
@@ -1716,24 +1836,31 @@ function renderMapLists(){
     m.legs.map(function(leg,i){
       var A=m.points[leg.a], B=m.points[leg.b];
       if(!A||!B) return '';
+      var lname=(leg.name&&String(leg.name).trim())||(A.name+' → '+B.name);
+      var lnote=leg.note&&String(leg.note).trim()?(' · '+leg.note):'';
       var modesHtml=state.vehicles.map(function(v){
         var on = !leg.modes || leg.modes.length===0 || leg.modes.indexOf(v.id)>=0;
         return `<button class="small" style="${on?'color:#e3c47f':''}" data-i="${i}" data-v="${v.id}" onclick="toggleLegMode(${i},'${v.id}')" title="${esc(v.name)} ${v.kmh}km/h">${on?'✓':''}${esc(v.name)}</button>`;
       }).join('');
-      return `<div class="listitem" style="margin-top:8px">
-        <div class="row" style="gap:6px">
-          <select data-k="a" data-l="${i}" onchange="onLegInput(this)" style="flex:1">${m.points.map(function(pt,j){return '<option value="'+j+'"'+(leg.a===j?' selected':'')+'>'+esc(pt.name)+'</option>';}).join('')}</select>
-          <span>→</span>
-          <select data-k="b" data-l="${i}" onchange="onLegInput(this)" style="flex:1">${m.points.map(function(pt,j){return '<option value="'+j+'"'+(leg.b===j?' selected':'')+'>'+esc(pt.name)+'</option>';}).join('')}</select>
-          <input type="number" value="${leg.dist||''}" placeholder="km" style="width:76px" data-k="dist" data-l="${i}" oninput="onLegInput(this)">
-          <button class="small danger" onclick="delLeg(${i})">✕</button>
-        </div>
-        <div class="row" style="gap:4px;margin-top:4px;flex-wrap:wrap">${modesHtml}</div>
-        <div class="row" style="gap:6px;margin-top:4px;flex-wrap:wrap">
-          <input type="text" value="${esc(leg.name||'')}" placeholder="道路名称（显示在地图上）" style="flex:1;min-width:150px" data-k="name" data-l="${i}" oninput="onLegInput(this)">
-          <input type="text" value="${esc(leg.note||'')}" placeholder="路况/风险备注" style="flex:1.4;min-width:150px" data-k="note" data-l="${i}" oninput="onLegInput(this)">
-        </div></div>`;
-    }).join('')+'</div>';
+      return `<details class="legcard" data-legid="${esc(leg.id)}"${(MAP_COLL&&MAP_COLL.legOpen&&MAP_COLL.legOpen[leg.id])?' open':''}>
+        <summary><span class="lname"><b>${esc(lname)}</b><span class="muted" style="font-weight:400">${esc(lnote)}</span></span>
+          <span class="num" style="color:var(--muted)">${Number(leg.dist||0).toFixed(1)} km</span>
+          <button class="small danger" style="padding:1px 7px" onclick="event.preventDefault();event.stopPropagation();delLeg(${i})">✕</button>
+        </summary>
+        <div class="legbody">
+          <div class="row" style="gap:6px">
+            <select data-k="a" data-l="${i}" onchange="onLegInput(this)" style="flex:1">${m.points.map(function(pt,j){return '<option value="'+j+'"'+(leg.a===j?' selected':'')+'>'+esc(pt.name)+'</option>';}).join('')}</select>
+            <span>→</span>
+            <select data-k="b" data-l="${i}" onchange="onLegInput(this)" style="flex:1">${m.points.map(function(pt,j){return '<option value="'+j+'"'+(leg.b===j?' selected':'')+'>'+esc(pt.name)+'</option>';}).join('')}</select>
+            <input type="number" value="${leg.dist||''}" placeholder="km" style="width:76px" data-k="dist" data-l="${i}" oninput="onLegInput(this)">
+          </div>
+          <div class="row" style="gap:4px;margin-top:5px;flex-wrap:wrap">${modesHtml}</div>
+          <div class="row" style="gap:6px;margin-top:5px;flex-wrap:wrap">
+            <input type="text" value="${esc(leg.name||'')}" placeholder="道路名称（显示在地图上）" style="flex:1;min-width:150px" data-k="name" data-l="${i}" oninput="onLegInput(this)">
+            <input type="text" value="${esc(leg.note||'')}" placeholder="路况/风险备注" style="flex:1.4;min-width:150px" data-k="note" data-l="${i}" oninput="onLegInput(this)">
+          </div>
+        </div></details>`;
+    }).join('')+'</div></details>';
 }
 function onPointInput(e){
   var m=currentMap(); if(!m)return;
@@ -2470,17 +2597,18 @@ function scaffoldSections(){
   <div id="npcList"></div>`;
   // 地图
   $('tab-maps').innerHTML = `
-  <div class="cols3">
+  <div class="mapcols">
     <div>
       <div class="card">
         <div class="panel-head"><b>🗂 地图角色</b><span class="muted" style="font-size:11px">点一下加入地图</span></div>
         <div id="mapActorsBox"></div>
       </div>
-      <div class="card">
-        <div class="panel-head"><b>🧩 摆件素材</b><span class="muted" style="font-size:11px">点按放入画布，可拖动/删除</span></div>
+      <details class="card ccard" data-coll="props">
+        <summary><b>🧩 摆件素材</b><span class="muted" style="font-weight:400">（点击展开/收回）</span></summary>
+        <div class="hint" style="line-height:1.8;margin-bottom:6px">点按放入画布<br>可拖动 / 删除</div>
         <div class="proplist" id="propPalette"></div>
         <input type="file" id="customPropFile" accept="image/*" multiple style="display:none" onchange="addCustomPropFiles(event)">
-      </div>
+      </details>
     </div>
     <div>
       <div class="card">
@@ -2521,54 +2649,64 @@ function scaffoldSections(){
     </div>
     <div>
       <div class="card" style="position:sticky;top:64px">
-        <div class="panel-head"><b>🚗 载具 / 时间速度</b>
-          <button class="small ghost" onclick="resetVehicles()">恢复默认</button></div>
-        <div id="mapVehicles"></div>
+        <details class="ccard" data-coll="veh" id="mapVehCard">
+          <summary><b>🚗 载具 / 时间速度</b>
+            <button class="small ghost" style="font-weight:400" onclick="event.preventDefault();event.stopPropagation();resetVehicles()">恢复默认</button>
+            <span class="muted" style="font-weight:400">（点击展开/收回）</span>
+          </summary>
+          <div id="mapVehicles"></div>
+        </details>
       </div>
     </div>
   </div>`;
   // 战斗
   $('tab-combat').innerHTML = `
-  <div class="card">
-    <h3>⚔️ 战斗桌</h3>
-    <div class="row" style="gap:8px;flex-wrap:wrap">
-      <label>加入类型<select id="cbAddKind" onchange="refreshCombatAddSel()">
-        <option value="pc">调查员</option><option value="npc">NPC / 敌人</option><option value="ad">临时手动成员</option>
-      </select></label>
-      <label>角色<select id="cbAddSel"></select></label>
-      <label>数量<input type="number" id="cbAddCount" value="1" min="1" style="width:70px"></label>
-      <button class="primary" onclick="combatAdd()">加入战斗</button>
-      <span style="flex:1"></span>
-      <button onclick="combatNewRound()">⏭ 下一轮（按敏捷排序）</button>
-      <button class="ghost" onclick="combatClear()">清空战斗</button>
+  <div class="combcols">
+    <div class="comb-side comb-side-left">
+      <div class="card" id="activePanel"><div class="hint">点场景里的头像或成员行，这里出现 HP/攻击/道具面板。</div></div>
     </div>
-  </div>
-  <div class="card">
-    <div class="panel-head"><b>🏟 战斗场景</b>
-      <div class="row">
-        <label class="muted" style="flex-direction:row;gap:4px">上传底图<input type="file" id="battleBg" accept="image/*" style="display:none" onchange="onBattleBg(event)"></label>
-        <button class="small ghost" onclick="clearBattleBg()">清除底图</button>
-        <span class="hint">头像可拖动；点选可操作</span>
+    <div class="comb-mid">
+      <div class="card">
+        <h3>⚔️ 战斗桌</h3>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <label>加入类型<select id="cbAddKind" onchange="refreshCombatAddSel()">
+            <option value="pc">调查员</option><option value="npc">NPC / 敌人</option><option value="ad">临时手动成员</option>
+          </select></label>
+          <label>角色<select id="cbAddSel"></select></label>
+          <label>数量<input type="number" id="cbAddCount" value="1" min="1" style="width:70px"></label>
+          <button class="primary" onclick="combatAdd()">加入战斗</button>
+          <span style="flex:1"></span>
+          <button onclick="combatNewRound()">⏭ 下一轮（按敏捷排序）</button>
+          <button class="ghost" onclick="combatClear()">清空战斗</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="panel-head"><b>🏟 战斗场景</b>
+          <div class="row">
+            <label class="muted" style="flex-direction:row;gap:4px">上传底图<input type="file" id="battleBg" accept="image/*" style="display:none" onchange="onBattleBg(event)"></label>
+            <button class="small ghost" onclick="clearBattleBg()">清除底图</button>
+            <span class="hint">头像可拖动；点选可操作</span>
+          </div>
+        </div>
+        <div class="battlecanvas-wrap"><canvas id="battleCanvas" width="940" height="500"></canvas></div>
+        <div class="row" style="justify-content:space-between;margin-top:4px">
+          <span class="scene-side side-调查员">调查员阵营 ← 左</span>
+          <span class="hint">通过下方成员栏加入/移出，头像上显示 HP/SAN/MP</span>
+          <span class="scene-side side-敌人">→ 敌人阵营 右</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row" style="justify-content:space-between"><b id="combatTitle"></b><span id="combatRoundBadge" class="muted"></span></div>
+        <div class="tblwrap"><table id="combatTable"><thead><tr>
+          <th style="width:26px"></th><th>成员（下方增删）</th><th>阵营</th><th class="num">敏捷</th><th>生命</th>
+          <th>SAN/MP</th><th>状态</th><th style="width:130px"></th>
+        </tr></thead><tbody id="combatBody"></tbody></table></div>
+        <div id="combatEmpty" class="hint" style="padding:10px">战斗场景为空：从上方加入调查员 / NPC。</div>
       </div>
     </div>
-    <div class="battlecanvas-wrap"><canvas id="battleCanvas" width="940" height="500"></canvas></div>
-    <div class="row" style="justify-content:space-between;margin-top:4px">
-      <span class="scene-side side-调查员">调查员阵营 ← 左</span>
-      <span class="hint">通过下方成员栏加入/移出，头像上显示 HP/SAN/MP</span>
-      <span class="scene-side side-敌人">→ 敌人阵营 右</span>
+    <div class="comb-side comb-side-right">
+      <div class="card"><h3>📜 行动日志</h3><div id="diceLog" class="log"></div></div>
     </div>
-  </div>
-  <div class="card">
-    <div class="row" style="justify-content:space-between"><b id="combatTitle"></b><span id="combatRoundBadge" class="muted"></span></div>
-    <div class="tblwrap"><table id="combatTable"><thead><tr>
-      <th style="width:26px"></th><th>成员（下方增删）</th><th>阵营</th><th class="num">敏捷</th><th>生命</th>
-      <th>SAN/MP</th><th>状态</th><th style="width:130px"></th>
-    </tr></thead><tbody id="combatBody"></tbody></table></div>
-    <div id="combatEmpty" class="hint" style="padding:10px">战斗场景为空：从上方加入调查员 / NPC。</div>
-  </div>
-  <div class="split">
-    <div class="card" id="activePanel"><div class="hint">点场景里的头像或成员行，这里出现 HP/攻击/道具面板。</div></div>
-    <div class="card"><h3>📜 行动日志</h3><div id="diceLog" class="log"></div></div>
   </div>`;
   $('helpModal').innerHTML = `<div class="modal" style="max-width:720px"><div class="modal-head"><b>使用说明</b><button class="ghost" onclick="document.getElementById('helpModal').classList.remove('open')">✕</button></div>
   <div class="modal-body" style="font-size:13px">
@@ -3497,7 +3635,7 @@ function drawBattleScene(){
   var sc=combatScene();
   ctx.clearRect(0,0,B_W,B_H);
   if(sc.bg){ var im=new Image(); im.onload=function(){ try{ctx.drawImage(im,0,0,B_W,B_H);}catch(e){} drawOver(ctx,sc); }; im.src=sc.bg; }
-  else { ctx.fillStyle='#1a1e2b'; ctx.fillRect(0,0,B_W,B_H); drawOver(ctx,sc); }
+  else { ctx.fillStyle=(typeof themeCanvasColor==='function')?themeCanvasColor():'#1a1e2b'; ctx.fillRect(0,0,B_W,B_H); drawOver(ctx,sc); }
 }
 function drawOver(ctx,sc){
   // 阵营提示线
@@ -4398,6 +4536,19 @@ function doImport(){
 
 /* ---------- F. 地图：缩放 / 无3D / 素材库 + 自定义素材上传 ---------- */
 var mapZoom = 1;
+var MAP_COLL={props:false,veh:false,pts:false,legs:false,legOpen:{}};
+/* 折叠卡片展开状态记忆：点击 details 时写入 MAP_COLL，地图列表重绘后保持状态 */
+(function bindMapCollapse(){
+  if(document.__cocMapCollBound) return;
+  document.__cocMapCollBound=1;
+  document.addEventListener('toggle', function(ev){
+    var d=ev.target; if(!d || !d.dataset) return;
+    var k=d.dataset.coll;
+    if(k){ MAP_COLL[k]=d.open; return; }
+    var lid=d.dataset.legid;
+    if(lid){ if(!MAP_COLL.legOpen) MAP_COLL.legOpen={}; MAP_COLL.legOpen[lid]=d.open; }
+  }, true);
+})();
 function applyZoomLabel(){ var el=$('zoomVal'); if(el) el.textContent=Math.round((mapZoom||1)*100)+'%'; }
 function mapZoomTo(z){
   var m=currentMap(); if(!m) return;
@@ -4454,7 +4605,7 @@ function drawMapCanvas(){
       overlayMap(g2,m);
     };
     img.src=m.background;
-  } else { g.fillStyle='#151922'; g.fillRect(0,0,MAP_W,MAP_H); overlayMap(g,m); }
+  } else { g.fillStyle=themeCanvasColor(); g.fillRect(0,0,MAP_W,MAP_H); overlayMap(g,m); }
 }
 var MAP_TOOLS_PALETTE=[
   ['🏠','房'],['🏢','楼'],['🏰','堡'],['🏭','厂'],['⛪','教堂'],['🏦','银行'],['🏥','医院'],['🎪','马戏'],
@@ -4642,8 +4793,9 @@ function renderActivePanel(){
     ${statRow('SAN','purple',c.san,'ap-san','san')}
     ${statRow('MP','blue',c.mp,'ap-mp','mp')}
     <div class="adjrow"><span class="lbl">护甲</span>
-      <div style="display:flex;align-items:center;gap:6px;min-height:18px"><span class="badge blue">🛡 ${c.armor||0}</span><span class="hint">受击自动抵扣，反馈到 HP 条</span></div>
+      <div style="display:flex;align-items:center;gap:6px;min-height:18px"><span class="badge blue">🛡 ${c.armor||0}</span></div>
       <span class="adjbtns"><input type="number" id="ap-armor" value="${c.armor||0}" min="0" title="护甲值"><button class="small" onclick="combSetArmor()">改护甲</button></span>
+      <div class="armorfoot">受击时先扣护甲，其余伤害反馈到 HP 条</div>
     </div>
   </div>
   <h4 class="small-title">🧬 属性（力量~幸运 · 保存后同步档案与小卡）</h4>
@@ -4867,7 +5019,27 @@ function ensureV2Data(){
   if(!state.ui) state.ui={};
   if(!state.ui.npcGroups) state.ui.npcGroups=['盟友','中立','敌人','其他'];
   else if(state.ui.npcGroups[0]==='调查员') state.ui.npcGroups[0]='盟友';
+  if(!state.ui.scenarioTabs || !state.ui.scenarioTabs.length){
+    state.ui.scenarioTabs=[
+      {name:'笔记 1',html:state.ui.scenario||''},
+      {name:'笔记 2',html:''},
+      {name:'笔记 3',html:''}
+    ];
+  }
+  while(state.ui.scenarioTabs.length<3){
+    state.ui.scenarioTabs.push({name:'笔记 '+(state.ui.scenarioTabs.length+1),html:''});
+  }
+  state.ui.scenarioTabs=state.ui.scenarioTabs.slice(0,3).map(function(t,i){
+    return {name:(t&&t.name)||('笔记 '+(i+1)), html:(t&&t.html)||''};
+  });
   if(!state.customProps) state.customProps=[];
+  /* 骰子台：大成功/大失败阈值 + 掷骰日志（关闭面板与刷新页面都不丢） */
+  if(!state.ui.dice) state.ui.dice={bs:1,bf:96,hist:[]};
+  diceThrSmall=Math.max(1,Math.min(100,Math.round(num(state.ui.dice.bs)||1)));
+  diceThrBig=Math.max(1,Math.min(100,Math.round(num(state.ui.dice.bf)||100)));
+  if(diceThrSmall>diceThrBig){ var _dt=diceThrSmall; diceThrSmall=diceThrBig; diceThrBig=_dt; }
+  diceHistory=Array.isArray(state.ui.dice.hist)?state.ui.dice.hist.slice(0,120):[];
+  if(state.ui.decor==null) state.ui.decor=true;
 }
 function switchTab(name){
   if(['surveyors','npcs','maps','combat'].indexOf(name)<0 || !$('tab-'+name)) name='surveyors';
@@ -5000,10 +5172,50 @@ function uiBgState(){
   if(!state.ui.bg) state.ui.bg={color:'',image:null};
   return state.ui.bg;
 }
+/* 主题引擎：把用户背景色推导成整套 UI 面板色（写入 CSS 变量，所有组件跟随适配） */
+function hexToRgb(h){
+  var s=String(h||'').replace('#','').trim();
+  if(s.length===3) s=s.split('').map(function(c){return c+c;}).join('');
+  var n=parseInt(s||'14161c',16);
+  if(!isFinite(n)) return {r:20,g:22,b:28};
+  return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+}
+function mixC(c1,c2,t){
+  return { r:Math.round(c1.r+(c2.r-c1.r)*t), g:Math.round(c1.g+(c2.g-c1.g)*t), b:Math.round(c1.b+(c2.b-c1.b)*t) };
+}
+function rgbStr(c){ return 'rgb('+c.r+','+c.g+','+c.b+')'; }
+function applyThemeVars(colorHex){
+  var col=hexToRgb(colorHex);
+  var work=mixC(col,{r:8,g:9,b:12},0.62);      // 压低明度保证白字可读
+  var a=mixC(work,{r:255,g:255,b:255},0.10);    // 卡片上缘
+  var b=mixC(work,{r:0,g:0,b:0},0.04);          // 卡片主体
+  var d=mixC(work,{r:0,g:0,b:0},0.18);          // 输入框/日志
+  var nav=mixC(work,{r:0,g:0,b:0},0.10);        // 顶栏
+  var line=mixC(work,{r:255,g:255,b:255},0.20); // 边框
+  var r=document.documentElement;
+  ['--uic-a','--uic-b','--uic-d','--uic-nav','--uic-line'].forEach(function(k){ r.style.removeProperty(k); });
+  r.style.setProperty('--uic-a',rgbStr(a));
+  r.style.setProperty('--uic-b',rgbStr(b));
+  r.style.setProperty('--uic-d',rgbStr(d));
+  r.style.setProperty('--uic-nav',rgbStr(nav));
+  r.style.setProperty('--uic-line',rgbStr(line));
+  r.style.setProperty('--uic-bg',rgbStr(mixC(work,{r:0,g:0,b:0},0.10)));
+}
+function clearThemeVars(){
+  var r=document.documentElement;
+  ['--uic-a','--uic-b','--uic-d','--uic-nav','--uic-line','--uic-bg'].forEach(function(k){ r.style.removeProperty(k); });
+}
+function themeCanvasColor(){
+  var v=String(document.documentElement.style.getPropertyValue('--uic-bg')||'').trim();
+  return v||'#151922';
+}
 function applyUiBg(){
   if(!state) return;
   var bg=uiBgState(), b=document.body;
+  var has=(bg.color||bg.image)?true:false;
+  b.classList.toggle('bgcustom', has);
   if(!bg.color && !bg.image){
+    clearThemeVars();
     b.style.removeProperty('background');
     b.style.removeProperty('background-color');
     b.style.removeProperty('background-image');
@@ -5012,13 +5224,21 @@ function applyUiBg(){
     b.style.removeProperty('background-attachment');
     return;
   }
+  applyThemeVars(bg.color||'#14161c');
   b.style.backgroundColor = bg.color || 'rgba(20,22,28,.9)';
   if(bg.image){
     b.style.backgroundImage='linear-gradient(rgba(13,15,20,.82),rgba(13,15,20,.82)),url("'+bg.image+'")';
     b.style.backgroundSize='cover'; b.style.backgroundPosition='center'; b.style.backgroundAttachment='fixed';
   } else {
-    b.style.backgroundImage='none'; b.style.backgroundSize=''; b.style.backgroundPosition=''; b.style.backgroundAttachment='';
+    // 纯色背景也压一层深色半透明，保证白字可读；卡片等面板再以半透明融入
+    b.style.backgroundImage='linear-gradient(rgba(13,15,20,.66),rgba(13,15,20,.66))';
+    b.style.backgroundSize=''; b.style.backgroundPosition=''; b.style.backgroundAttachment='';
   }
+  /* 主题色一变，画布底色立即跟随（地图默认底 / 战斗场景默认底） */
+  try{
+    if(typeof drawMapCanvas==='function') drawMapCanvas();
+    if(typeof drawBattleScene==='function') drawBattleScene();
+  }catch(e){}
 }
 function refreshBgUI(){
   var bg=uiBgState();
@@ -5058,7 +5278,7 @@ function openBgModal(){
       <div class="vdiv"></div>
       <div class="row" style="justify-content:space-between">
         <button class="small ghost" onclick="resetBgAll()">↺ 恢复默认背景</button>
-        <span class="hint">设置会保存在本机浏览器</span>
+        <span class="hint">设置保存在本机；开启后卡片/顶栏等会自动半透明适配</span>
       </div>
     </div></div>`;
   refreshBgUI();
@@ -5083,6 +5303,412 @@ function onBgImgFile(e){
 function clearBgImage(){ var bg=uiBgState(); bg.image=null; saveState(); applyUiBg(); refreshBgUI(); toast('已清除背景图片'); }
 function resetBgAll(){ var bg=uiBgState(); bg.color=''; bg.image=null; saveState(); applyUiBg(); refreshBgUI(); toast('已恢复默认背景'); }
 (function(){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyUiBg); else applyUiBg(); })();
+
+/* ---------- 📜 剧本摘要/笔记 与 🎲 骰子：与页面平级的两个悬浮栏目 ---------- */
+var openFloatPanel=null;
+var noteTabIndex=0;
+var diceTarget=null;            // {id,name,kind,skills[]}
+var diceHistory=[];             // 本次会话保留，不再随面板关闭清空
+var diceThrSmall=1;             // 大成功阈值：1D100 掷出 ≤ 此值
+var diceThrBig=96;              // 大失败阈值：1D100 掷出 ≥ 此值
+
+function renderNav(){
+  var nav=$('nav'); if(!nav) return;
+  nav.innerHTML='';
+  TABS.forEach(function(t){
+    var b=document.createElement('button');
+    b.id='nav-'+t[0]; b.textContent=t[1];
+    b.className=t[0]===state.activeTab?'active':'';
+    b.onclick=function(){ switchTab(t[0]); };
+    nav.appendChild(b);
+  });
+  [['nav-script','📜 剧本/笔记','script'],['nav-dice','🎲 骰子','dice']].forEach(function(x){
+    var b=document.createElement('button');
+    b.id=x[0]; b.textContent=x[1];
+    if(openFloatPanel===x[2]) b.className='active';
+    b.title=(x[2]==='script'?'悬浮剧本摘要/随团笔记（不切换页面）':'悬浮骰子台（可自定义几个几面骰）');
+    b.onclick=function(){ toggleFloat(x[2]); };
+    nav.appendChild(b);
+  });
+}
+function toggleFloat(kind){
+  if(openFloatPanel===kind){ closeFloatPanel(); return; }
+  openFloatPanel=kind;
+  renderNav();
+  buildFloatPanel();
+  positionFloatPanel();
+}
+function closeFloatPanel(){
+  if(openFloatPanel==='script') saveNoteFromEditor();
+  openFloatPanel=null;
+  renderNav();
+  var p=$('floatPanel'); if(p) p.hidden=true;
+}
+function positionFloatPanel(){
+  var p=$('floatPanel'); if(!p) return;
+  var vw=window.innerWidth||document.documentElement.clientWidth||1200;
+  var vh=window.innerHeight||document.documentElement.clientHeight||800;
+  var mobile=vw<=760;
+  var tb=document.querySelector('.topbar');
+  var top=mobile?6:(tb?tb.getBoundingClientRect().bottom+6:56);
+  top=Math.max(6,Math.round(top));
+  var isScript=openFloatPanel==='script';
+  var headH=50, bd=p.querySelector('.floatbody');
+  if(isScript){
+    /* 占约 4/5 屏，同时保证不溢出视口底部 */
+    var h=Math.min(Math.round(vh*0.84),920);
+    var room=vh-top-10;
+    if(h>room && room>200) h=Math.round(room);
+    p.style.height=Math.round(h)+'px';
+    if(bd) bd.style.height=Math.max(140,Math.round(h-headH))+'px';
+  } else {
+    p.style.height='';
+    if(bd) bd.style.height='';
+  }
+  p.style.top=top+'px';
+  p.hidden=false;
+}
+function floatActorsChips(action, only){
+  var list=(state.actors||[]).filter(function(a){ return !only || a.kind===only; });
+  if(!list.length) return '<span class="hint">还没有调查员/NPC</span>';
+  return list.map(function(a){
+    return `<span class="fchip" data-aid="${esc(a.id)}" data-kind="${esc(a.kind||'pc')}" data-action="${action}" title="点击：${action==='insert'?'插入到笔记':'设为掷骰目标'}">${avatarView(a,'sm')}<span>${esc(a.name)}</span><i class="muted" style="font-style:normal">${esc(sideOf(a))}</i></span>`;
+  }).join('');
+}
+function scenarioTabs(){
+  if(!state.ui) state.ui={};
+  if(!state.ui.scenarioTabs || !state.ui.scenarioTabs.length) state.ui.scenarioTabs=[{name:'笔记 1',html:''},{name:'笔记 2',html:''},{name:'笔记 3',html:''}];
+  while(state.ui.scenarioTabs.length<3) state.ui.scenarioTabs.push({name:'笔记 '+(state.ui.scenarioTabs.length+1),html:''});
+  return state.ui.scenarioTabs.slice(0,3);
+}
+function noteTabsHTML(){
+  return scenarioTabs().map(function(tb,i){
+    return `<span class="ntab${i===noteTabIndex?' on':''}">
+      <button class="ntabgo" onclick="switchNoteTab(${i})">${esc(tb.name||('笔记 '+(i+1)))}</button>
+      <button class="ntabren" title="改这个笔记卡的名字" onclick="renameNoteTab(${i})">✎</button>
+    </span>`;
+  }).join('');
+}
+function loadNoteEditor(){
+  var tabs=scenarioTabs();
+  if(noteTabIndex>=tabs.length) noteTabIndex=0;
+  var ed=$('noteEditor'); if(ed) ed.innerHTML=tabs[noteTabIndex].html||'';
+  var tw=$('noteTabs'); if(tw) tw.innerHTML=noteTabsHTML();
+}
+function switchNoteTab(i){
+  saveNoteFromEditor();
+  var tabs=scenarioTabs();
+  if(i>=0&&i<tabs.length) noteTabIndex=i;
+  loadNoteEditor();
+}
+function renameNoteTab(i){
+  var tabs=scenarioTabs();
+  var nm=prompt('给这张笔记卡命名：', (tabs[i]&&tabs[i].name)||('笔记 '+(i+1)));
+  if(nm===null) return;
+  nm=String(nm).trim()||('笔记 '+(i+1));
+  tabs[i].name=nm;
+  saveStateQuiet();
+  var tw=$('noteTabs'); if(tw) tw.innerHTML=noteTabsHTML();
+  toast('笔记卡已改名：'+nm);
+}
+function buildFloatPanel(){
+  var p=$('floatPanel'); if(!p) return;
+  p.classList.toggle('script-on', openFloatPanel==='script');
+  p.classList.toggle('dice-on', openFloatPanel==='dice');
+  if(openFloatPanel==='script'){
+    var tabs=scenarioTabs();
+    if(noteTabIndex>=tabs.length) noteTabIndex=0;
+    p.innerHTML=`<div class="floathead"><b>📜 剧本摘要 / 随团笔记</b>
+      <span class="hint">悬浮显示，可边看调查员/NPC 边记录</span>
+      <button class="small ghost" style="margin-left:auto" onclick="closeFloatPanel()">收起 ✕</button></div>
+      <div class="floatbody">
+        <div class="note-tabs" id="noteTabs">${noteTabsHTML()}</div>
+        <div class="note-tools">
+          <span class="muted" style="font-size:12px">点角色 → 插入快捷链接：</span>
+          <span id="noteActorChips">${floatActorsChips('insert')}</span>
+        </div>
+        <div class="note-editor" id="noteEditor" contenteditable="true" spellcheck="false">${tabs[noteTabIndex].html||''}</div>
+        <div class="row" style="justify-content:space-between;margin-top:6px">
+          <span class="hint">3 张笔记卡可切换、可改名；点笔记里的“角色标签”打开角色详情。自动保存在本机。</span>
+          <button class="small ghost" onclick="clearScenarioNote()">清空当前笔记</button>
+        </div>
+      </div>`;
+  } else {
+    p.innerHTML=`<div class="floathead"><b>🎲 骰子台</b>
+      <span class="hint">几个骰子 × 几面骰，自由填数字（例：1d100、3d6）</span>
+      <button class="small ghost" style="margin-left:auto" onclick="closeFloatPanel()">收起 ✕</button></div>
+      <div class="floatbody">
+        <div class="dice-num row" style="gap:10px;align-items:flex-end">
+          <label>骰子个数<input type="number" id="dieCount" value="1" min="1" max="100" step="1"></label>
+          <label>骰子面数<input type="number" id="dieSides" value="100" min="2" max="1000000" step="1"></label>
+          <button class="primary" style="height:34px" onclick="rollFloatDice()">🎲 掷骰</button>
+        </div>
+        <div class="row" style="gap:6px;margin-top:4px;flex-wrap:wrap">
+          <label style="flex-direction:row;align-items:center;gap:4px">大成功（掷出 ≤）<input type="number" id="diceBs" value="${diceThrSmall}" min="1" max="100" style="width:70px" onchange="saveDiceThrUI()"></label>
+          <label style="flex-direction:row;align-items:center;gap:4px">大失败（掷出 ≥）<input type="number" id="diceBf" value="${diceThrBig}" min="1" max="100" style="width:70px" onchange="saveDiceThrUI()"></label>
+          <span class="hint">仅 1D100 判定时生效</span>
+        </div>
+        <div class="dice-big" id="diceBig">—</div>
+        <div class="dice-detail" id="diceDetail"></div>
+        <div class="note-tools" style="border-top:1px dashed var(--line);border-bottom:none;padding-top:6px;margin-bottom:6px">
+          <span class="muted" style="font-size:12px">选择掷骰角色：</span>
+          <span id="diceActorChips">${floatActorsChips('target')}</span>
+          <select id="diceSkill" style="min-width:180px" onchange="diceSkillChanged(this)"><option value="">（不使用技能）</option></select>
+          <span class="muted" id="diceSkillVal"></span>
+        </div>
+        <div class="hint" id="diceTargetLbl" style="margin-bottom:6px"></div>
+        <div class="row" style="justify-content:space-between;margin-bottom:4px">
+          <span class="muted" style="font-size:12px">掷骰日志（关闭面板不丢失）</span>
+          <button class="small ghost" onclick="clearDiceHistory()">清空日志</button>
+        </div>
+        <div class="log dicehist" id="diceHist"></div>
+      </div>`;
+    refreshDiceActorUI();
+    renderDiceHist();
+  }
+}
+function clearScenarioNote(){
+  var tabs=scenarioTabs();
+  if(!confirmBox('清空当前笔记卡的全部内容？')) return;
+  tabs[noteTabIndex].html='';
+  saveNoteFromEditor(); loadNoteEditor();
+  toast('当前笔记已清空');
+}
+function insertNoteChip(aid){
+  var a=actorById(aid); if(!a) return;
+  var ed=$('noteEditor'); if(!ed) return;
+  ed.focus();
+  var chip=document.createElement('span');
+  chip.className='fchip nchip'; chip.setAttribute('contenteditable','false');
+  chip.dataset.aid=a.id; chip.dataset.kind=a.kind||'pc';
+  chip.innerHTML=avatarView(a,'sm')+esc(a.name)+'·'+esc(sideOf(a));
+  ed.appendChild(chip);
+  ed.appendChild(document.createTextNode(' '));
+  saveNoteFromEditor();
+  toast('已插入「'+a.name+'」链接');
+}
+function saveNoteFromEditor(){
+  var ed=$('noteEditor'); if(!ed) return;
+  if(!state.ui) state.ui={};
+  var tabs=scenarioTabs();
+  if(noteTabIndex>=tabs.length) noteTabIndex=0;
+  tabs[noteTabIndex].html=ed.innerHTML;
+  state.ui.scenario=ed.innerHTML;   // 兼容旧字段
+  saveStateQuiet();
+}
+function refreshDiceActorUI(){
+  var lbl=$('diceTargetLbl');
+  if(lbl) lbl.textContent=diceTarget?('🎯 掷骰目标：'+diceTarget.name+'（'+(diceTarget.kind==='pc'?'调查员':'NPC')+'） · 技能自动读取人物卡'):'（未选择目标，直接掷骰也可以）';
+  document.querySelectorAll('#diceActorChips .fchip').forEach(function(c){
+    c.classList.toggle('on', !!(diceTarget&&c.dataset.aid===diceTarget.id));
+  });
+  populateDiceSkills();
+}
+function setDiceTarget(chip){
+  if(!chip) return;
+  var aid=chip.dataset.aid; var a=actorById(aid); if(!a) return;
+  if(diceTarget&&diceTarget.id===aid){ diceTarget=null; }
+  else { diceTarget={id:a.id,name:a.name,kind:a.kind||'pc',skills:(a.skills||[]).slice()}; }
+  refreshDiceActorUI();
+}
+function populateDiceSkills(){
+  var sel=$('diceSkill'); if(!sel) return;
+  var keep=sel.value;
+  if(!diceTarget){
+    sel.innerHTML='<option value="">（不使用技能）</option>';
+    var sv=$('diceSkillVal'); if(sv) sv.textContent='';
+    return;
+  }
+  var opts=diceTarget.skills||[];
+  sel.innerHTML='<option value="">（不使用技能）</option>'+opts.map(function(s,i){
+    return '<option value="'+i+'">'+esc(s.name||'未名技能')+' '+Math.round(s.total||0)+'%</option>';
+  }).join('');
+  if(!opts.length) sel.innerHTML='<option value="">（该角色没有技能数据）</option>';
+  if(keep) sel.value=keep;
+  diceSkillChanged(sel);
+}
+function diceSkillChanged(sel){
+  if(!sel) return;
+  var i=sel.value===''?-1:num(sel.value);
+  var sk=(i>=0&&diceTarget&&diceTarget.skills&&diceTarget.skills[i])?diceTarget.skills[i]:null;
+  var sv=$('diceSkillVal'); if(sv) sv.textContent=sk?('→ '+Math.round(sk.total||0)+'%'):'';
+}
+function storeDiceState(){
+  if(!state||!state.ui) return;
+  if(!state.ui.dice) state.ui.dice={bs:1,bf:96,hist:[]};
+  state.ui.dice.bs=diceThrSmall; state.ui.dice.bf=diceThrBig;
+  state.ui.dice.hist=diceHistory.slice(0,120);
+  saveStateQuiet();
+}
+function saveDiceThrUI(){
+  var bsEl=$('diceBs'), bfEl=$('diceBf');
+  var bs=Math.max(1,Math.min(100,Math.round(num(bsEl?bsEl.value:1))||1));
+  var bf=Math.max(1,Math.min(100,Math.round(num(bfEl?bfEl.value:100))||100));
+  if(bs>bf){ var t=bs; bs=bf; bf=t; }
+  diceThrSmall=bs; diceThrBig=bf;
+  if(bsEl) bsEl.value=bs; if(bfEl) bfEl.value=bf;
+  storeDiceState();
+}
+function clearDiceHistory(){ diceHistory=[]; renderDiceHist(); storeDiceState(); }
+function renderDiceHist(){
+  var h=$('diceHist'); if(!h) return;
+  h.innerHTML=diceHistory.length?diceHistory.map(function(x){return '<div class="l info">'+esc(x)+'</div>';}).join(''):'<div class="l muted">还没有掷骰记录。</div>';
+}
+function classifyD100(roll, skillVal, bs, bf){
+  if(roll<=bs) return '💥 大成功';
+  if(roll>=bf) return '💀 大失败';
+  if(skillVal==null) return '（超过失败/成功阈值范围外的普通范围，未选技能不作检定）';
+  var ex=Math.floor(skillVal/5), hd=Math.floor(skillVal/2);
+  if(roll<=skillVal) return roll<=ex?'✨ 极难成功':(roll<=hd?'🌟 困难成功':'✅ 普通成功');
+  return '❌ 失败';
+}
+function rollFloatDice(){
+  var n=Math.max(1,Math.min(100,Math.round(num($('dieCount').value))))||1;
+  var sides=Math.max(2,Math.min(1000000,Math.round(num($('dieSides').value))))||100;
+  var bs=Math.max(1,Math.min(100,Math.round(num($('diceBs').value))||1));
+  var bf=Math.max(1,Math.min(100,Math.round(num($('diceBf').value))||100));
+  if(bs>bf){ var t=bs; bs=bf; bf=t; }
+  diceThrSmall=bs; diceThrBig=bf;
+  var rolls=[];
+  for(var i=0;i<n;i++) rolls.push(1+Math.floor(Math.random()*sides));
+  var total=rolls.reduce(function(a,b){return a+b;},0);
+  var expr=n+'D'+sides;
+  var roll1=rolls.length===1?rolls[0]:null;
+  var d100= n===1 && sides===100;
+  var cls='';
+  if(d100){
+    var si=$('diceSkill').value===''?-1:num($('diceSkill').value);
+    var sk=(si>=0&&diceTarget&&diceTarget.skills&&diceTarget.skills[si])?diceTarget.skills[si]:null;
+    cls=classifyD100(roll1, sk?(Math.round(sk.total)||0):null, bs, bf);
+  }
+  $('diceBig').textContent=total;
+  $('diceDetail').textContent=(n>1?('骰面：'+rolls.join(' + ')+' = '):'')+total+(cls?('　'+cls):'')+(d100&&!cls?'':'');
+  if(d100) $('diceDetail').textContent+='　'+cls;
+  var who=diceTarget?diceTarget.name+' ('+(diceTarget.kind==='pc'?'调查员':'NPC')+') ':'';
+  var skillTxt='';
+  if(d100){
+    var si2=$('diceSkill').value===''?-1:num($('diceSkill').value);
+    var sk2=(si2>=0&&diceTarget&&diceTarget.skills&&diceTarget.skills[si2])?diceTarget.skills[si2]:null;
+    skillTxt=sk2?('·'+esc(sk2.name)+' '+Math.round(sk2.total)+'%'):'·无技能';
+  }
+  var line='['+nowStamp()+'] '+(who||'')+'🎲 '+expr+' = '+total+(n>1?('（'+rolls.join(', ')+'）'):'')+skillTxt+(cls?(' → '+cls):'');
+  diceHistory.unshift(line);
+  if(diceHistory.length>120) diceHistory.pop();
+  storeDiceState();
+  renderDiceHist();
+}
+function openActorFromFloat(chip){
+  var aid=chip&&chip.dataset.aid; if(!aid) return;
+  var a=actorById(aid);
+  if(!a){ toast('该角色已不存在（可能被删除）'); return; }
+  openActorModal(aid, a.kind);
+}
+/* 悬浮全局事件：一次性绑定 */
+(function initFloatGlobal(){
+  if(document.__cocFloatBound) return;
+  document.__cocFloatBound=1;
+  document.addEventListener('click', function(e){
+    if(!e.target||!e.target.closest) return;
+    var chip=e.target.closest('.fchip');
+    if(!chip) return;
+    if(chip.closest('#noteEditor')){
+      e.preventDefault();
+      openActorFromFloat(chip);
+      return;
+    }
+    var act=chip.dataset.action;
+    if(act==='insert') insertNoteChip(chip.dataset.aid);
+    else if(act==='target') setDiceTarget(chip);
+  });
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.id==='noteEditor') saveNoteFromEditor();
+  });
+  window.addEventListener('resize', function(){
+    if(openFloatPanel) positionFloatPanel();
+  });
+})();
+
+/* ---------- 🐙 背景漂浮小装饰：小章鱼/手枪/笔记本等，永不停止；右上角开关 ---------- */
+var DECOR_GLYPHS=['🐙','🦑','🔫','📓','📔','🧿','🕯️','📜','⌛','💊','🖋️','🗝️','🦇','🌙','⚗️','🗞️','☕','🕸️','🔦','🕵️'];
+var _decorBits=[], _decorRAF=null, _decorLast=0;
+function decorOn(){ return !!(state&&state.ui&&state.ui.decor!==false); }
+function decorCountFor(vw){ return vw<420?8:(vw<860?11:(vw<1400?15:20)); }
+function applyDecorState(){
+  var body=document.body; if(!body) return;
+  body.classList.toggle('decoroff', !decorOn());
+  var btn=$('decorToggle');
+  if(btn){
+    btn.textContent=decorOn()?'🐙 装饰：开':'🐙 装饰：关';
+    btn.classList.toggle('on', decorOn());
+  }
+  if(decorOn()) spawnDecorBits(); else stopDecorBits();
+}
+function toggleDecor(){
+  if(!state) return;
+  if(!state.ui) state.ui={};
+  state.ui.decor=!decorOn();
+  saveStateQuiet();
+  applyDecorState();
+  toast(state.ui.decor?'背景漂浮小图标已开启':'背景漂浮小图标已关闭');
+}
+function spawnDecorBits(){
+  var body=document.body; if(!body) return;
+  stopDecorBits();
+  var vw=window.innerWidth||body.clientWidth||1200;
+  var vh=window.innerHeight||body.clientHeight||800;
+  var n=decorCountFor(vw), bg=body.classList.contains('bgcustom');
+  _decorBits=[];
+  for(var i=0;i<n;i++){
+    var el=document.createElement('span');
+    el.className='decor-bit';
+    el.textContent=DECOR_GLYPHS[Math.floor(Math.random()*DECOR_GLYPHS.length)];
+    body.appendChild(el);
+    var sz=13+Math.random()*30;
+    el.style.fontSize=Math.round(sz)+'px';
+    el.style.opacity=bg?(0.10+Math.random()*0.20):(0.06+Math.random()*0.14);
+    var dir=Math.random()<0.5?-1:1;
+    _decorBits.push({
+      el:el, x:Math.random()*vw, y:Math.random()*vh,
+      vx:dir*(5+Math.random()*17), vy:(Math.random()*7-3.5),
+      ph:Math.random()*Math.PI*2, sw:(0.4+Math.random()*0.9), rot:Math.random()*360
+    });
+  }
+  if(_decorRAF==null){
+    _decorLast=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+    _decorRAF=requestAnimationFrame(decorTick);
+  }
+}
+function decorTick(){
+  _decorRAF=requestAnimationFrame(decorTick);
+  if(document.hidden) return;
+  var now=(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+  var dt=Math.min(0.05,((now-_decorLast)/1000)||0.016);
+  _decorLast=now;
+  var vw=window.innerWidth||document.body.clientWidth||1200;
+  var vh=window.innerHeight||document.body.clientHeight||800;
+  var t=now/1000;
+  for(var i=0;i<_decorBits.length;i++){
+    var b=_decorBits[i]; if(!b||!b.el) continue;
+    b.x+=b.vx*dt+Math.sin(t*b.sw+b.ph)*10*dt;
+    b.y+=b.vy*dt+Math.cos(t*b.sw*0.8+b.ph)*7*dt;
+    if(b.x<-60) b.x=vw+50; else if(b.x>vw+60) b.x=-50;
+    if(b.y<-60) b.y=vh+50; else if(b.y>vh+60) b.y=-50;
+    b.rot+=dt*8;
+    b.el.style.transform='translate3d('+Math.round(b.x)+'px,'+Math.round(b.y)+'px,0) rotate('+(b.rot%360).toFixed(1)+'deg)';
+  }
+}
+function stopDecorBits(){
+  if(_decorRAF!=null){ cancelAnimationFrame(_decorRAF); _decorRAF=null; }
+  (_decorBits||[]).forEach(function(b){ if(b&&b.el&&b.el.parentNode) b.el.parentNode.removeChild(b.el); });
+  _decorBits=[];
+}
+(function bootDecor(){
+  function start(){ applyDecorState(); }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+  /* 兜底：无论 DOMContentLoaded 与数据兜底谁先跑，都要按最终 state.ui.decor 同步一次 */
+  setTimeout(start, 0);
+})();
 </script>
 </body>
 </html>
