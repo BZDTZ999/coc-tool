@@ -525,21 +525,24 @@ button#decorToggle.on{border-color:rgba(201,162,94,.6);color:var(--gold)}
 }
 
 /* ================= 本轮增补：地图多场景卡片 / 骰子页签 / SAN 检定 / 战斗表防溢出 ================= */
-/* 多地图卡片（最多 3 张，卡片切换/改名/删除） */
-.mapcards{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-bottom:8px}
-.maplbl{display:inline-flex;align-items:center;color:var(--muted);font-size:12px;margin-right:2px;flex:none}
-.mapcard{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;
-  padding:3px 6px 3px 10px;background:linear-gradient(180deg,#2c3141,#202530);cursor:pointer;
-  min-width:150px;max-width:270px;flex:1 1 170px}
+/* 多地图页签（固定 3 个按钮位：切换 / ✎改名 / 🗑删除，空格为「＋ 新建地图」） */
+.mapcards{display:flex;flex-wrap:nowrap;gap:6px;align-items:stretch;margin-bottom:8px}
+.maplbl{display:inline-flex;align-items:center;color:var(--muted);font-size:12px;margin-right:2px;flex:none;padding:0 4px}
+.mapcard{display:flex;align-items:stretch;flex:1 1 0;min-width:0;max-width:300px;border:1px solid var(--line);
+  border-radius:10px;overflow:hidden;background:var(--panel2);cursor:pointer}
 .mapcard:hover{border-color:var(--acc)}
 .mapcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc);background:linear-gradient(180deg,#373042,#2a2334)}
-.mapcard .mcname{flex:1;min-width:0;font-weight:600;color:var(--gold);background:transparent;
-  border:1px dashed transparent;padding:2px 4px;border-radius:6px;font-size:12.5px}
-.mapcard .mcname:hover,.mapcard .mcname:focus{border-color:var(--line);background:rgba(255,255,255,.04)}
-.mapcard .mcdel{padding:1px 6px;font-size:11px}
-.mapcard.mcadd,.mapcard.mcdim{border-style:dashed;justify-content:center;cursor:pointer;min-width:120px;flex:0 1 auto;color:var(--muted);text-align:center;font-size:12.5px}
-.mapcard.mcadd:hover{border-color:var(--acc);color:var(--gold)}
-.mapcard.mcdim{opacity:.6;cursor:not-allowed}
+.mapcard .mapgo{flex:1;min-width:0;border:none;background:transparent;color:var(--ink);padding:7px 8px;font-size:12.5px;
+  text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mapcard .mapgo:hover{color:var(--gold)}
+.mapcard.on .mapgo{color:var(--gold)}
+.mapcard .mapren,.mapcard .mcdel{flex:none;border:none;background:transparent;color:var(--muted);padding:0 7px;
+  font-size:12px;cursor:pointer;border-left:1px solid var(--line)}
+.mapcard .mapren:hover{color:var(--gold)}
+.mapcard .mcdel:hover{color:#ff9c9c}
+.mapcard.empty{border-style:dashed;justify-content:center;min-width:120px;flex:1 1 0}
+.mapcard.empty .mapgo{color:var(--gold);text-align:center}
+.mapcard.empty:hover{border-color:var(--acc);background:rgba(201,162,94,.06)}
 /* 骰子台子页签 + SAN 检定区域 */
 .dice-tabs{margin:0 0 10px}
 .dice-tabs button{font-size:13px;padding:5px 16px}
@@ -570,6 +573,17 @@ body.bgcustom .mapcard .mcname{color:var(--gold)}
 body.bgcustom .dice-tabs button.active{background:rgba(201,162,94,.16)}
 /* 地图“加路”条带内联底色，主题下用 CSS 变量强制覆盖 */
 body.bgcustom #mapLegsCard .listitem.row{background:var(--uic-d) !important;border-color:var(--uic-line)}
+/* 主题修复补丁：小卡 / 战斗详情加号按钮 / 地图页签 / 战斗场景头像 */
+body.bgcustom #pcList .pccard{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .addbar button.primary{background:linear-gradient(180deg,var(--acc),var(--acc2));border-color:rgba(201,162,94,.65);color:#241d10}
+body.bgcustom .addbar button.primary:hover{color:#241d10;filter:brightness(1.07)}
+body.bgcustom .mapcard.on{background:linear-gradient(180deg,var(--uic-a),var(--uic-b))}
+body.bgcustom .mapcard .mapgo{color:var(--ink)}
+body.bgcustom .mapcard.on .mapgo,body.bgcustom .mapcard.empty .mapgo{color:var(--gold)}
+body.bgcustom .mapcard .mapren{background:transparent;color:var(--muted);border:none;border-left:1px solid var(--uic-line)}
+body.bgcustom .mapcard .mapren:hover{color:var(--gold)}
+body.bgcustom .mapcard .mcdel{background:transparent;color:#ffcfcf;border:none;border-left:1px solid var(--uic-line);box-shadow:none}
+body.bgcustom .mapcard .mcdel:hover{background:#a04343;color:#fff}
 </style>
 </head>
 <body>
@@ -840,6 +854,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         if (nm2) items.push({ name: nm2, qty: 1 });
       }
     }
+    result.items = items;
 
     // —— 资产 ——
     result.assets = {
@@ -2698,9 +2713,9 @@ function scaffoldSections(){
     </div>
     <div>
       <div class="card">
+        <div class="mapcards" id="mapCardBar" style="margin-bottom:8px"></div>
         <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div style="flex:1;min-width:280px">
-            <div class="mapcards" id="mapCardBar"></div>
             <select id="mapSel" style="display:none" onchange="onMapSelect()"></select>
           </div>
           <div class="row" style="gap:6px;flex-wrap:wrap">
@@ -3592,16 +3607,17 @@ function roundRectPath(g,x,y,w,h,r){
   g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
   g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
 }
-function plateText(g,text,cx,baselineY,fontStr,highlight){
+function plateText(g,text,cx,cy,fontStr,highlight){
   if(!text) return;
   g.font=fontStr||'bold 13px "PingFang SC",sans-serif';
-  g.textAlign='center'; g.textBaseline='alphabetic';
-  var w=g.measureText(text).width+10;
+  g.textAlign='center'; g.textBaseline='middle';
+  var w=g.measureText(text).width+12;
   var fs=12; var mm=(fontStr||'').match(/([\d.]+)px/); if(mm) fs=parseFloat(mm[1]);
-  var h=fs+7; var x=cx-w/2; var top=baselineY-h+2;
+  var h=fs+8; var x=cx-w/2; var top=cy-h/2;
   g.fillStyle=highlight?'rgba(227,196,127,.85)':'rgba(0,0,0,.72)';
   roundRectPath(g,x,top,w,h,4); g.fill();
-  g.fillStyle='#fff'; g.fillText(text,cx,baselineY);
+  g.fillStyle='#fff'; g.fillText(text,cx,cy);
+  g.textBaseline='alphabetic';
 }
 var _avatarImgCache={};
 function drawAvatarOnCanvas(g,x,y,r,a){
@@ -3618,9 +3634,10 @@ function drawAvatarOnCanvas(g,x,y,r,a){
   g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.lineWidth=1.5; g.strokeStyle='#c9a25e'; g.stroke();
   g.restore();
 }
+function cssVarOr(name,fb){ try{ var v=getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v||fb; }catch(e){ return fb; } }
 function fallbackAvatar(g,x,y,r,a){
-  g.fillStyle='#2c3346'; g.fillRect(x-r,y-r,r*2,r*2);
-  g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fillStyle='#3a4256'; g.fill();
+  g.fillStyle=cssVarOr('--uic-d','#2c3346'); g.fillRect(x-r,y-r,r*2,r*2);
+  g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fillStyle=cssVarOr('--uic-a','#3a4256'); g.fill();
   var emoji=(a&&a.avatar&&a.avatar.preset)||(a&&a.kind==='npc'?'🧟':AVATAR_DEFAULT_PC);
   g.font=r*1.2+'px serif'; g.textAlign='center'; g.textBaseline='middle';
   g.fillText(emoji,x,y+1);
@@ -4651,16 +4668,19 @@ function zoomFit(){
 }
 /* 多地图卡片：最多 3 张，卡片切换/改名/删除，隐藏的 #mapSel 仅作兼容 */
 function mapCardBarHTML(){
+  /* 像剧本/笔记的页签：固定 3 个位置，已有地图可直接点按钮切换；空格为「＋ 新建地图」 */
   var maps=state.maps||[];
-  var html=maps.map(function(m){
+  var html='';
+  for(var i=0;i<3;i++){
+    var m=maps[i];
+    if(!m){ html+='<span class="mapcard empty" title="新建一张地图（最多 3 张）"><button class="mapgo add" onclick="newMap()">＋ 新建地图</button></span>'; continue; }
     var act=(m.id===state.activeMapId)?' on':'';
-    return '<span class="mapcard'+act+'" title="点击切换场景" onclick="setActiveMap(\''+m.id+'\')">'
-      +'<input class="mcname" value="'+esc(m.name)+'" spellcheck="false" title="点这里改名" onclick="event.stopPropagation()" onfocus="this.select()" onchange="renameMapIdFromInput(this,\''+m.id+'\')">'
-      +'<button class="mcdel small danger" title="删除这张地图" onclick="event.stopPropagation();deleteMapId(\''+m.id+'\')">🗑</button></span>';
-  }).join('');
-  if(maps.length>=3) html+='<span class="mapcard mcdim" title="最多保留 3 张地图">＋ 新建（已满 3 张）</span>';
-  else html+='<span class="mapcard mcadd" title="新建地图（最多 3 张）" onclick="newMap()">＋ 新建地图</span>';
-  return '<span class="maplbl">场景</span>'+html;
+    html+='<span class="mapcard'+act+'" data-mapid="'+esc(m.id)+'" title="点击左侧按钮切换地图">'
+      +'<button class="mapgo" onclick="setActiveMap(\''+m.id+'\')">🗺 '+esc(m.name)+'</button>'
+      +'<button class="mapren" title="改地图名" onclick="renameMapId(\''+m.id+'\')">✎</button>'
+      +'<button class="mcdel" title="删除这张地图" onclick="deleteMapId(\''+m.id+'\')">🗑</button></span>';
+  }
+  return '<span class="maplbl">地图</span>'+html;
 }
 function renderMapCards(){
   var bar=$('mapCardBar'); if(!bar) return;
@@ -4850,11 +4870,12 @@ function drawOver(ctx,sc){
     var aw=armStr?ctx.measureText(armStr).width:0;
     var groupW=nw+aw+(armStr?12:0);
     var x0=p.x-groupW/2;
-    if(nm) plateText(ctx,nm,x0+nw/2,p.y+38,'bold 16px "PingFang SC",sans-serif');
-    if(armStr) plateText(ctx,armStr,x0+nw+8+aw/2,p.y+38,'bold 13px "PingFang SC",sans-serif');
-    miniBar(p.x,p.y+52, (c.hp&&c.hp.cur)||0,(c.hp&&c.hp.max)||0,'#6fbf73','H');
-    miniBar(p.x,p.y+66, (c.san&&c.san.cur)||0,(c.san&&c.san.max)||0,'#a78fd1','S');
-    miniBar(p.x,p.y+80, (c.mp&&c.mp.cur)||0,(c.mp&&c.mp.max)||0,'#6fa7d6','M');
+    var nameCy=p.y+46;
+    if(nm) plateText(ctx,nm,x0+nw/2,nameCy,'bold 16px "PingFang SC",sans-serif');
+    if(armStr) plateText(ctx,armStr,x0+nw+8+aw/2,nameCy,'bold 13px "PingFang SC",sans-serif');
+    miniBar(p.x,p.y+60, (c.hp&&c.hp.cur)||0,(c.hp&&c.hp.max)||0,'#6fbf73','H');
+    miniBar(p.x,p.y+74, (c.san&&c.san.cur)||0,(c.san&&c.san.max)||0,'#a78fd1','S');
+    miniBar(p.x,p.y+88, (c.mp&&c.mp.cur)||0,(c.mp&&c.mp.max)||0,'#6fa7d6','M');
     if(active){ ctx.strokeStyle='#e3c47f'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(p.x,p.y,32,0,Math.PI*2); ctx.stroke(); }
   });
   ctx.textAlign='left';
@@ -5573,7 +5594,7 @@ var SAN_SYMPTOMS_BOOK=[
   {n:'恐惧', d:'患上恐惧症：可再 D100 查恐惧症状表挑一个恐惧源', dur:'1D10 轮'},
   {n:'躁狂', d:'陷入某种躁狂诱因：可再 D100 查躁狂症状表', dur:'1D10 轮'}
 ];
-var SAN_CUSTOM_DEFAULT='尖叫着指认月亮｜1D10 轮\n抱着“珍贵之物”反复喃喃自语｜1D10 轮';
+var SAN_CUSTOM_DEFAULT='指着月亮尖叫，坚信自己已经死了\n抱着“珍贵之物”反复喃喃自语，不允许任何人碰';
 function sanCfg(){
   if(!state.ui) state.ui={};
   if(!state.ui.san) state.ui.san={};
@@ -5676,8 +5697,8 @@ function updateSanSetUI(){
   var c=sanCfg();
   var row=$('sanCustomRow'); if(!row) return;
   if(c.set==='custom'){
-    row.innerHTML='<textarea id="sanCustomList" placeholder="每行一条症状；可用「症状｜持续时间」书写，例：'+esc(SAN_CUSTOM_DEFAULT)+'" style="min-height:72px" onchange="saveSanUI()">'+esc(c.custom||'')+'</textarea>'
-      +'<div class="hint" style="margin-top:2px">每行一条；写“症状｜持续时间”可带自己的时长，不写则默认 1D10 轮。</div>';
+    row.innerHTML='<textarea id="sanCustomList" placeholder="每行一条疯狂症状（只写症状名），例：'+esc(SAN_CUSTOM_DEFAULT)+'" style="min-height:72px" onchange="saveSanUI()">'+esc(c.custom||'')+'</textarea>'
+      +'<div class="hint" style="margin-top:2px">这里只自定义症状内容；持续时长仍按规则书掷 1D10 轮。</div>';
   } else row.innerHTML='';
 }
 function saveSanUI(){
@@ -5739,11 +5760,9 @@ function pickBookSymptom(){
   return {label:s.n,desc:s.d,dur:s.dur,idx:i+1};
 }
 function pickCustomSymptom(c){
-  var lines=(c.custom||'').split(/\r?\n/).map(function(x){return String(x||'').trim();}).filter(Boolean);
+  var lines=(c.custom||'').split(/\r?\n/).map(function(x){return String(x||'').trim().replace(/\s*｜.*$/, '').trim();}).filter(Boolean);
   if(!lines.length) return null;
   var line=lines[Math.floor(Math.random()*lines.length)];
-  var i=line.indexOf('｜');
-  if(i>=0) return {label:line.slice(0,i).trim(),desc:'',dur:line.slice(i+1).trim()||'1D10 轮',raw:line};
   return {label:line,desc:'',dur:'1D10 轮',raw:line};
 }
 function showSanDetail(html,bigText,bg){
