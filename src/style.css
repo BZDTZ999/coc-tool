@@ -1,0 +1,605 @@
+:root{
+  --bg:#14161c; --bg2:#1b1f29; --panel:#20242f; --panel2:#262b38; --line:#333a4b;
+  --ink:#e8e6df; --muted:#9aa2b5; --acc:#c9a25e; --acc2:#8b6d3f; --gold:#e3c47f;
+  --good:#6fbf73; --bad:#d16a6a; --blue:#6fa7d6; --purple:#a78fd1;
+  --radius:10px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 80% -10%, #2a2418 0%, var(--bg) 55%);color:var(--ink);
+  font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;min-height:100vh}
+a{color:var(--gold)}
+.topbar{position:sticky;top:0;z-index:40;background:rgba(18,20,26,.97);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);box-shadow:0 4px 18px rgba(0,0,0,.35)}
+header{display:flex;align-items:center;gap:12px;padding:10px 18px 4px}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand b{font-size:19px;letter-spacing:2px;color:var(--gold)}
+.brand small{color:var(--muted)}
+.hbtn{margin-left:auto}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
+  border-radius:8px;padding:6px 12px;transition:.15s}
+button:hover,.btn:hover{border-color:var(--acc);color:var(--gold)}
+button.primary{background:linear-gradient(180deg,#caa35f,#9a7638);color:#241d10;border-color:#caa35f;font-weight:600}
+button.primary:hover{filter:brightness(1.08);color:#241d10}
+button.danger{color:#e3a8a8}
+button.ghost{background:transparent}
+button.small{padding:3px 8px;font-size:12px;border-radius:6px}
+button:disabled{opacity:.45;cursor:not-allowed}
+nav{display:flex;gap:4px;padding:8px 16px 0;flex-wrap:wrap;background:rgba(18,20,26,.5)}
+nav button{border:none;background:transparent;color:var(--muted);padding:8px 14px;border-radius:10px 10px 0 0;border-bottom:2px solid transparent}
+nav button.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(255,255,255,.03)}
+nav{margin-top:2px}
+main{padding:18px;max-width:1280px;margin:0 auto}
+section.tab{display:none}
+section.tab.active{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+.card h3{margin:0 0 10px;color:var(--gold);font-size:15px;letter-spacing:.5px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:10px}
+.hint{color:var(--muted);font-size:12.5px}
+.muted{color:var(--muted)}
+input[type=text],input[type=number],input[type=file],select,textarea{
+  font:inherit;color:var(--ink);background:#191d26;border:1px solid var(--line);border-radius:7px;padding:6px 9px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+input[type=file]{padding:4px}
+textarea{width:100%;resize:vertical;min-height:60px}
+label{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+label b{color:var(--ink);font-weight:500}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{color:var(--muted);font-weight:500;text-align:left;border-bottom:1px solid var(--line);padding:6px 8px;white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid #2a3040;vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,.02)}
+.num{font-family:var(--mono)}
+.badge{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;border:1px solid var(--line)}
+.badge.good{color:var(--good);border-color:rgba(111,191,115,.4)}
+.badge.bad{color:var(--bad);border-color:rgba(209,106,106,.45)}
+.badge.warn{color:var(--gold);border-color:rgba(227,196,127,.4)}
+.badge.blue{color:var(--blue);border-color:rgba(111,167,214,.4)}
+/* actor cards */
+.actorcard{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;position:relative}
+.actorcard .nm{font-size:15px;font-weight:600}
+.actorcard .sub{color:var(--muted);font-size:12px}
+.attrmini{display:flex;flex-wrap:wrap;gap:4px 8px;margin:8px 0;font-family:var(--mono);font-size:11.5px;color:#cdd3e0}
+.attrmini span{background:#1a1e29;border:1px solid var(--line);padding:1px 6px;border-radius:5px}
+.bar{height:8px;background:#171a22;border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#6fbf73,#3f8f52)}
+.bar.hp>i{background:linear-gradient(90deg,#6fbf73,#358c4b)}
+.bar.san>i{background:linear-gradient(90deg,#a78fd1,#6f52b8)}
+/* canvas */
+#mapWrap{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:
+  linear-gradient(0deg,rgba(255,255,255,.02) 1px,transparent 1px) 0 0/26px 26px,
+  linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px) 0 0/26px 26px,#151922}
+canvas#mapCanvas{display:block;width:100%;height:auto;cursor:crosshair;touch-action:none}
+/* log */
+.log{font-family:var(--mono);font-size:12px;max-height:220px;overflow:auto;background:#10131b;border:1px solid var(--line);border-radius:8px;padding:8px}
+.log .l{white-space:pre-wrap;word-break:break-word;border-bottom:1px dashed #232838;padding:3px 4px}
+.log .l.win{color:#a9e0ac}.log .l.bad{color:#e6a3a3}.log .l.info{color:#b9c4dd}.log .l.gold{color:var(--gold)}
+/* modal */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:90;overflow:auto;padding:24px}
+.modal-mask.open{display:flex}
+.modal{background:#1b1f2a;border:1px solid var(--line);border-radius:14px;max-width:960px;width:100%;margin:auto;box-shadow:0 20px 60px #000a}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.modal-head b{color:var(--gold);font-size:16px}
+.modal-body{padding:16px 18px;max-height:72vh;overflow:auto}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.fieldlist{display:flex;flex-wrap:wrap;gap:10px}
+.kv{display:flex;gap:6px;align-items:center}
+.split{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start}
+@media(max-width:1100px){.split{grid-template-columns:1fr}}
+.listitem{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px;background:var(--panel2)}
+.listitem .t{font-weight:600}
+.point-mark{display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--acc);margin-right:6px}
+.tabs-mini{display:flex;gap:2px;margin-bottom:10px;flex-wrap:wrap}
+.tabs-mini button{font-size:12px;padding:4px 10px;border-radius:6px}
+.tabs-mini button.active{background:var(--panel2);color:var(--gold)}
+.notice{border-left:3px solid var(--gold);background:rgba(227,196,127,.08);padding:8px 12px;border-radius:0 8px 8px 0;font-size:13px;margin:8px 0}
+.statusline{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#10131b;border:1px solid var(--line);padding:8px 16px;border-radius:20px;font-size:13px;display:none;z-index:120}
+h4.small-title{margin:14px 0 6px;color:#cdd3e0;font-size:13px;letter-spacing:1px}
+footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center;padding:10px}
+footer div{line-height:1.7}
+footer{display:flex;flex-direction:column;align-items:center;gap:0}
+/* 背景设置弹窗 */
+.bgsw{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#cfd6e6}
+.bgsw.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
+.bgsample{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);display:inline-block}
+.log .l.purple{color:#cdb6ee}.log .l.warn{color:#e3c47f}.log .l.muted{color:#8b93a7}
+
+/* ===== v2 增补：头像 / 三列 / 芯片技能 / 场景 ===== */
+.avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;
+  background:linear-gradient(160deg,#3a4155,#232838);border:2px solid var(--acc);flex:none;
+  font-size:26px;color:#fff;user-select:none}
+.avatar img,.avatar .av-img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar.sm{width:34px;height:34px;font-size:18px}
+.avatar.md{width:52px;height:52px;font-size:28px}
+.avatar.lg{width:88px;height:88px;font-size:46px}
+.avatar.xl{width:120px;height:120px;font-size:56px}
+.avwrap{display:flex;gap:10px;align-items:flex-start}
+.preset-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.preset-picker button{width:38px;height:38px;border-radius:50%;font-size:20px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.preset-picker button.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
+.mono{font-family:var(--mono)}
+/* 3x3 属性 */
+.attrgrid{display:grid;grid-template-columns:repeat(3,minmax(96px,1fr));gap:6px}
+.attrgrid .cell{background:#191d26;border:1px solid var(--line);border-radius:8px;padding:5px 8px;text-align:center}
+.attrgrid .cell .cn{color:var(--muted);font-size:11px}
+.attrgrid .cell .en{color:var(--gold);font-size:11px;letter-spacing:.4px}
+.attrgrid .cell .val{font-family:var(--mono);font-size:15px}
+.attrgrid input{width:100%;text-align:center}
+/* 技能芯片 */
+.skillchips{display:flex;flex-wrap:wrap;gap:6px}
+.skillchip{display:inline-flex;align-items:center;gap:4px;background:#232838;border:1px solid var(--line);border-radius:20px;padding:2px 4px 2px 10px;font-size:12.5px}
+.skillchip.added{background:#332f22;border-color:#c9a25e;box-shadow:inset 0 0 0 1px rgba(201,162,94,.35)}
+.skillchip .sk-base{font-size:10px;color:var(--muted);opacity:.8;padding-left:2px;font-family:var(--mono)}
+.skillchip input{width:auto;background:transparent;border:none;padding:2px;min-width:0}
+.skillchip input.sk-name{width:86px}
+.skillchip input.sk-total{width:44px;font-family:var(--mono);text-align:right}
+.skillchip .del{border:none;background:transparent;color:#c98a8a;cursor:pointer;border-radius:50%;padding:0 5px}
+/* 技能上下分区 */
+.skilldef{border:1px solid #2a3040;border-radius:10px;background:rgba(0,0,0,.12);margin-top:8px}
+.skilldef>summary{cursor:pointer;list-style:none;padding:7px 10px;color:var(--muted);font-size:12px;user-select:none}
+.skilldef>summary::-webkit-details-marker{display:none}
+.skilldef>summary:hover{color:var(--gold)}
+.skilldef .skillchips{padding:2px 10px 10px}
+.skilldef .skillchip{background:#1a1e28;border-color:#2c3345;opacity:.92}
+.skilldef .skillchip .sk-base{color:#7f879c}
+.skilldef:not([open]) .skillchips{display:none}
+/* 战斗属性九宫格：3×3 便于看清数值 */
+.combattrgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:4px 0}
+.combattrgrid .cat{background:#191d26;border:1px solid #2b3245;border-radius:7px;padding:3px 2px;text-align:center;min-width:0}
+.combattrgrid .cat em{display:block;font-style:normal;font-family:var(--mono);font-size:10px;color:var(--gold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.combattrgrid .cat input{width:100%;min-width:0;padding:1px 0;text-align:center;font-size:13px;background:transparent;border:none;border-bottom:1px dashed #3a4258;border-radius:0}
+.combattrgrid .cat input:focus{border-bottom-color:var(--acc)}
+.adjrow .armorfoot{grid-column:1/-1;font-size:11px;color:var(--muted);line-height:1.4;padding:0 2px 2px}
+/* 三栏 */
+.cols3{display:grid;grid-template-columns:230px minmax(0,1fr) 250px;gap:14px;align-items:start}
+.cols3>div{min-width:0}
+@media(max-width:1150px){.cols3{grid-template-columns:1fr}}
+.actorpill{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;margin-bottom:5px;background:#1d212d;cursor:pointer}
+.actorpill:hover{border-color:var(--acc)}
+.actorpill.on{border-color:#6fbf73;background:rgba(111,191,115,.07)}
+.actorpill .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px}
+.sidebadge{font-size:10.5px;border-radius:10px;padding:0 6px;border:1px solid}
+.side-调查员{color:#7fc0ea;border-color:rgba(127,192,234,.4)}
+.side-盟友{color:#8fd69b;border-color:rgba(143,214,155,.4)}
+.side-中立{color:#c9c6b8;border-color:rgba(201,198,184,.4)}
+.side-敌人{color:#e08f8f;border-color:rgba(224,143,143,.4)}
+.smallgrid{display:grid;gap:8px}
+.vehrow{display:grid;grid-template-columns:1fr 70px;gap:6px;align-items:center}
+.bars3{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.bars3 .brow{display:grid;grid-template-columns:44px 1fr 44px;gap:6px;align-items:center;font-size:11px;font-family:var(--mono)}
+.bar.gold>i{background:linear-gradient(90deg,#e3c47f,#b8903f)}
+.bar.blue>i{background:linear-gradient(90deg,#6fa7d6,#3f6f9e)}
+.bar.purple>i{background:linear-gradient(90deg,#a78fd1,#6f52b8)}
+.proplist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.propbtn{font-size:22px;padding:2px 8px}
+.propbtn span{display:block;font-size:9px;color:var(--muted);text-align:center;margin-top:-2px}
+.toklegend{font-size:11px;color:var(--muted)}
+.scenebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 8px;background:#191d26;border-bottom:1px solid var(--line)}
+.scene-side{font-size:12px;padding:2px 8px;border-radius:12px;border:1px solid var(--line)}
+.battlecanvas-wrap{position:relative;background:#151922}
+canvas.scene{display:block;width:100%;height:auto}
+.token{display:inline-flex;flex-direction:column;align-items:center}
+.token .mini{font-family:var(--mono);font-size:9.5px;color:#cfd6e6;line-height:1.2;text-align:center}
+.drag-hint{font-size:11px;color:var(--muted);margin:2px 0 6px}
+.vdiv{height:1px;background:var(--line);margin:8px 0}
+.sectiontitle{font-size:12px;letter-spacing:2px;color:var(--gold);margin:10px 0 6px}
+.compress-skill td{padding:3px 6px;font-size:12.5px}
+.avatar-area{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hpanel{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.panel-head b{color:var(--gold)}
+.propchip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:#20242f;border-radius:20px;padding:2px 8px;font-size:12px;margin:2px}
+
+/* ===== 调查员小卡：左信息 + 右上大头像 + 3×3 双语属性 + 彩条 + 剧情道具 ===== */
+#pcList .pccard{display:flex;flex-direction:column;gap:7px;padding:12px;overflow:hidden;
+  background:linear-gradient(180deg,#2c3142,#212634);border-color:#3a4258;border-radius:12px}
+#pcList .pccard:hover{border-color:var(--acc)}
+.pccard .pchead{display:grid;grid-template-columns:minmax(0,1fr) clamp(150px,48%,220px);gap:10px;
+  align-items:stretch;min-width:0}
+.pccard .pcinfo{display:flex;flex-direction:column;min-width:0}
+.pccard .pcnameline{display:flex;align-items:center;gap:6px;min-width:0;line-height:1.3}
+.pccard .pcnameline .nm{font-size:17px;font-weight:700;color:#f2efe6;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pccard .pcmeta{margin-top:3px;font-size:12px;color:#b9c0d2;line-height:1.45;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pccard .pcmeta.muted{color:#8b93a7;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pccard .pcatts9{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.pccard .pctile{background:#191d28;border:1px solid #2d3447;border-radius:9px;padding:4px 3px 5px;
+  text-align:center;min-width:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.pccard .pctile b{display:block;color:var(--gold);font-size:9.5px;font-weight:700;letter-spacing:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
+.pccard .pctile em{display:block;font-style:normal;font-family:var(--mono);font-size:18px;font-weight:700;
+  color:#f7f4ea;line-height:1.35}
+.pccard .pchead .pcav{position:relative;border-radius:12px;overflow:hidden;align-self:stretch;
+  background:radial-gradient(120% 90% at 30% 20%,#333b52 0%,#141823 70%);
+  border:1px solid #454f6b;box-shadow:0 2px 10px rgba(0,0,0,.35), inset 0 0 22px rgba(0,0,0,.28);
+  display:flex;align-items:center;justify-content:center;min-width:0;min-height:92px}
+.pccard .pchead .pcav img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block}
+.pccard .pchead .pcav .emoji{font-size:56px;line-height:1;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.35)}
+.pccard .bars3{margin-top:0}
+.pccard .bars3 .brow{grid-template-columns:34px 1fr 40px;gap:6px;font-size:10.5px}
+.pccard .bar{height:7px}
+.pcdbwpn{display:flex;gap:8px;align-items:baseline;font-size:11px;color:var(--muted);margin-top:1px}
+.pcdbwpn .mono{color:#e3c47f}
+.pcdbwpn .wpnlbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#d8dde8}
+.plotmini{margin-top:1px;padding:4px 7px;border-top:1px dashed #41495e;background:rgba(255,255,255,.025);border-radius:6px;
+  font-size:11px;color:#d9c9a3;line-height:1.5;display:flex;gap:6px;align-items:baseline}
+.plotmini .ph{color:var(--gold)}
+.plotmini .pt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcbtns{display:flex;justify-content:flex-end;gap:4px;margin-top:1px}
+.pcbtns button{padding:2px 8px;font-size:11px}
+
+/* ===== 战斗：操作面板分行的 HP/SAN/MP/护甲与装备编辑 ===== */
+.adjrows{display:grid;gap:6px}
+.adjrow{display:grid;grid-template-columns:44px 1fr auto;gap:8px;align-items:center;background:#1c202b;border:1px solid #2b3245;border-radius:8px;padding:4px 8px}
+.adjrow .lbl{font-family:var(--mono);font-size:12px;color:var(--gold);font-weight:600}
+.adjrow .bar{height:8px;flex:1}
+.adjrow .adjbtns{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.adjrow input{width:60px;padding:3px 6px}
+.loadout-mini{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
+.loadout-mini .chip{display:inline-flex;align-items:center;gap:4px;background:#191d26;border:1px solid var(--line);border-radius:6px;padding:2px 4px 2px 8px;font-size:12px}
+.loadout-mini .chip .x{border:none;background:transparent;color:#e3a3a3;cursor:pointer;padding:0 4px;border-radius:50%}
+.loadout-mini .chip .x:hover{background:#a04343;color:#fff}
+.loadout-mini .chip.note{background:transparent;border-style:dashed;color:var(--muted)}
+.addbar{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-top:2px}
+.addbar input,.addbar select{padding:3px 6px;font-size:12px}
+.addbar .small{margin-left:2px}
+
+/* ===== v3 样式 ===== */
+#mapWrap{overflow:auto;max-height:80vh}
+canvas#mapCanvas{width:auto;height:auto;display:block}
+.zoomrow{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px 6px}
+.zoomval{font-family:var(--mono);font-size:12px;min-width:44px;text-align:center}
+.npccols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
+@media(max-width:1250px){.npccols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.npccols{grid-template-columns:1fr}}
+.npccol{min-width:0}
+.npchead{display:flex;align-items:center;gap:4px;margin:2px 0 6px}
+.npchead input{flex:1;min-width:0;font-weight:700;color:var(--gold);border:1px solid transparent;background:transparent;padding:2px 4px}
+.npchead input:hover,.npchead input:focus{border-color:var(--line);background:rgba(255,255,255,.03)}
+.npcminigrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+@media(max-width:1250px){.npcminigrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
+.npcmini{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:0}
+.npcmini:hover{border-color:var(--acc)}
+.npcmini .bars3 .brow{grid-template-columns:34px 1fr 34px;font-size:10px}
+.npcmini .bar{height:6px}
+.npccol+.npccol{border-left:1px solid var(--line);padding-left:10px}
+.npccols{gap:0}
+.npccols .npccol{padding:0 5px}
+.flash{animation:flashNew 1.6s ease}
+@keyframes flashNew{0%{box-shadow:0 0 0 2px var(--gold)}70%{box-shadow:0 0 0 2px rgba(227,196,127,.25)}100%{box-shadow:none}}
+.spellline{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px;color:var(--muted);font-size:12px}
+.spelltag{background:rgba(167,143,209,.14);border:1px solid rgba(167,143,209,.35);border-radius:10px;padding:0 7px;font-size:11px;color:#cdb6ee}
+.spelltag i{font-style:normal;opacity:.75;margin-left:4px}
+.propbtn{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:1px;min-width:52px;font-size:20px;padding:4px 2px;line-height:1.1}
+.propbtn span{font-size:10px;color:var(--muted)}
+.propbtn.custprop img{width:26px;height:26px;object-fit:contain}
+.propbtn .delcust{position:absolute;top:-6px;right:-6px;background:#a04343;color:#fff;border-radius:50%;width:15px;height:15px;font-size:10px;line-height:15px;text-align:center}
+.propbtn.addfile{color:var(--gold);border-style:dashed}
+.quickwrap .bigscroll{display:block;max-height:360px;overflow:auto}
+.quickgrid .card{min-width:0}
+table td{white-space:nowrap}
+table .bigscroll td, .quickwrap td{white-space:normal}
+
+/* ========== 手机/窄屏适配（iPhone 16 等） ========== */
+.tblwrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+html{-webkit-text-size-adjust:100%}
+canvas#mapCanvas,canvas#battleCanvas{touch-action:none}
+canvas#battleCanvas{display:block;width:100%;height:auto}
+body{min-height:100vh}
+@supports(min-height:100dvh){body{min-height:100dvh}}
+
+@media(max-width:1100px){
+  .cols3>div:nth-child(2){order:1}
+  .cols3>div:nth-child(1){order:2}
+  .cols3>div:nth-child(3){order:3}
+}
+@media(max-width:820px){
+  body{font-size:14px}
+  main{padding:10px 10px calc(env(safe-area-inset-bottom,0px) + 14px);overflow-x:hidden}
+  header{flex-wrap:wrap;gap:6px;padding:8px 10px 2px}
+  .brand b{font-size:17px;letter-spacing:.5px}
+  .brand small{display:none}
+  .hbtn{margin-left:0;width:100%;justify-content:flex-end}
+  .hbtn .small{padding:5px 9px;font-size:11.5px}
+  nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 6px 0;margin-top:0}
+  nav::-webkit-scrollbar{display:none}
+  nav button{flex:none;white-space:nowrap;padding:9px 11px;font-size:13.5px;min-height:42px}
+  .card{padding:11px 10px}
+  .card h3{font-size:13.5px}
+  .row{gap:7px}
+  input[type=text],input[type=number],input[type=file],select,textarea{font-size:16px;max-width:100%}
+  input[type=number]{-webkit-appearance:none;-moz-appearance:textfield}
+  button.small{padding:5px 9px;min-height:30px}
+  label{max-width:100%}
+  footer{font-size:11px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}
+  .statusline{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);max-width:92vw;text-align:center}
+  /* 弹窗整屏可用 */
+  .modal-mask{padding:0;align-items:flex-start}
+  .modal{width:100%;max-width:100%;margin:0;border-radius:0;border:none;min-height:100vh;min-height:100dvh;box-shadow:none}
+  .modal-head{position:sticky;top:0;z-index:6;background:#20242f;padding:10px 10px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .modal-body{max-height:none;padding:12px 10px calc(env(safe-area-inset-bottom,0px) + 16px)}
+  .avatar-area{gap:10px}
+  .attrgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .attrgrid .cell{padding:5px 3px}
+  .grid3{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .grid2{grid-template-columns:1fr}
+  /* 调查员小卡：保留大头像，同时给属性块留空间 */
+  .pccard .pchead{grid-template-columns:minmax(0,1fr) minmax(132px,44%)}
+  .pccard .pctile b{font-size:9px}
+  /* NPC 列改为横向堆叠 + 顶部隔线 */
+  .npccol+.npccol{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:6px;margin-top:8px}
+  .npcminigrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* 地图 */
+  #mapWrap{max-height:62vh}
+  .zoomrow{flex-wrap:wrap}
+  .drag-hint{display:none}
+  #mapTools button{padding:6px 9px;font-size:12.5px}
+  /* 战斗 */
+  #combatTable{min-width:720px}
+  .battlecanvas-wrap{overflow:hidden}
+  .log{max-height:190px}
+  table th,table td{padding:5px 6px;font-size:12.5px}
+  .tblwrap table{min-width:640px}
+  .vehrow{grid-template-columns:1fr 84px}
+}
+@media(max-width:430px){
+  main{padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 10px)}
+  .card{padding:10px 8px}
+  #pcList{grid-template-columns:minmax(0,1fr)!important}
+  .pccard .pchead{grid-template-columns:minmax(0,1fr) minmax(122px,43%)}
+  .pccard .pctile b{font-size:8.5px;letter-spacing:0}
+  .pccard .pchead .pcav .emoji{font-size:44px}
+  .pccard .pchead .pcav{min-height:80px}
+  .avatar-area{flex-direction:column}
+  .preset-picker button{width:44px;height:44px;font-size:22px}
+  .modal-head .row{gap:4px}
+  .hint{font-size:12px}
+}
+
+/* 触屏细节 */
+button,.btn,input,select,label,textarea{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.npcmini button:active,.pccard button:active{transform:translateY(1px)}
+@media(max-width:430px){
+  .npcmini .row{gap:3px}
+  .npcmini button.small{padding:3px 6px;font-size:11px}
+}
+
+/* ================= 背景适配：自定义背景时让 UI 半透明融入 ================= */
+/* 开启自定义背景后，全部面板/卡/输入/画布底色都换成从背景色推导的整套色板 */
+body.bgcustom{background-attachment:fixed}
+body.bgcustom .topbar{background:var(--uic-nav)}
+body.bgcustom nav{background:var(--uic-nav)}
+body.bgcustom nav button.active{background:rgba(255,255,255,.04);border-bottom-color:var(--acc)}
+body.bgcustom .card{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .actorcard,body.bgcustom .pccard,body.bgcustom .npcmini{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .modal,body.bgcustom .floatpanel{background:var(--uic-b);border-color:var(--uic-line)}
+body.bgcustom .modal-head,body.bgcustom .floathead{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-bottom-color:var(--uic-line)}
+body.bgcustom input[type=text],body.bgcustom input[type=number],body.bgcustom input[type=file],
+body.bgcustom select,body.bgcustom textarea{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .log,body.bgcustom .note-editor,body.bgcustom #mapWrap,body.bgcustom .statusline,body.bgcustom .dicehist{background:var(--uic-d)}
+body.bgcustom .attrmini span,body.bgcustom .attrgrid .cell,body.bgcustom .skillchip,body.bgcustom .adjrow,
+body.bgcustom .combattrgrid .cat,body.bgcustom .actorpill,body.bgcustom .legcard,body.bgcustom .pccard .pctile,
+body.bgcustom .pccard .plotmini,body.bgcustom .listitem{background:var(--uic-d)}
+body.bgcustom .bar,body.bgcustom .npcmini .bar,body.bgcustom .adjrow .bar{background:rgba(0,0,0,.45);border-color:rgba(255,255,255,.08)}
+body.bgcustom .notice{background:var(--uic-d);border-color:rgba(201,162,94,.28)}
+body.bgcustom .scenebar,body.bgcustom .battlecanvas-wrap{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .zoomrow{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .loadout-mini .chip{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .tblwrap th,body.bgcustom .combattrgrid .cat em{color:var(--gold)}
+body.bgcustom tr:hover td{background:rgba(255,255,255,.03)}
+body.bgcustom .pchead .pcav{background:radial-gradient(120% 90% at 30% 20%,var(--uic-a) 0%,var(--uic-d) 70%)}
+body.bgcustom .avatar{box-shadow:0 1px 6px rgba(0,0,0,.35)}
+body.bgcustom .legcard>summary,.legcard{border-color:var(--uic-line)}
+/* ---- 全量补色：按钮/头像底/芯片/素材摆件/列表行/地图工具/战斗按钮等，全部跟随主题 ---- */
+body.bgcustom button{background:var(--uic-d);border-color:var(--uic-line);color:var(--ink)}
+body.bgcustom button.primary{background:linear-gradient(180deg,var(--acc),var(--acc2));border-color:rgba(201,162,94,.65);color:#241d10}
+body.bgcustom button.ghost{background:transparent}
+body.bgcustom button.danger{background:rgba(160,67,67,.16);color:#f0c6c6;border-color:rgba(224,143,143,.4)}
+body.bgcustom button:hover{border-color:var(--acc);color:var(--gold)}
+body.bgcustom button.primary:hover{color:#241d10;filter:brightness(1.07)}
+body.bgcustom button.danger:hover{color:#ffd9d9}
+body.bgcustom button:disabled{opacity:.45}
+body.bgcustom .avatar{background:radial-gradient(120% 110% at 30% 18%,var(--uic-a) 0%,var(--uic-d) 78%);border-color:rgba(201,162,94,.55)}
+body.bgcustom .preset-picker button{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .preset-picker button.on{border-color:var(--acc);box-shadow:0 0 0 2px rgba(201,162,94,.55);background:rgba(201,162,94,.14)}
+body.bgcustom .chip,body.bgcustom .propchip,body.bgcustom .loadout-mini .chip,body.bgcustom .skillchip{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .skillchip.added{background:rgba(201,162,94,.16);border-color:var(--acc)}
+body.bgcustom .skilldef{background:rgba(0,0,0,.14);border-color:var(--uic-line)}
+body.bgcustom .listitem{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .wrow,body.bgcustom .plotrow{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .propbtn{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .propbtn:hover{border-color:var(--acc)}
+body.bgcustom .propbtn.addfile{color:var(--gold)}
+body.bgcustom .zoomrow,body.bgcustom .tabs-mini button,body.bgcustom #mapTools button{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom #mapTools button.active,body.bgcustom .tabs-mini button.active{border-color:var(--acc);color:var(--gold)}
+body.bgcustom .bar{background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.08)}
+body.bgcustom .adjrow .adjbtns button,body.bgcustom .addbar button,body.bgcustom .pcbtns button,body.bgcustom .pcav button{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .scene-side,body.bgcustom .badge{background:rgba(0,0,0,.22)}
+body.bgcustom .npchead input{background:transparent;color:var(--gold)}
+body.bgcustom .npchead input:focus{background:rgba(255,255,255,.05)}
+body.bgcustom .detail-card,body.bgcustom .comb-actor-mini{background:var(--uic-d)}
+body.bgcustom .mapcard{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .mapcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+
+/* ================= 折叠卡片（details） ================= */
+details.ccard>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+  padding:4px 0 8px;font-weight:600;color:var(--gold);user-select:none}
+details.ccard>summary::-webkit-details-marker{display:none}
+details.ccard>summary::after{content:'▸';margin-left:auto;color:var(--muted);font-size:12px;transition:transform .15s}
+details.ccard[open]>summary::after{transform:rotate(90deg)}
+details.ccard[open]>summary{border-bottom:1px dashed var(--line);margin-bottom:8px;padding-bottom:6px}
+.legcard{border:1px solid #2a3246;border-radius:9px;background:rgba(0,0,0,.10);margin:8px 0 0;padding:0}
+.legcard>summary{list-style:none;cursor:pointer;padding:7px 9px;display:flex;align-items:center;gap:8px;user-select:none}
+.legcard>summary::-webkit-details-marker{display:none}
+.legcard>summary::after{content:'▾';margin-left:auto;color:var(--muted);font-size:11px}
+.legcard[open]>summary::after{content:'▴'}
+.legcard>summary .lname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legcard .legbody{padding:2px 9px 9px}
+
+/* ================= 地图页：左素材 / 中间地图 / 右载具 ================= */
+.mapcols{display:grid;grid-template-columns:240px minmax(0,1fr) 290px;gap:14px;align-items:start}
+.mapcols>div{min-width:0}
+@media(max-width:1200px){.mapcols{grid-template-columns:240px minmax(0,1fr);grid-template-areas:'c1 c2' 'c3 c3'}}
+@media(max-width:1200px){.mapcols>div:nth-child(1){grid-area:c1}.mapcols>div:nth-child(2){grid-area:c2}.mapcols>div:nth-child(3){grid-area:c3}}
+@media(max-width:860px){.mapcols{grid-template-columns:1fr;grid-template-areas:'c1' 'c2' 'c3'}}
+.vehwide>summary{padding:8px 4px}
+.vehwide .row{margin:0 4px 8px}
+
+/* ================= 战斗页三栏：左详情/中战斗桌场景/右日志 ================= */
+.combcols{display:grid;grid-template-columns:minmax(260px,300px) minmax(0,1fr) minmax(250px,290px);gap:14px;align-items:start}
+.combcols>div{min-width:0}
+.comb-side .card{position:static;max-height:none;overflow:visible}
+.comb-mid .tblwrap{overflow:visible}
+@media(max-width:1280px){.combcols{grid-template-columns:minmax(240px,290px) minmax(0,1fr);grid-template-areas:'side main' 'log log'}}
+@media(max-width:1280px){.comb-side-left{grid-area:side}.comb-mid{grid-area:main}.comb-side-right{grid-area:log}}
+@media(max-width:980px){.combcols{grid-template-columns:1fr;grid-template-areas:'side' 'main' 'log'}}
+@media(max-width:1100px){.comb-mid .tblwrap{overflow-x:auto}}
+.comb-side .card h3{margin-top:0}
+
+/* ================= 悬浮面板（剧本/骰子） ================= */
+.floatpanel{position:fixed;left:50%;transform:translateX(-50%);z-index:80;width:min(1100px,calc(100vw - 16px));
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.55);overflow:hidden}
+.floatpanel .floathead{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#2b3040,#212634)}
+.floatpanel .floathead b{color:var(--gold);font-size:15px;letter-spacing:1px}
+.floatpanel .floatbody{padding:12px 14px;max-height:calc(100vh - 220px);overflow:auto}
+/* 剧本/笔记悬浮：约占 4/5 屏；骰子台也可更宽一些 */
+.floatpanel.script-on{width:min(1180px,calc(100vw - 16px));height:min(84vh,920px)}
+.floatpanel.dice-on{width:min(1040px,calc(100vw - 16px))}
+.floatpanel.script-on .floatbody{max-height:none;height:calc(min(84vh,920px) - 50px)}
+.floatpanel.dice-on .floatbody{max-height:none;height:calc(100vh - 140px)}
+.floatpanel.script-on .note-editor{min-height:52%}
+.note-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:0 0 9px;border-bottom:1px solid var(--line);margin-bottom:8px;align-items:center}
+.ntab{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:rgba(255,255,255,.02);font-size:12.5px}
+.ntab.on{border-color:rgba(201,162,94,.7);background:rgba(201,162,94,.13)}
+.ntabgo{border:none;background:transparent;color:var(--ink);padding:4px 11px;cursor:pointer;border-radius:0}
+.ntabren{border:none;background:transparent;color:var(--muted);padding:4px 8px;cursor:pointer;font-size:12px;opacity:.85}
+.ntab.on .ntabgo{color:var(--gold);font-weight:600}
+.ntabgo:hover{color:var(--gold)}
+.ntab .ntabren:hover{color:var(--acc);opacity:1}
+.fchip{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(201,162,94,.4);background:rgba(201,162,94,.10);
+  color:var(--gold);border-radius:18px;padding:2px 9px 2px 3px;font-size:12px;cursor:pointer;margin:2px;user-select:none;vertical-align:middle}
+.fchip .avatar.sm{width:20px;height:20px;font-size:12px;line-height:20px}
+.fchip:hover{border-color:var(--acc);background:rgba(201,162,94,.22)}
+.fchip.on{background:rgba(111,191,115,.16);border-color:#6fbf73;color:#bfe6c2}
+.note-editor{min-height:170px;border:1px solid var(--line);background:#171b25;border-radius:9px;padding:10px 12px;outline:none;
+  overflow:auto;font-size:14px;line-height:1.8;margin-top:8px}
+.note-editor:focus{border-color:var(--acc)}
+.fchip.nchip{border-color:var(--line);background:rgba(167,143,209,.16);color:#cdb6ee;padding:1px 8px;font-size:12px;line-height:1.6}
+.dice-big{font-family:var(--mono);font-size:44px;font-weight:800;color:var(--gold);line-height:1.1;text-align:center;padding:10px 0 4px}
+.dice-detail{font-family:var(--mono);text-align:center;color:var(--muted);font-size:13px;margin-bottom:8px;word-break:break-all}
+.dicehist{max-height:180px}
+.dice-num input{width:86px;text-align:center;font-size:16px}
+.note-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;border-bottom:1px dashed var(--line);padding-bottom:8px}
+/* 背景漂浮小装饰（小章鱼/手枪/笔记本等，永久漂浮，右上角可开关） */
+.decor-bit{position:fixed;left:0;top:0;z-index:6;pointer-events:none;user-select:none;line-height:1;
+  will-change:transform;text-shadow:0 2px 10px rgba(0,0,0,.35);
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+body.decoroff .decor-bit{display:none}
+button#decorToggle.on{border-color:rgba(201,162,94,.6);color:var(--gold)}
+@media(max-width:700px){
+  .floatpanel{width:calc(100vw - 8px);border-radius:10px}
+  .floatpanel .floathead .hint{display:none}
+  .floatpanel{max-height:calc(100dvh - 8px);max-height:calc(100vh - 8px)}
+  .floatpanel .floatbody{max-height:calc(100vh - 170px)}
+  .note-editor{min-height:130px}
+  .floatpanel.script-on{width:calc(100vw - 8px);height:calc(100dvh - 14px);height:calc(100vh - 14px)}
+  .floatpanel.script-on .floatbody{max-height:none;height:calc(100dvh - 66px);height:calc(100vh - 66px);-webkit-overflow-scrolling:touch}
+  .floatpanel.script-on .note-editor{min-height:50vh}
+  .floatpanel.dice-on{width:calc(100vw - 8px)}
+  .floatpanel.dice-on .floatbody{max-height:none;height:calc(100dvh - 66px);height:calc(100vh - 66px)}
+}
+@media(max-width:980px){
+  .comb-side .card{position:static;max-height:none;overflow:visible}
+  .mapcols>div:first-child .card{width:100%}
+}
+
+/* ================= 本轮增补：地图多场景卡片 / 骰子页签 / SAN 检定 / 战斗表防溢出 ================= */
+/* 多地图页签（固定 3 个按钮位：切换 / ✎改名 / 🗑删除，空格为「＋ 新建地图」） */
+.mapcards{display:flex;flex-wrap:nowrap;gap:6px;align-items:stretch;margin-bottom:8px}
+.maplbl{display:inline-flex;align-items:center;color:var(--muted);font-size:12px;margin-right:2px;flex:none;padding:0 4px}
+.mapcard{display:flex;align-items:stretch;flex:1 1 0;min-width:0;max-width:300px;border:1px solid var(--line);
+  border-radius:10px;overflow:hidden;background:var(--panel2);cursor:pointer}
+.mapcard:hover{border-color:var(--acc)}
+.mapcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc);background:linear-gradient(180deg,#373042,#2a2334)}
+.mapcard .mapgo{flex:1;min-width:0;border:none;background:transparent;color:var(--ink);padding:7px 8px;font-size:12.5px;
+  text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mapcard .mapgo:hover{color:var(--gold)}
+.mapcard.on .mapgo{color:var(--gold)}
+.mapcard .mapren,.mapcard .mcdel{flex:none;border:none;background:transparent;color:var(--muted);padding:0 7px;
+  font-size:12px;cursor:pointer;border-left:1px solid var(--line)}
+.mapcard .mapren:hover{color:var(--gold)}
+.mapcard .mcdel:hover{color:#ff9c9c}
+.mapcard.empty{border-style:dashed;justify-content:center;min-width:120px;flex:1 1 0}
+.mapcard.empty .mapgo{color:var(--gold);text-align:center}
+.mapcard.empty:hover{border-color:var(--acc);background:rgba(201,162,94,.06)}
+/* 骰子台子页签 + SAN 检定区域 */
+.dice-tabs{margin:0 0 10px}
+.dice-tabs button{font-size:13px;padding:5px 16px}
+.sanrows{display:grid;gap:6px}
+.sanrows .row{margin:0;padding:3px 0}
+.sanstep{display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(180deg,#caa35f,#9a7638);color:#241d10;font-weight:700;font-size:12px;font-family:var(--mono)}
+/* 战斗成员表：紧凑且不溢出 */
+#combatTable td{white-space:nowrap}
+#combatTable .combmn{display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#combatTable .combmn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;display:inline-block;vertical-align:bottom}
+#combatTable .combnm{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+#combatTable .combactns{white-space:nowrap}
+#combatTable .combactns button{padding:2px 7px;font-size:11px;white-space:nowrap;margin-left:2px}
+.comb-mid .tblwrap{overflow-x:auto;overflow-y:visible}
+@media(max-width:820px){
+  #combatTable{min-width:680px}
+}
+/* bgcustom：补上特定高优先级控件（x / 删除 / 头像 / 地图卡片等）的背景适配 */
+body.bgcustom .pccard .pchead .pcav{background:radial-gradient(120% 90% at 30% 20%,var(--uic-a) 0%,var(--uic-d) 70%);border-color:var(--uic-line)}
+body.bgcustom .loadout-mini .chip .x,body.bgcustom .chip .x,body.bgcustom .skillchip .del,
+body.bgcustom .propbtn .delcust,body.bgcustom .mapcard .mcdel{background:rgba(0,0,0,.28);border:none;color:#ffcfcf;box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+body.bgcustom .loadout-mini .chip .x:hover,body.bgcustom .chip .x:hover,body.bgcustom .skillchip .del:hover,
+body.bgcustom .propbtn .delcust:hover,body.bgcustom .mapcard .mcdel:hover{background:#a04343;color:#fff}
+body.bgcustom .mapcard{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .mapcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+body.bgcustom .mapcard .mcname{color:var(--gold)}
+body.bgcustom .dice-tabs button.active{background:rgba(201,162,94,.16)}
+/* 地图“加路”条带内联底色，主题下用 CSS 变量强制覆盖 */
+body.bgcustom #mapLegsCard .listitem.row{background:var(--uic-d) !important;border-color:var(--uic-line)}
+/* 主题修复补丁：小卡 / 战斗详情加号按钮 / 地图页签 / 战斗场景头像 */
+body.bgcustom #pcList .pccard{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .addbar button.primary{background:linear-gradient(180deg,var(--acc),var(--acc2));border-color:rgba(201,162,94,.65);color:#241d10}
+body.bgcustom .addbar button.primary:hover{color:#241d10;filter:brightness(1.07)}
+body.bgcustom .mapcard.on{background:linear-gradient(180deg,var(--uic-a),var(--uic-b))}
+body.bgcustom .mapcard .mapgo{color:var(--ink)}
+body.bgcustom .mapcard.on .mapgo,body.bgcustom .mapcard.empty .mapgo{color:var(--gold)}
+body.bgcustom .mapcard .mapren{background:transparent;color:var(--muted);border:none;border-left:1px solid var(--uic-line)}
+body.bgcustom .mapcard .mapren:hover{color:var(--gold)}
+body.bgcustom .mapcard .mcdel{background:transparent;color:#ffcfcf;border:none;border-left:1px solid var(--uic-line);box-shadow:none}
+body.bgcustom .mapcard .mcdel:hover{background:#a04343;color:#fff}
+
+/* ================= 本轮增补：调查员经历小卡外框 / 头像点击上传 / 骰子技能芯片 ================= */
+#pcList .pccard .pchead .pcav{cursor:pointer}
+.pccard .runstar{position:absolute;top:2px;left:50%;transform:translateX(-50%);z-index:4;font-size:15px;line-height:1;
+  pointer-events:none;filter:drop-shadow(0 0 6px rgba(255,200,90,.95));animation:runstar-pulse 2.4s ease-in-out infinite}
+@keyframes runstar-pulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.18)}}
+/* 1~5 团：逐团叠一条 2px 金属边（由内到外铁→铜→银→金→白金） */
+.pccard.runs1{box-shadow:inset 0 0 0 2px #8b8d94}
+.pccard.runs2{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333}
+.pccard.runs3{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333,inset 0 0 0 6px #cdd3dc}
+.pccard.runs4{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333,inset 0 0 0 6px #cdd3dc,inset 0 0 0 8px #d6af37}
+.pccard.runs5{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333,inset 0 0 0 6px #cdd3dc,inset 0 0 0 8px #d6af37,inset 0 0 0 10px #e7ecf2}
+/* 6 团以上：4px 发光边（翡翠→钻石→火焰）；9 团以上再加星星 */
+.pccard.runs6{box-shadow:inset 0 0 0 4px #34d399,0 0 14px 2px rgba(52,211,153,.6)}
+.pccard.runs7{box-shadow:inset 0 0 0 4px #6fdcff,0 0 14px 2px rgba(111,220,255,.6)}
+.pccard.runs8{box-shadow:inset 0 0 0 4px #ff9a3d,0 0 16px 3px rgba(255,154,61,.65)}
+/* 骰子台：技能芯片（高→低排列，☆＝已加点） */
+.dice-skills{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0}
+.skchip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:#1c212e;
+  color:var(--ink);border-radius:14px;padding:1px 8px;font-size:11.5px;font-family:var(--mono);cursor:pointer;margin:2px;user-select:none}
+.skchip:hover{border-color:var(--acc);color:var(--gold)}
+.skchip.added{color:#ffd98a;border-color:rgba(201,162,94,.5);background:rgba(201,162,94,.09)}
+.skchip.on{background:rgba(111,191,115,.16);border-color:#6fbf73;color:#bfe6c2}
+body.bgcustom .skchip{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .skchip.added{background:rgba(201,162,94,.14);border-color:rgba(201,162,94,.6);color:#ffe3a0}
+body.bgcustom .skchip.on{background:rgba(111,191,115,.18);border-color:#6fbf73;color:#d5f2d8}

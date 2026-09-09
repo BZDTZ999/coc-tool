@@ -953,7 +953,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   return { parseWorkbook: parseWorkbook, num: num, clean: clean, colIdx: colIdx };
 });
 </script>
-<script>/* ================= 克苏鲁跑团桌旁助手 ================= */
+<script>/* ================= 带团妙妙小工具 · COC ================= */
 'use strict';
 var LS_KEY = 'coc-tool-v1';
 var XLSX_OK = typeof XLSX !== 'undefined';
@@ -1167,178 +1167,10 @@ var TABS = [
   ['surveyors','📋 调查员'], ['npcs','👤 NPC 与敌人'], ['maps','🗺️ 地图·路线'],
   ['combat','⚔️ 战斗']
 ];
-function renderNav(){
-  var nav=$('nav'); nav.innerHTML='';
-  TABS.forEach(function(t){
-    var b=document.createElement('button');
-    b.id='nav-'+t[0]; b.textContent=t[1];
-    b.className = t[0]===state.activeTab?'active':'';
-    b.onclick=function(){ switchTab(t[0]); };
-    nav.appendChild(b);
-  });
-}
-function switchTab(name){
-  state.activeTab = name; saveStateQuiet();
-  renderNav();
-  document.querySelectorAll('section.tab').forEach(function(s){ s.classList.toggle('active', s.id==='tab-'+name); });
-  if (name==='surveyors') renderSurveyors();
-  if (name==='npcs') renderNpcs();
-  if (name==='maps') renderMapsShell();
-  if (name==='combat') renderCombatShell();
-  if (name==='settings') renderSettings();
-}
-function scaffoldSections(){
-  // 调查员
-  $('tab-surveyors').innerHTML = `
-    <div class="card">
-      <h3>从《空白人物卡.xlsx》导入调查员</h3>
-      <div class="row">
-        <label style="flex-direction:row;gap:6px" class="muted">📄 选择 .xlsx 人物卡
-          <input type="file" id="fileImport" accept=".xlsx,.xls" onchange="onPickCardFile(event)">
-        </label>
-        <button id="btnImport" class="primary" onclick="doImport()" disabled>解析并录入</button>
-      </div>
-      <div class="hint" style="margin-top:6px">上传你填写好的空白人物卡（支持『人物卡』工作表）。数量、技能、武器、物品、背景会一并读入；读完后可在编辑器里改错/补漏。</div>
-      <div id="importPreview"></div>
-    </div>
-    <div class="row" style="justify-content:space-between;margin:4px 2px 8px">
-      <b id="pcCountTitle">调查员库</b>
-      <button onclick="openActorModal(null,'pc')" class="small primary">＋ 手动新建调查员</button>
-    </div>
-    <div class="grid" id="pcList" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>`;
-  // NPC
-  $('tab-npcs').innerHTML = `
-    <div class="card">
-      <h3>NPC / 敌人库（可随机生成、改数值与数量）</h3>
-      <div class="row">
-        <label>模板
-          <select id="npcTplSel"></select>
-        </label>
-        <label style="max-width:110px">数量
-          <input type="number" id="npcTplCount" value="1" min="1" style="width:80px">
-        </label>
-        <button onclick="genNpcFromTpl()" class="primary">🎲 按模板生成</button>
-        <button onclick="openActorModal(null,'npc')" class="">✏️ 手动新建 NPC</button>
-      </div>
-      <div class="hint" style="margin-top:6px">数量指“这一队在场景里的个体数”，随时可在条目里改成 0/更多；加入战斗时会按该数量展开成个体。模板属性可在右侧列表任意微调。</div>
-    </div>
-    <div id="npcList"></div>`;
-  // 地图
-  $('tab-maps').innerHTML = `
-    <div class="card">
-      <h3>🗺️ 场景地图 · 路线与载具时间</h3>
-      <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div class="row" style="gap:6px">
-          <label>当前场景
-            <select id="mapSel" onchange="onMapSelect()"></select>
-          </label>
-          <button class="small" onclick="newMap()">＋ 新建场景</button>
-          <button class="small ghost" onclick="renameMap()">重命名</button>
-          <button class="small danger" onclick="deleteMap()">删除</button>
-        </div>
-        <div class="row" style="gap:6px">
-          <label>1px = <input id="mapScale" type="number" step="0.001" style="width:70px"> km
-            <button class="small" onclick="onScaleChange()">设置</button></label>
-          <label class="muted" style="flex-direction:row;gap:4px">背景图
-            <input type="file" id="mapBg" accept="image/*" onchange="onBgPick(event)"></label>
-        </div>
-      </div>
-      <div class="row tabs-mini" id="mapTools" style="margin-top:10px">
-        <button id="mt-select" class="active" onclick="setMapTool('select')">🖱 选择/拖动</button>
-        <button id="mt-add" onclick="setMapTool('add')">📍 添加地点</button>
-        <button class="ghost" onclick="clearSelection()">取消选中</button>
-        <button class="ghost small" onclick="loadDemoMap()">载入示例地图</button>
-      </div>
-      <div id="mapWrap"><canvas id="mapCanvas" width="1000" height="620"></canvas></div>
-      <div id="mapHint" class="hint">提示：选「添加地点」后在图上点按落点；用「选择/拖动」拖动地点；下方添加道路后自动连线。示例地点与道路已预置。</div>
-    </div>
-    <div class="grid2">
-      <div id="mapPointsCard"></div>
-      <div id="mapLegsCard"></div>
-    </div>
-    <div id="routeCard"></div>`;
-  // 战斗
-  $('tab-combat').innerHTML = `
-    <div class="card">
-      <h3>⚔️ 战斗桌</h3>
-      <div class="row" style="gap:8px;flex-wrap:wrap">
-        <label>加入成员类型
-          <select id="cbAddKind">
-            <option value="pc">调查员</option>
-            <option value="npc">NPC / 敌人</option>
-            <option value="ad">临时手动成员</option>
-          </select>
-        </label>
-        <label>选择角色 <select id="cbAddSel"></select></label>
-        <label>数量 <input type="number" id="cbAddCount" value="1" min="1" style="width:70px"></label>
-        <button class="primary" onclick="combatAdd()">加入战斗</button>
-        <span style="flex:1"></span>
-        <button onclick="combatNewRound()">⏭ 下一轮（按敏捷排序）</button>
-        <button class="ghost" onclick="combatClear()">清空战斗</button>
-      </div>
-      <div class="hint" style="margin-top:6px">每轮按 DEX 从高到低行动；平手时点“重掷平手”。点某一行可操作该角色。</div>
-    </div>
-    <div class="card">
-      <div class="row" style="justify-content:space-between">
-        <b id="combatTitle"></b>
-        <span id="combatRoundBadge" class="muted"></span>
-      </div>
-      <table id="combatTable"><thead><tr>
-        <th style="width:28px"></th><th>名称</th><th>阵营</th><th class="num">敏捷</th><th>HP</th>
-        <th>SAN</th><th class="num">速度(码/轮)</th><th>状态</th><th style="width:150px"></th>
-      </tr></thead><tbody id="combatBody"></tbody></table>
-      <div id="combatEmpty" class="hint" style="padding:10px">还没有成员，先从上面加入。</div>
-    </div>
-    <div class="split">
-      <div class="card" id="activePanel"><div class="hint">点选战斗成员，这里会出现 HP/攻击/道具面板。</div></div>
-      <div class="card"><h3>行动日志与骰子</h3>
-        <div id="diceLog" class="log"></div>
-      </div>
-    </div>`;
-  // 设置
-  $('tab-settings').innerHTML = `
-    <div class="card"><h3>🚗 载具速度表（供路线/时间计算）</h3>
-      <div class="row" style="margin-bottom:8px"><button class="primary small" onclick="addVehicle()">＋ 添加载具</button>
-      <button class="ghost small" onclick="resetVehicles()">恢复默认速度</button></div>
-      <div id="vehiclesTable"></div>
-    </div>
-    <div class="card"><h3>🎲 快速骰子</h3>
-      <div class="row">
-        <button class="small" onclick="quickDice('1D100')">D100</button>
-        <button class="small" onclick="quickDice('3D6')">3D6</button>
-        <button class="small" onclick="quickDice('1D6')">D6</button>
-        <button class="small" onclick="quickDice('1D10')">D10</button>
-        <label style="flex-direction:row;align-items:center;gap:6px">自定义
-          <input id="customDice" type="text" placeholder="如 2D6+4 / 1D100">
-          <button class="small primary" onclick="quickDiceCustom()">掷</button></label>
-      </div>
-    </div>
-    <div class="card"><h3>💾 数据备份</h3>
-      <div class="row">
-        <button class="primary" onclick="exportBackup()">导出全部数据 (JSON)</button>
-        <label class="muted" style="flex-direction:row">导入备份<input type="file" accept=".json" id="fileRestore2" style="display:none" onchange="restoreBackup(event)"></label>
-        <button class="danger ghost" onclick="wipeData()">清空所有数据</button>
-      </div>
-      <div id="storageStatus" class="hint" style="margin-top:8px"></div>
-    </div>`;
-  // 帮助弹窗
-  $('helpModal').innerHTML = `<div class="modal" style="max-width:720px"><div class="modal-head"><b>使用说明</b><button class="ghost" onclick="document.getElementById('helpModal').classList.remove('open')">✕</button></div>
-  <div class="modal-body" style="font-size:13px">
-    <h4>📋 调查员</h4><p>在“调查员”页选择《空白人物卡.xlsx》→ 解析并录入。此工具按你这张卡『人物卡』工作表的布局读取：姓名/玩家/职业/年龄等基本信息、9 项属性、技能当前值（成功率列）、武器、随身物品、现金与背景故事。读到的值可在编辑器里修改。注意：需要先用 Excel/WPS 打开填好并保存；宏/公式产生的派生值（HP 等）会自动按 COC7 规则补算。</p>
-    <h4>👤 NPC 与敌人</h4><p>用模板一键生成普通人类 NPC（市民/警察/暴徒/邪教徒等）或神话生物（深潜者/修格斯等），再在列表里改数量、属性、技能、武器、道具。</p>
-    <h4>🗺️ 地图与路线</h4><p>在地图上点按添加地点（可上传背景图当底图）。为地点之间“加道路”填写距离（km）。在下方路线计算里选起点/终点和载具，会按最短时间给出路径、分段时间与总耗时；逐段可换乘其他载具（可带出发时刻看几点到）。</p>
-    <h4>⚔️ 战斗</h4><p>把调查员/NPC 加入战斗桌后按敏捷排序。选中成员即可：掷攻击（自动按技能判成败）、掷伤害、直接扣血、使用背包里的消耗品（治疗/回SAN/回MP/弹药等）。伤害、速度、濒死都自动计算。战斗日志同时也是通用骰子日志。</p>
-    <h4>💾 数据</h4><p>所有数据仅存本机浏览器。建议每次跑团结束导出 JSON 备份；换浏览器/电脑用“导入备份”恢复。若浏览器限制本地保存（file:// 打开时偶尔如此），也请用导出功能保管数据。</p>
-  </div></div>`;
-  loadState();
-}
-function initApp(){
-  scaffoldSections();
-  renderNav();
-  renderVehicleTable();
-  switchTab('surveyors');
-  window.setTimeout(function(){ logRoll('🔧 已就绪。首次使用已预置：码头帮派打手 ×3 与一张示例地图（可删）。', 'info'); }, 50);
-}
+
+
+
+
 
 /* ================= 调查员 / NPC 库 ================= */
 var pendingFile = null, pendingParse = null, currentActorModal = null, editingActorId = null;
@@ -1384,107 +1216,14 @@ var NPC_TPL = [
    hpNote:'与克苏鲁同形的巨型眷属', armor:5, mov:8, note:'恐怖外形每轮可能造成 SAN 损失'}
 ];
 
-function npcTplOptions(){
-  var sel=$('npcTplSel'); if(!sel) return;
-  sel.innerHTML = NPC_TPL.map(function(t){ return '<option value="'+esc(t.name)+'">'+esc(t.name)+' · '+esc(t.race)+'</option>'; }).join('');
-}
+
 function randBetween(min,max){ return Math.round(min + Math.random()*(max-min)); }
-function genNpcFromTpl(){
-  var name=$('npcTplSel').value, cnt=Math.max(1, num($('npcTplCount').value)||1);
-  var tpl=NPC_TPL.filter(function(t){return t.name===name;})[0];
-  if(!tpl) return;
-  var attrs={};
-  ['str','con','pow','dex','app','siz','int','edu','luck'].forEach(function(k){
-    var v=tpl.attrs[k];
-    attrs[k]= Array.isArray(v) ? randBetween(v[0],v[1]) : v;
-  });
-  var skills=[], weapons=[];
-  Object.keys(tpl.skills||{}).forEach(function(sk){ skills.push({name:sk,total:Array.isArray(tpl.skills[sk])?randBetween(tpl.skills[sk][0],tpl.skills[sk][1]):tpl.skills[sk]}); });
-  (tpl.weapons||[]).forEach(function(w){
-    var cap=w.ammoCap||0;
-    weapons.push({name:w.name,type:w.type||'',skill:w.skill||'斗殴',damage:w.damage||'1D3+DB',range:'近战',pierce:'—',attacks:'1',ammoCap:cap,ammoCur:cap});
-  });
-  var hpMax=Math.max(0,Math.floor((attrs.con+attrs.siz)/10));
-  var npc={
-    id:uid('npc'), kind:'npc', count:cnt, template:tpl.race==='神话生物'?('神话生物·'+tpl.name):tpl.name,
-    name:tpl.name+(cnt>1?' (×'+cnt+')':''), note:tpl.note||tpl.hpNote||'',
-    attrs:attrs, hp:{cur:hpMax,max:hpMax}, mp:{cur:Math.floor(attrs.pow/5),max:Math.floor(attrs.pow/5)},
-    san:{cur:tpl.race==='神话生物'?0:Math.min(attrs.pow,99),max:99}, mov:tpl.mov||8,
-    db:dbTextOf(attrs), build:'0', armor:{value:tpl.armor||0,type:''},
-    skills:skills, weapons:weapons, inv:[], cash:0, currency:'美元', backstory:'', notes:(tpl.note||'')
-  };
-  state.actors.push(npc); saveState(); renderNpcs();
-  toast('已生成「'+npc.name+'」数量 '+cnt);
-  openActorModal(npc.id,'npc');
-}
+
 
 /* ---------- 导入 ---------- */
-function onPickCardFile(e){
-  var f=e.target.files&&e.target.files[0];
-  if(!f){ pendingFile=null; pendingParse=null; return; }
-  var re=/\.(xlsx|xls)$/i;
-  if(!re.test(f.name)){ toast('请选择 .xlsx 文件'); return; }
-  var r=new FileReader();
-  r.onload=function(){
-    try{
-      var wb=XLSX.read(new Uint8Array(r.result),{type:'array',cellFormula:false});
-      if(typeof CoCParser!=='undefined' && CoCParser.parseWorkbook){
-        pendingParse=CoCParser.parseWorkbook(wb);
-        pendingFile=f;
-        renderImportPreview();
-        toast('已解析：'+f.name);
-      } else { toast('解析模块未加载'); }
-    }catch(err){ toast('解析失败：'+err.message,5000); console.error(err); }
-  };
-  r.readAsArrayBuffer(f);
-}
-function renderImportPreview(){
-  var box=$('importPreview'), btn=$('btnImport');
-  if(!pendingParse){ box.innerHTML=''; if(btn)btn.disabled=true; return; }
-  var p=pendingParse;
-  var warn=p.warnings&&p.warnings.length?('<div class="notice">⚠ '+(p.warnings.map(esc).join('<br>'))+'</div>'):'';
-  var skillN=p.skills.length, wpn=p.weapons.length, itm=p.items.length;
-  var a=p.attrs;
-  box.innerHTML=`
-    <div class="notice" style="margin-top:10px">已读取工作表「${esc(p.sheet)}」：属性 ${(a.str||0)}/${(a.con||0)}/${(a.pow||0)}/${(a.dex||0)}/${(a.app||0)}/${(a.siz||0)}/${(a.int||0)}/${(a.edu||0)}/${(a.luck||0)}（STR/CON/POW/DEX/APP/SIZ/INT/EDU/LUCK）· 技能 ${skillN} 项 · 武器 ${wpn} 件 · 物品 ${itm} 件 ${warn}</div>
-    <div class="grid2" style="margin-top:8px">
-      <div><table>
-        <tr><th>姓名</th><td>${esc(p.basic.name)||'<span class=muted>—</span>'}</td><th>玩家</th><td>${esc(p.basic.player)||'—'}</td></tr>
-        <tr><th>职业</th><td>${esc(p.basic.occupation)||'—'}</td><th>年龄</th><td>${esc(p.basic.age)||'—'}</td></tr>
-        <tr><th>住地</th><td>${esc(p.basic.residence)||'—'}</td><th>故乡</th><td>${esc(p.basic.hometown)||'—'}</td></tr>
-        <tr><th>现金</th><td>${p.assets.cash||0} ${esc(p.assets.currency)}</td><th>时代</th><td>${esc(p.basic.era)||'—'}</td></tr>
-      </table></div>
-      <div class="hint">${esc(p.basic.sex||'')} ${esc(p.basic.sex?'':'')} 备注：${esc((p.backstory&&(p.backstory.appearance||'').slice(0,60))||'无背景文字')}</div>
-    </div>`;
-  btn.disabled=false;
-}
-function doImport(){
-  if(!pendingParse){ toast('还没有可导入的文件'); return; }
-  var p=pendingParse;
-  var a=p.attrs;
-  var hpMax=p.derived.hpMax||Math.floor((a.con+a.siz)/10);
-  var actor={
-    id:uid('pc'), kind:'pc',
-    name:p.basic.name||'未命名调查员', player:p.basic.player||'', occupation:p.basic.occupation||'',
-    era:p.basic.era||'', age:p.basic.age||'', sex:p.basic.sex||'',
-    residence:p.basic.residence||'', hometown:p.basic.hometown||'',
-    attrs:a, hp:{cur:Math.max(1,p.derived.hpCur||hpMax),max:hpMax||1},
-    mp:{cur:p.derived.mpCur||Math.floor(a.pow/5),max:Math.floor(a.pow/5)},
-    san:{cur:Math.min(a.pow||0,99),max:99}, mov:p.derived.mov||8,
-    db:p.derived.db||dbTextOf(a), build:p.derived.build||'0',
-    armor:{value:num(p.derived.armorValue)||0, type:p.derived.armorType||''},
-    skills:p.skills.map(function(s){return {name:s.name,total:s.total};}),
-    weapons:p.weapons.map(function(w){ var cap=num(w.ammo); return {name:w.name,type:w.type,skill:w.skill||'斗殴',damage:w.damage,range:w.range,pierce:w.pierce,attacks:w.attacks||'1',ammoCap:cap,ammoCur:cap,note:''}; }),
-    inv:p.items.map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:''};}),
-    cash:p.assets.cash||0, currency:p.assets.currency||'美元',
-    backstory:Object.keys(p.backstory||{}).map(function(k){var v=p.backstory[k];return v?('【'+k+'】'+v):'';}).join('\n').replace(/【(appearance|beliefs|people|places|belongings|traits|secrets|scars|phobias)】/g,function(m,k){return '【'+({appearance:'外貌',beliefs:'思想与信念',people:'重要之人',places:'意义非凡之地',belongings:'宝贵之物',traits:'特质',secrets:'难言之隐',scars:'伤口与疤痕',phobias:'恐惧症'}[k])+'】';}),
-    notes:'', count:1
-  };
-  state.actors.push(actor);
-  saveState(); renderSurveyors();
-  toast('已录入调查员「'+actor.name+'」',3000);
-  openActorModal(actor.id,'pc');
-}
+
+
+
 
 /* ---------- 角色卡列表 ---------- */
 function actorCardHTML(a){
@@ -1520,155 +1259,21 @@ function actorCardHTML(a){
       ${a.kind==='pc'?'<button class="small ghost" onclick="exportActorJson(\''+a.id+'\')">导出</button>':''}
     </div></div>`;
 }
-function renderSurveyors(){
-  var list=state.actors.filter(function(x){return x.kind==='pc';});
-  $('pcCountTitle').textContent='调查员库（'+list.length+'）';
-  $('pcList').innerHTML=list.length?list.map(actorCardHTML).join(''):'<div class="hint">还没有调查员。导入你的《空白人物卡.xlsx》，或点右上角“手动新建”。</div>';
-  if(pendingParse) renderImportPreview();
-}
-function renderNpcs(){
-  npcTplOptions();
-  var list=state.actors.filter(function(x){return x.kind==='npc';});
-  var el=$('npcList');
-  if(!list.length){ el.innerHTML='<div class="hint">还没有 NPC。用上方模板生成一批，或手动新建。</div>'; return; }
-  el.innerHTML=list.map(function(a){
-    var sub=a.template||'自定义';
-    var sideTxt='';
-    return `<div class="card" style="margin-bottom:10px">
-      <div class="row" style="justify-content:space-between">
-        <div style="flex:1">
-          <b>${esc(a.name)}</b> <span class="badge warn">${esc(sub)}</span>
-          ${a.count>1?'<span class="badge">数量 ×'+a.count+'</span>':''}
-          <span class="muted" style="margin-left:8px">${esc(a.note||'')}</span>
-        </div>
-        <div class="row" style="gap:4px">
-          <button class="small primary" onclick="combatPreAdd('${a.id}')">⚔️ 加入战斗</button>
-          <button class="small" onclick="openActorModal('${a.id}','npc')">编辑</button>
-          <button class="small danger" onclick="duplicateActor('${a.id}')">复制</button>
-          <button class="small danger" onclick="deleteActor('${a.id}')">删除</button>
-        </div>
-      </div>
-      <div class="row" style="margin-top:8px;gap:10px;font-size:12px;flex-wrap:wrap">
-        <span class="num">HP ${a.hp.cur}/${a.hp.max}</span>
-        <span class="num">STR ${a.attrs.str} CON ${a.attrs.con} DEX ${a.attrs.dex} POW ${a.attrs.pow} SIZ ${a.attrs.siz}</span>
-        <span class="num">DB ${esc(a.db||'')} MOV ${a.mov}</span>
-        <span>${esc((a.weapons||[]).map(w=>w.name).join('、')||'徒手')}</span>
-      </div>
-    </div>`;
-  }).join('');
-}
+
+
 
 /* ---------- 编辑弹窗 ---------- */
 var ATTR_NAMES={str:'力量 STR',con:'体质 CON',pow:'意志 POW',dex:'敏捷 DEX',app:'外貌 APP',siz:'体型 SIZ',int:'智力/灵感',edu:'教育 EDU',luck:'幸运 Luck'};
-function openActorModal(id, kind){
-  var a = null;
-  if(id){ a=state.actors.filter(function(x){return x.id===id;})[0]; }
-  kind = kind || (a?a.kind:'pc');
-  if(!a){
-    a={id:uid(kind==='pc'?'pc':'npc'),kind:kind,count:1,name:'',player:'',occupation:'',era:'',age:'',sex:'',residence:'',hometown:'',
-       attrs:{str:0,con:0,pow:0,dex:0,app:0,siz:0,int:0,edu:0,luck:0},
-       hp:{cur:0,max:0},mp:{cur:0,max:0},san:{cur:0,max:99},mov:8,db:'0',build:'0',
-       armor:{value:0,type:''},skills:[],weapons:[],inv:[],cash:0,currency:'美元',backstory:'',notes:'',template:'',note:''};
-  }
-  currentActorModal=a;
-  editingActorId=a.id;
-  var mask=$('actorModal');
-  var skillsHtml=(a.skills||[]).map(function(s,i){return skillRowHTML(s.name,s.total,i);}).join('');
-  var weaponsHtml=(a.weapons||[]).map(function(w,i){return weaponRowHTML(w,i);}).join('');
-  var invHtml=(a.inv||[]).map(function(it,i){return invRowHTML(it,i);}).join('');
-  var at=a.attrs||{};
-  mask.innerHTML=`<div class="modal">
-    <div class="modal-head"><b>${a.kind==='npc'?'编辑 NPC/敌人':'编辑调查员'}：${esc(a.name||'(未命名)')}</b>
-      <div class="row"><button class="ghost small" onclick="saveActorModal()">💾 保存</button><button class="ghost" onclick="closeActorModal()">✕</button></div></div>
-    <div class="modal-body">
-      <div class="grid3">
-        <label>名称 <input type="text" id="am-name" value="${esc(a.name)}"></label>
-        ${a.kind==='pc'?'<label>玩家 <input type="text" id="am-player" value="'+esc(a.player)+'"></label>':''}
-        ${a.kind==='pc'?'<label>职业 <input type="text" id="am-occ" value="'+esc(a.occupation)+'"></label>':''}
-        ${a.kind==='npc'?'<label>分类标签 <input type="text" id="am-tpl" value="'+esc(a.template||'')+'" placeholder="如 邪教徒 / 神话生物"></label>':'<label>时代 <input type="text" id="am-era" value="'+esc(a.era)+'"></label>'}
-        ${a.kind==='pc'?'<label>年龄 <input type="text" id="am-age" value="'+esc(a.age)+'"></label>':'<label>数量(个体) <input type="number" id="am-count" value="'+(a.count||1)+'" min="1"></label>'}
-        ${a.kind==='pc'?'<label>性别 <input type="text" id="am-sex" value="'+esc(a.sex)+'"></label>':''}
-        ${a.kind==='pc'?'<label>住地 <input type="text" id="am-res" value="'+esc(a.residence)+'"></label>':''}
-        ${a.kind==='pc'?'<label>故乡 <input type="text" id="am-home" value="'+esc(a.hometown)+'"></label>':''}
-      </div>
-      ${a.kind==='npc'?'<label style="margin-top:8px">备注/行为（显示在列表）<input type="text" id="am-note" value="'+esc(a.note||'')+'"></label>':''}
-      <h4 class="small-title">⚜ 属性（9 项）</h4>
-      <div class="grid3">
-        ${Object.keys(ATTR_NAMES).map(function(k){return '<label>'+ATTR_NAMES[k]+'<input type="number" class="am-attr" data-k="'+k+'" value="'+(at[k]||0)+'"></label>';}).join('')}
-        <label>移动 MOV<input type="number" id="am-mov" value="${a.mov||8}"></label>
-        <label>护甲值<input type="number" id="am-armor" value="${a.armor?a.armor.value:0}" min="0"></label>
-        <label>护甲类型<input type="text" id="am-armtype" value="${esc(a.armor?a.armor.type:'')}" placeholder="如皮夹克"></label>
-      </div>
-      <div class="row" style="margin-top:10px;gap:6px" id="derivedBar"></div>
-      <h4 class="small-title">🩸 生命 / 理智 / 魔力</h4>
-      <div class="grid3">
-        <label>当前 HP<input type="number" id="am-hpcur" value="${a.hp.cur||0}" min="0"></label>
-        <label>最大 HP<input type="number" id="am-hpmax" value="${a.hp.max||0}" min="0"></label>
-        <label>当前 SAN<input type="number" id="am-sancur" value="${a.san?a.san.cur:0}" min="0"></label>
-        <label>最大 SAN<input type="number" id="am-sanmax" value="${a.san?a.san.max:99}" min="0"></label>
-        <label>当前 MP<input type="number" id="am-mpcur" value="${a.mp?a.mp.cur:0}" min="0"></label>
-        <label>最大 MP<input type="number" id="am-mpmax" value="${a.mp?a.mp.max:0}" min="0"></label>
-      </div>
-      <h4 class="small-title">🎯 技能（名称 + 当前值）</h4>
-      <div id="am-skills"></div>
-      <div class="row" style="margin-top:6px"><button class="small" onclick="addSkillRow()">＋ 技能</button>
-        <span class="hint">填入当前成功率；空技能不保存。</span></div>
-      <h4 class="small-title">🗡 武器</h4>
-      <div id="am-weapons"></div>
-      <div class="row" style="margin-top:6px"><button class="small" onclick="addWeaponRow()">＋ 武器</button>
-        <span class="hint">装弹量：0=无需弹药。战斗里每发消耗 1，弹匣空后“装填”会消耗背包里“弹药”道具。</span></div>
-      <h4 class="small-title">🎒 背包 / 随身用品</h4>
-      <div id="am-inv"></div>
-      <div class="row" style="margin-top:6px"><button class="small" onclick="addInvRow()">＋ 物品</button>
-        <span class="hint">效果可选：治疗/回SAN/回MP/弹药(装填用)/无。道具可在战斗中直接“使用”。</span></div>
-      <h4 class="small-title">💰 资产</h4>
-      <div class="row">
-        <label>现金 <input type="number" id="am-cash" value="${a.cash||0}" style="width:110px"></label>
-        <label>货币 <input type="text" id="am-currency" value="${esc(a.currency||'美元')}" style="width:110px"></label>
-      </div>
-      ${a.kind==='pc'?'<h4 class="small-title">📜 背景故事</h4><textarea id="am-back" rows="5">'+esc(a.backstory||'')+'</textarea>':''}
-      <div class="row" style="justify-content:flex-end;margin-top:14px">
-        ${editingActorId?'<button class="danger ghost small" onclick="deleteActor(\''+a.id+'\')">删除此角色</button>':''}
-        <button class="primary" onclick="saveActorModal()">保存</button>
-      </div>
-    </div></div>`;
-  mask.classList.add('open');
-  bindSkillTable();
-  bindWeaponTable();
-  bindInvTable();
-  recomputeDerived();
-  // 任何输入都刷新派生区
-  mask.querySelectorAll('input,select').forEach(function(inp){
-    inp.addEventListener('input',function(){ recomputeDerived(); });
-  });
-}
-function recomputeDerived(){
-  var m=$('actorModal'); if(!m) return;
-  var get=function(id){ var e=$(id); return e?num(e.value):0; };
-  var str=get('am-attr-str')||0, con=get('am-attr-con')||0, siz=get('am-attr-siz')||0, pow=get('am-attr-pow')||0;
-  var hp=Math.floor((con+siz)/10), mp=Math.floor(pow/5);
-  var bar=$('derivedBar'); if(!bar) return;
-  bar.innerHTML='<span class="hint">推算：</span><span class="num" style="color:#8fd69b">HP上限 '+(hp||0)+'</span><span class="num" style="color:#b9a3e0">MP上限 '+(mp||0)+'</span><span class="num" style="color:#e3c47f">DB '+esc(dbTextOf({str:str,siz:siz}))+'</span><span class="hint">（不覆盖手填值）</span>';
-}
+
+
 function skillRowHTML(name,total,i){
   return `<div class="listitem row" data-skill="${i}">
     <input type="text" class="sk-name" value="${esc(name)}" placeholder="技能名称" style="flex:1">
     <input type="number" class="sk-total" value="${num(total)||0}" style="width:90px" placeholder="当前值">
     <button class="small danger" onclick="this.closest('.listitem').remove()">✕</button></div>`;
 }
-function addSkillRow(){
-  var box=$('am-skills'); if(!box) return;
-  var div=document.createElement('div'); div.className='listitem row'; div.innerHTML='<input type="text" class="sk-name" placeholder="技能名称" style="flex:1"><input type="number" class="sk-total" value="0" style="width:90px"><button class="small danger" onclick="this.closest(\'.listitem\').remove()">✕</button>';
-  box.appendChild(div);
-}
-function bindSkillTable(){
-  var box=$('am-skills'); if(!box) return;
-  box.innerHTML='';
-  (currentActorModal.skills||[]).forEach(function(s,i){
-    var d=document.createElement('div'); d.className='listitem row'; d.innerHTML=skillRowHTML(s.name,s.total,i);
-    box.appendChild(d);
-  });
-}
+
+
 function weaponRowHTML(w,i){
   return `<div class="listitem row" style="gap:6px;flex-wrap:wrap">
     <input type="text" class="w-name" value="${esc(w.name)}" placeholder="武器" style="width:130px">
@@ -1678,100 +1283,13 @@ function weaponRowHTML(w,i){
     <label style="flex-direction:row;align-items:center">弹匣<input type="number" class="w-cap" value="${num(w.ammoCap)||0}" style="width:60px"></label>
     <button class="small danger" onclick="this.closest('.listitem').remove()">✕</button></div>`;
 }
-function addWeaponRow(){
-  var box=$('am-weapons'); if(!box) return;
-  var d=document.createElement('div'); d.className='listitem row'; d.innerHTML=weaponRowHTML({name:'',skill:'',damage:'',range:'',ammoCap:0},0);
-  box.appendChild(d);
-}
-function bindWeaponTable(){
-  var box=$('am-weapons'); if(!box) return;
-  box.innerHTML='';
-  (currentActorModal.weapons||[]).forEach(function(w){ var d=document.createElement('div'); d.className='listitem row'; d.innerHTML=weaponRowHTML(w,0); box.appendChild(d); });
-}
-function invRowHTML(it,i){
-  var eff=it.effect||'';
-  return `<div class="listitem row" style="gap:6px;flex-wrap:wrap">
-    <input type="text" class="inv-name" value="${esc(it.name)}" placeholder="物品" style="flex:1;min-width:120px">
-    <input type="number" class="inv-qty" value="${num(it.qty)||0}" style="width:70px" min="0" title="数量">
-    <select class="inv-effect" style="width:130px">
-      ${['','heal','san','mp','ammo'].map(function(k){return '<option value="'+k+'"'+(eff===k?' selected':'')+'>'+({heal:'治疗 HP',san:'回复 SAN',mp:'回复 MP',ammo:'弹药(装填)'}[k]||'无特殊效果')+'</option>';}).join('')}
-    </select>
-    <input type="text" class="inv-amount" value="${esc(it.amount||'')}" placeholder="量，如1D3" style="width:90px">
-    <input type="text" class="inv-note" value="${esc(it.note||'')}" placeholder="备注" style="width:140px">
-    <button class="small danger" onclick="this.closest('.listitem').remove()">✕</button></div>`;
-}
-function addInvRow(){
-  var box=$('am-inv'); if(!box) return;
-  var d=document.createElement('div'); d.className='listitem row'; d.innerHTML=invRowHTML({name:'',qty:1,effect:'',amount:'',note:''},0);
-  box.appendChild(d);
-}
-function bindInvTable(){
-  var box=$('am-inv'); if(!box) return;
-  box.innerHTML='';
-  (currentActorModal.inv||[]).forEach(function(it){ var d=document.createElement('div'); d.className='listitem row'; d.innerHTML=invRowHTML(it,0); box.appendChild(d); });
-}
-function collectFromModal(){
-  var m=$('actorModal'); if(!m) return null;
-  var a=currentActorModal; if(!a) return null;
-  a.name=$('am-name').value.trim()||'(未命名)';
-  if($('am-player')) a.player=$('am-player').value.trim();
-  if($('am-occ')) a.occupation=$('am-occ').value.trim();
-  if($('am-era')) a.era=$('am-era').value.trim();
-  if($('am-age')) a.age=$('am-age').value.trim();
-  if($('am-sex')) a.sex=$('am-sex').value.trim();
-  if($('am-res')) a.residence=$('am-res').value.trim();
-  if($('am-home')) a.hometown=$('am-home').value.trim();
-  if($('am-tpl')) a.template=$('am-tpl').value.trim();
-  if($('am-note')) a.note=$('am-note').value.trim();
-  if($('am-count')) a.count=Math.max(1,Math.round(num($('am-count').value))||1);
-  ['str','con','pow','dex','app','siz','int','edu','luck'].forEach(function(k){
-    var e=m.querySelector('.am-attr[data-k="'+k+'"]'); if(e) a.attrs[k]=Math.max(0,Math.round(num(e.value)));
-  });
-  a.mov=Math.max(0,Math.round(num($('am-mov').value))||8);
-  a.armor={ value:Math.max(0,num($('am-armor').value)||0), type:$('am-armtype').value.trim() };
-  a.db=dbTextOf(a.attrs);
-  a.hp.cur=Math.max(0,num($('am-hpcur').value));
-  a.hp.max=Math.max(0,num($('am-hpmax').value));
-  if(!a.hp.max){ a.hp.max=Math.floor((a.attrs.con+a.attrs.siz)/10); }
-  a.san.cur=Math.max(0,num($('am-sancur').value));
-  a.san.max=Math.max(1,num($('am-sanmax').value)||99);
-  a.mp.cur=Math.max(0,num($('am-mpcur').value));
-  a.mp.max=Math.max(0,num($('am-mpmax').value));
-  a.skills=[]; m.querySelectorAll('#am-skills .listitem').forEach(function(li){
-    var nm=li.querySelector('.sk-name').value.trim(); var tot=num(li.querySelector('.sk-total').value);
-    if(nm) a.skills.push({name:nm,total:tot});
-  });
-  a.weapons=[]; m.querySelectorAll('#am-weapons .listitem').forEach(function(li){
-    var w={ name:li.querySelector('.w-name').value.trim(), skill:li.querySelector('.w-skill').value.trim()||'斗殴',
-            damage:li.querySelector('.w-dmg').value.trim()||'1D3+DB', range:li.querySelector('.w-range').value.trim()||'近战',
-            type:'', pierce:'—', attacks:'1', ammoCap:Math.max(0,Math.round(num(li.querySelector('.w-cap').value))), ammoCur:Math.max(0,Math.round(num(li.querySelector('.w-cap').value))), note:'' };
-    if(w.name) a.weapons.push(w);
-  });
-  a.inv=[]; m.querySelectorAll('#am-inv .listitem').forEach(function(li){
-    var it={ name:li.querySelector('.inv-name').value.trim(), qty:Math.max(0,Math.round(num(li.querySelector('.inv-qty').value))),
-             effect:li.querySelector('.inv-effect').value, amount:li.querySelector('.inv-amount').value.trim(), note:li.querySelector('.inv-note').value.trim() };
-    if(it.name) a.inv.push(it);
-  });
-  a.cash=num($('am-cash').value);
-  a.currency=$('am-currency').value.trim()||'美元';
-  if($('am-back')) a.backstory=$('am-back').value;
-  return a;
-}
-function saveActorModal(){
-  var a=collectFromModal(); if(!a) return;
-  if(!a.hp.max) a.hp.max=1;
-  if(!editingActorId){
-    a.id=uid(a.kind==='pc'?'pc':'npc');
-    state.actors.push(a);
-  } else {
-    var idx=state.actors.findIndex(function(x){return x.id===editingActorId;});
-    if(idx>=0) state.actors[idx]=a; else { state.actors.push(a); }
-  }
-  saveState();
-  closeActorModal();
-  if(a.kind==='pc') renderSurveyors(); else renderNpcs();
-  toast('已保存「'+a.name+'」');
-}
+
+
+
+
+
+
+
 function closeActorModal(){ var m=$('actorModal'); m.classList.remove('open'); m.innerHTML=''; currentActorModal=null; editingActorId=null; }
 function deleteActor(id){
   var a=state.actors.filter(function(x){return x.id===id;})[0];
@@ -1803,29 +1321,12 @@ var routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
 var MAP_W=1000, MAP_H=620;
 
 function currentMap(){ return state.maps.filter(function(m){return m.id===state.activeMapId;})[0]||null; }
-function renderMapsShell(){
-  var sel=$('mapSel'); if(!sel) return;
-  sel.innerHTML=state.maps.map(function(m,i){
-    return '<option value="'+m.id+'"'+(m.id===state.activeMapId?' selected':'')+'>'+esc(m.name)+'</option>';
-  }).join('')||'<option value="">(无场景)</option>';
-  if(!state.maps.length) return;
-  var m=currentMap(); if(!m) return;
-  $('mapScale').value=m.kmPerPx||0.01;
-  drawMapCanvas();
-  renderMapLists();
-  renderRoutePanel();
-}
+
 function onMapSelect(){
   var sel=$('mapSel'); state.activeMapId=sel.value; routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
   saveStateQuiet(); renderMapsShell();
 }
-function newMap(){
-  var name=prompt('新场景名称：','场景 '+new Date().toLocaleDateString());
-  if(name===null) return;
-  var m={id:uid('map'),name:name||'未命名场景',kmPerPx:0.02,background:null,points:[],legs:[]};
-  state.maps.push(m); state.activeMapId=m.id; routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
-  saveState(); renderMapsShell(); toast('已新建场景');
-}
+
 function renameMap(){
   var m=currentMap(); if(!m) return;
   var name=prompt('重命名场景：',m.name); if(name===null) return;
@@ -1848,54 +1349,17 @@ function loadDemoMap(){
   } else { state.maps.push(d); state.activeMapId=d.id; }
   saveState(); renderMapsShell();
 }
-function setMapTool(t){
-  mapTool=t; mapSel={type:null,idx:-1};
-  document.querySelectorAll('#mapTools button').forEach(function(b){ b.classList.toggle('active', b.id==='mt-'+t); });
-  $('mapCanvas').style.cursor = t==='add'?'crosshair':'default';
-  drawMapCanvas();
-}
+
 function mapCanvasPos(ev){
   var cv=$('mapCanvas'); var r=cv.getBoundingClientRect();
   return { x: Math.round((ev.clientX-r.left)/r.width*MAP_W), y: Math.round((ev.clientY-r.top)/r.height*MAP_H) };
 }
-function onCanvasClick(ev){
-  var m=currentMap(); if(!m) return;
-  var p=mapCanvasPos(ev);
-  if(mapTool==='add'){
-    var nm=prompt('地点名称：','地点'+(m.points.length+1));
-    if(nm===null) return;
-    m.points.push({id:uid('p'),name:nm||'地点',icon:'📍',desc:'',x:p.x,y:p.y});
-    routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
-    saveState(); drawMapCanvas(); renderMapLists(); renderRoutePanel();
-    return;
-  }
-  // 选择最近点或清空
-  var hit=m.points.findIndex(function(pt){ return Math.hypot(pt.x-p.x,pt.y-p.y)<16; });
-  if(hit>=0){ mapSel={type:'point',idx:hit}; }
-  else { mapSel={type:null,idx:-1}; }
-  drawMapCanvas();
-}
-function onCanvasDown(ev){
-  var m=currentMap(); if(!m) return;
-  var p=mapCanvasPos(ev);
-  if(mapTool==='add') return; // 添加由 click 处理
-  var hit=m.points.findIndex(function(pt){ return Math.hypot(pt.x-p.x,pt.y-p.y)<16; });
-  if(hit>=0){ mapDrag={idx:hit, dx:p.x-m.points[hit].x, dy:p.y-m.points[hit].y }; mapSel={type:'point',idx:hit}; }
-  else { mapDrag=null; mapSel={type:null,idx:-1}; }
-  drawMapCanvas();
-}
-function onCanvasMove(ev){
-  if(!mapDrag) return;
-  var m=currentMap(); if(!m) return;
-  var p=mapCanvasPos(ev);
-  var pt=m.points[mapDrag.idx]; if(!pt) return;
-  pt.x=Math.max(10,Math.min(MAP_W-10,p.x-mapDrag.dx));
-  pt.y=Math.max(10,Math.min(MAP_H-10,p.y-mapDrag.dy));
-  drawMapCanvas();
-}
-function onCanvasUp(){ mapDrag=null; saveStateQuiet(); }
-function clearSelection(){ mapSel={type:null,idx:-1}; drawMapCanvas(); }
-function onScaleChange(){ var m=currentMap(); if(!m)return; m.kmPerPx=Math.max(0.0001,num($('mapScale').value))||0.01; saveState(); toast('比例尺已更新'); }
+
+
+
+
+
+
 function onBgPick(e){
   var m=currentMap(); if(!m)return;
   var f=e.target.files&&e.target.files[0]; if(!f)return;
@@ -1908,47 +1372,7 @@ function legAllowed(leg, vehId){
   if(!leg.modes || !leg.modes.length) return true;
   return leg.modes.indexOf(vehId)>=0;
 }
-function drawMapCanvas(){
-  var cv=$('mapCanvas'); if(!cv) return;
-  var g=cv.getContext('2d');
-  var m=currentMap(); if(!m) return;
-  g.clearRect(0,0,MAP_W,MAP_H);
-  g.fillStyle='#151922'; g.fillRect(0,0,MAP_W,MAP_H);
-  if(m.background){ var img=new Image(); img.onload=function(){ try{g.drawImage(img,0,0,MAP_W,MAP_H);}catch(e){} redrawOver(); }; img.src=m.background; }
-  else redrawOver();
-  function redrawOver(){
-    // 道路
-    m.legs.forEach(function(leg,i){
-      var A=m.points[leg.a], B=m.points[leg.b];
-      if(!A||!B) return;
-      var routeHit=false;
-      g.beginPath(); g.moveTo(A.x,A.y); g.lineTo(B.x,B.y);
-      if(routeSel.pathLegs && routeSel.pathLegs.indexOf(leg.id)>=0){
-        g.strokeStyle='#e3c47f'; g.lineWidth=4.5;
-      } else {
-        g.strokeStyle='rgba(180,196,230,.35)'; g.lineWidth=2;
-      }
-      g.stroke();
-      var mx=(A.x+B.x)/2, my=(A.y+B.y)/2;
-      if(leg.dist){ g.font='12px Menlo,monospace'; g.fillStyle='rgba(230,228,223,.7)'; g.fillText(leg.dist+'km', mx+6, my-6); }
-    });
-    // 地点
-    m.points.forEach(function(pt,i){
-      var selected = mapSel.type==='point'&&mapSel.idx===i;
-      var r = selected?10:8;
-      g.beginPath(); g.arc(pt.x,pt.y,r,0,Math.PI*2);
-      g.fillStyle = selected?'#e3c47f':'#c9a25e'; g.fill();
-      g.lineWidth=selected?3:1.5; g.strokeStyle='#1b1f2a'; g.stroke();
-      if(pt.icon){ g.font='16px serif'; g.fillText(pt.icon, pt.x-8, pt.y-14); }
-      g.font='13px sans-serif'; g.fillStyle='#fff';
-      var label=pt.name||'';
-      g.font = 'bold 13px "PingFang SC",sans-serif';
-      g.textAlign='center';
-      g.fillText(String(label).slice(0,12), pt.x, pt.y+24);
-      g.textAlign='left';
-    });
-  }
-}
+
 function distBetween(m,a,b){ return Math.sqrt(Math.pow(m.points[a].x-m.points[b].x,2)+Math.pow(m.points[a].y-m.points[b].y,2))*(m.kmPerPx||0.01); }
 function renderMapLists(){
   var m=currentMap(); var pc=$('mapPointsCard'), lc=$('mapLegsCard');
@@ -2195,73 +1619,13 @@ var combActiveId=null;
 function combatActors(kind){
   return state.actors.filter(function(a){return a.kind===kind;});
 }
-function renderCombatShell(){
-  var kind=$('cbAddKind')?$('cbAddKind').value:'pc';
-  var sel=$('cbAddSel');
-  var opts='';
-  var list=combatActors(kind);
-  if(!list.length){ opts='<option value="">（无）</option>'; }
-  else opts=list.map(function(a){ return '<option value="'+a.id+'">'+esc(a.name)+(a.kind==='npc'&&a.count>1?' ×'+a.count:'')+'</option>'; }).join('');
-  sel.innerHTML=opts;
-  renderCombatRoster();
-}
+
 function onAddKindChange(){ renderCombatShell(); }
-function spawnCombatant(actor, tag){
-  var a=JSON.parse(JSON.stringify(actor));
-  var c={
-    id:uid('c'), actorId:a.id, tag:tag||(a.kind==='pc'?'调查员':'敌人'),
-    name:a.name, side:a.kind==='pc'?'调查员':'敌人',
-    dex:a.attrs.dex||0, mov:a.mov||8,
-    hp:{cur:a.hp.max,max:a.hp.max}, san:{cur:a.san?a.san.cur:a.attrs.pow||0,max:99}, mp:{cur:a.mp?a.mp.max:0,max:a.mp?a.mp.max:0},
-    db:a.db||dbTextOf(a.attrs), armor:(a.armor&&a.armor.value)||0,
-    skills:(a.skills||[]).slice(), weapons:(a.weapons||[]).map(function(w){return JSON.parse(JSON.stringify(w));}),
-    inv:(a.inv||[]).map(function(i){return JSON.parse(JSON.stringify(i));}),
-    note:a.note||'', state:'正常', done:false
-  };
-  c.san.max=a.san&&a.san.max?a.san.max:99;
-  c.mp.max=a.mp?a.mp.max:0; if(!c.mp.max&&a.attrs.pow) c.mp.max=Math.floor(a.attrs.pow/5);
-  c.mp.cur=(a.mp&&a.mp.cur)?a.mp.cur:(c.mp.max||0);
-  c.hp.max=a.hp.max||Math.max(1,Math.floor(((a.attrs.con||0)+(a.attrs.siz||0))/10));
-  c.hp.cur=c.hp.max;
-  return c;
-}
-function combatPreAdd(actorId){
-  var a=state.actors.filter(function(x){return x.id===actorId;})[0]; if(!a) return;
-  switchTab('combat');
-  var cnt=a.kind==='npc'?(a.count||1):1;
-  for(var i=0;i<cnt;i++) state.combat.participants.push(spawnCombatant(a,''));
-  saveState(); renderCombatShell();
-  toast('已加入 '+cnt+' 个「'+a.name+'」');
-}
-function combatAdd(){
-  var kind=$('cbAddKind').value;
-  var selId=$('cbAddSel').value;
-  var cnt=Math.max(1,Math.round(num($('cbAddCount').value))||1);
-  if(kind==='ad'){
-    var nm=prompt('临时成员名称：'); if(nm===null)return;
-    var dex=prompt('敏捷 DEX：','50'); var hp=prompt('最大 HP：','10');
-    var c={id:uid('c'),actorId:null,tag:'临时',name:nm,side:'敌人',dex:num(dex)||50,mov:8,
-      hp:{cur:num(hp)||10,max:num(hp)||10},san:{cur:50,max:99},mp:{cur:0,max:0},db:'0',armor:0,
-      skills:[],weapons:[],inv:[],note:'',state:'正常',done:false};
-    state.combat.participants.push(c);
-  } else {
-    var a=state.actors.filter(function(x){return x.id===selId;})[0];
-    if(!a){ toast('请先选择角色'); return; }
-    if(kind==='npc'&&!state.actors.some(function(x){return x.id===selId&&x.count===0;}) && cnt<1) return;
-    for(var i=0;i<cnt;i++) state.combat.participants.push(spawnCombatant(a,i>0?('#'+(i+1)):''));
-  }
-  saveState(); renderCombatRoster(); toast('成员已加入战斗');
-}
-function combatRemove(cid){
-  state.combat.participants=state.combat.participants.filter(function(c){return c.id!==cid;});
-  if(combActiveId===cid) combActiveId=null;
-  saveState(); renderCombatRoster(); renderActivePanel(); if(typeof drawBattleScene==='function') drawBattleScene();
-}
-function combatClear(){
-  if(!confirmBox('清空所有战斗成员？')) return;
-  state.combat.participants=[]; state.combat.round=0; combActiveId=null;
-  saveState(); renderCombatRoster(); renderActivePanel(); if(typeof drawBattleScene==='function') drawBattleScene();
-}
+
+
+
+
+
 function combatNewRound(){
   var list=state.combat.participants.filter(function(c){return c.state!=='死亡'&&c.state!=='离场';});
   list.sort(function(x,y){return (y.dex||0)-(x.dex||0);});
@@ -2280,82 +1644,14 @@ function hpBar(c){
   var pct=Math.max(0,Math.min(100, c.hp.max? Math.round(c.hp.cur/c.hp.max*100):0));
   return `<div style="display:flex;align-items:center;gap:6px"><div class="bar hp" style="width:70px"><i style="width:${pct}%"></i></div><span class="num">${c.hp.cur}/${c.hp.max}</span></div>`;
 }
-function renderCombatRoster(){
-  var body=$('combatBody'); if(!body) return;
-  var parts=state.combat.participants||[];
-  $('combatTitle').textContent='成员 '+parts.length+' 人 · 第 '+(state.combat.round||0)+' 轮';
-  $('combatEmpty').style.display=parts.length?'none':'block';
-  body.innerHTML=parts.map(function(c,i){
-    var st=combatantState(c);
-    var stCls = st==='死亡'?'bad':(st==='正常'?'good':(st==='昏迷'||st==='濒死'?'warn':''));
-    return `<tr data-id="${c.id}" style="cursor:pointer" onclick="selectComb('${c.id}')" class="${combActiveId===c.id?'active':''}">
-      <td class="num">${i+1}</td>
-      <td><b>${esc(c.name)}</b>${c.tag?' <span class="muted">'+esc(c.tag)+'</span>':''}<br><span class="muted" style="font-size:11px">${esc((c.note||'').slice(0,26))}</span></td>
-      <td><span class="badge ${c.side==='调查员'?'blue':'bad'}">${esc(c.side)}</span></td>
-      <td class="num">${c.dex||0}</td>
-      <td>${hpBar(c)}</td>
-      <td class="num">${c.san&&c.san.max?c.san.cur+'/'+c.san.max:''}</td>
-      <td class="num">${c.mov||8}</td>
-      <td><span class="badge ${stCls||'muted'}">${esc(st)}</span></td>
-      <td style="text-align:right"><button class="small" onclick="event.stopPropagation();combSelectTarget('${c.id}')">🎯 目标</button>
-        <button class="small danger" onclick="event.stopPropagation();combatRemove('${c.id}')">移出</button></td>
-    </tr>`;
-  }).join('');
-  var rows=body.querySelectorAll('tr[data-id]');
-  rows.forEach(function(r){
-    if(r.classList.contains('active')) r.style.background='rgba(227,196,127,.08)';
-  });
-}
+
 var combTargetId=null;
-function selectComb(cid){ combActiveId=cid; renderCombatRoster(); renderActivePanel(); }
+
 function combSelectTarget(cid){ combTargetId=cid; toast('已将目标设为 '+combActiveName(cid)); renderActivePanel(); renderCombatRoster(); }
 function combActiveName(cid){ var c=combById(cid); return c?c.name:''; }
 function combById(cid){ return state.combat.participants.filter(function(c){return c.id===cid;})[0]||null; }
 function activeComb(){ return combById(combActiveId); }
-function renderActivePanel(){
-  var c=activeComb();
-  var el=$('activePanel'); if(!el) return;
-  if(!c){ el.innerHTML='<div class="hint">点选战斗成员，这里会出现 HP/攻击/道具面板。</div>'; return; }
-  var alive=state.combat.participants.filter(function(x){return x.id!==c.id && x.state!=='死亡'&&x.state!=='离场';});
-  var targetOpts=alive.map(function(x){return '<option value="'+x.id+'"'+(combTargetId===x.id?' selected':'')+'>'+esc(x.name)+' ('+esc(x.side)+')</option>';}).join('');
-  var wpnOpts=(c.weapons||[]).map(function(w,i){
-    var ammoTxt=w.ammoCap>0?(' · 弹药 '+w.ammoCur+'/'+w.ammoCap):'';
-    return '<option value="'+i+'">'+esc(w.name)+(w.skill?' ('+esc(w.skill)+')':'')+' ｜'+esc(w.damage)+ammoTxt+'</option>';
-  }).join('')||'<option value="-1">（无武器/徒手）</option>';
-  var invOpts=(c.inv||[]).filter(function(it){return it.qty>0;}).map(function(it,i){ return '<option value="'+i+'">'+esc(it.name)+' ×'+it.qty+'</option>';}).join('');
-  var effList={heal:'治疗',san:'SAN',mp:'MP',ammo:'弹药',none:''};
-  el.innerHTML=`
-    <h3 style="display:flex;justify-content:space-between"><span>🎯 ${esc(c.name)}</span>
-      <span class="row"><button class="small" onclick="toggleState('昏迷')">昏迷</button><button class="small" onclick="toggleState('死亡')">死亡</button></span></h3>
-    <div class="row" style="gap:14px;flex-wrap:wrap">
-      ${hpBar(c)} <span class="num">SAN ${c.san?c.san.cur+'/'+c.san.max:'—'}</span>
-      <span class="num">MP ${c.mp?c.mp.cur+'/'+c.mp.max:'—'}</span>
-      <span class="num">敏捷 ${c.dex} 移动 ${c.mov}码/轮</span>
-    </div>
-    <h4 class="small-title">🩹 直接调整</h4>
-    <div class="row" style="gap:6px">
-      <label>扣HP<input type="number" id="ap-dmg" value="0" style="width:80px"></label>
-      <button class="small" onclick="applyDirectDmg()">扣血</button>
-      <label>回HP<input type="number" id="ap-heal" value="0" style="width:80px"></label>
-      <button class="small" onclick="applyDirectHeal()">回血</button>
-      <label>扣SAN<input type="number" id="ap-san" value="0" style="width:80px"></label>
-      <button class="small" onclick="applyDirectSan()">SAN损失</button>
-    </div>
-    <h4 class="small-title">🗡 攻击（自动判定）</h4>
-    <div class="row" style="gap:6px;flex-wrap:wrap">
-      <label>武器/徒手<select id="ap-wpn">${wpnOpts}</select></label>
-      <label>目标<select id="ap-target">${targetOpts}</select></label>
-      <button class="primary" onclick="combatAttackRoll()" ${!alive.length?'disabled':''}>🎲 攻击检定</button>
-    </div>
-    <div class="hint">按 COC7：成功率=武器对应技能值；出 1 大成功(伤害拉满)，≤技能普通/困难/极难依次命中，≥96 或 100 为大失败。有弹匣的武器每枪-1，空了要装填。</div>
-    <h4 class="small-title">🎒 背包道具</h4>
-    <div class="row" style="gap:6px;flex-wrap:wrap">
-      <label>道具<select id="ap-item">${invOpts||'<option value="-1">（背包空）</option>'}</select></label>
-      <button class="small" onclick="combUseItem()">使用（对自身）</button>
-    </div>
-    <div class="hint">战斗道具的效果在编辑角色时设定（治疗/回SAN/回MP/弹药）；使用后数量-1。</div>
-    ${c.weapons&&c.weapons.some(function(w){return w.ammoCap>0;})?'<h4 class="small-title">🔫 装填</h4><div class="row"><button class="small" onclick="combReload()">装填当前武器（消耗背包“弹药”）</button></div>':''}`;
-}
+
 function toggleState(st){
   var c=activeComb(); if(!c) return;
   if(c.state===st) c.state='正常'; else c.state=st;
@@ -2494,14 +1790,10 @@ function renderVehicleTable(){
     }).join('')+`</tbody></table></div>
     <div class="hint" style="margin-top:6px">每小时行进公里数 = 时间计算口径；也可把这里的数值改成你的团版规则（如 1920s 破车 35km/h）。</div>`;
 }
-function onVehInput(e){
-  var v=state.vehicles[num(e.dataset.i)]; if(!v) return;
-  v[e.dataset.k]= e.dataset.k==='kmh'?Math.max(0,num(e.value)):e.value;
-  saveStateQuiet();
-}
-function addVehicle(){ state.vehicles.push({id:uid('v'),name:'新载具',kmh:40,note:''}); saveState(); renderVehicleTable(); }
-function delVehicle(i){ state.vehicles.splice(i,1); saveState(); renderVehicleTable(); }
-function resetVehicles(){ state.vehicles=defaultVehicles(); saveState(); renderVehicleTable(); renderVehicleRelated(); toast('已恢复默认速度'); }
+
+
+
+
 function renderVehicleRelated(){ renderMapsShell(); renderRoutePanel(); }
 
 function renderSettings(){
@@ -2514,11 +1806,7 @@ function renderSettings(){
   }
 }
 
-function quickDice(expr){
-  var r=rollExpr(expr);
-  var detail=r.dice.length?('　'+(r.dice.join(' '))):'';
-  logRoll('🎲 '+expr+' = '+r.total+detail,'gold');
-}
+
 function quickDiceCustom(){
   var v=$('customDice').value; if(!v.trim()) return;
   quickDice(v);
@@ -2582,7 +1870,6 @@ function bindEvents(){
   }
 }
 window.addEventListener('DOMContentLoaded', initApp);
-
 
 /* ================= v2 UI 覆盖层 ================= */
 'use strict';
@@ -2907,63 +2194,10 @@ function renderImportPreview(){
       <div class="hint">背景拆条 ${secs.length} 条${p.backstory.text?' + 正文'+p.backstory.text.length+'字':''}</div>
     </div>`;
 }
-function doImport(){
-  if(!pendingParse){ toast('还没有可导入的文件'); return; }
-  var p=pendingParse;
-  var a=p.attrs;
-  var hpMax=p.derived.hpMax||Math.floor((a.con+a.siz)/10)||1;
-  var secs=p.backstory.sections||{};
-  var history={};
-  ['appearance','beliefs','people','places','belongings','traits','secrets','scars','phobias'].forEach(function(k){ history[k]=(secs[k]||''); });
-  var actor={
-    id:uid('pc'), kind:'pc', side:'调查员',
-    name:p.basic.name||'未命名调查员', player:p.basic.player||'', occupation:p.basic.occupation||'',
-    era:p.basic.era||'', age:p.basic.age||'', sex:p.basic.sex||'',
-    residence:p.basic.residence||'', hometown:p.basic.hometown||'',
-    avatar:{ preset:AVATAR_DEFAULT_PC, custom:null },
-    attrs:a, hp:{cur:Math.max(1,p.derived.hpCur||hpMax),max:hpMax||1},
-    mp:{cur:p.derived.mpCur||Math.floor(a.pow/5),max:Math.floor(a.pow/5)},
-    san:{cur:p.derived.sanCur!=null?Math.min(p.derived.sanCur,99):Math.min(a.pow||0,99),max:Math.max(1,p.derived.sanMax||99)},
-    mov:p.derived.mov||8, db:p.derived.db||'0', build:p.derived.build||'0',
-    armor:{value:num(p.derived.armorValue)||0,type:p.derived.armorType||''},
-    skills:p.skills.map(function(s){return {name:s.name,total:s.total};}),
-    weapons:p.weapons.map(function(w){ var cap=num(w.ammo); return {name:w.name,type:w.type,skill:w.skill||'斗殴',damage:w.damage,range:w.range,pierce:w.pierce,attacks:w.attacks||'1',ammoCap:cap,ammoCur:cap,note:''}; }),
-    inv:p.items.map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:''};}),
-    cash:p.assets.cash||0, currency:p.assets.currency||'美元',
-    history:history, backstory:p.backstory.text||'',
-    notes:'', count:1, template:'', note:''
-  };
-  state.actors.push(actor);
-  saveState(); renderSurveyors();
-  toast('已录入「'+actor.name+'」'); openActorModal(actor.id,'pc');
-}
+
 
 /* ---------- 调查员 / NPC 列表 ---------- */
-function pcCardHTML(a){
-  var sub=[a.occupation,a.player?('玩家 '+a.player):'',a.age?a.age+'岁':'',a.residence].filter(Boolean).join(' · ');
-  return `<div class="actorcard">
-    <div class="hpanel" style="justify-content:space-between">
-      <div style="min-width:0">
-        <div class="row" style="gap:6px"><span class="badge blue">调查员</span><span class="nm" style="font-size:16px">${esc(a.name)}</span></div>
-        <div class="sub">${esc(sub||'基本信息未填')}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        ${avatarView(a,'md')}
-        <div class="row" style="gap:3px">
-          <button class="small" title="编辑" onclick="openActorModal('${a.id}','pc')">✏️</button>
-          <button class="small ghost" title="导出角色" onclick="exportActorJson('${a.id}')">⬇</button>
-          <button class="small danger" title="删除" onclick="deleteActor('${a.id}')">🗑</button>
-        </div>
-      </div>
-    </div>
-    <div style="margin-top:8px">${attrs3x3(a,false)}</div>
-    ${barsHTML(a)}
-    <div class="row" style="font-size:11.5px;color:var(--muted);margin-top:6px;gap:10px">
-      <span class="mono">MOV ${a.mov||8}</span><span class="mono">DB ${esc(a.db||'-2')}</span>
-      <span>${esc((a.weapons||[]).slice(0,2).map(function(w){return w.name;}).join('、')||'无武器')}</span>
-    </div>
-  </div>`;
-}
+
 function npcCardHTML(a){
   var s=sideOf(a);
   return `<div class="actorcard" data-id="${a.id}">
@@ -3010,24 +2244,14 @@ function quickSetNpcCount(id){
   if(a.name&&/ ×\d+$/.test(a.name)) a.name=a.name.replace(/ ×\d+$/,' ×'+a.count); else if(a.count>1&&!/×/.test(a.name)) a.name=a.name+' ×'+a.count;
   saveState(); renderNpcs(); toast('数量已改为 '+a.count);
 }
-function quickSetNpcSide(id){
-  var a=state.actors.filter(function(x){return x.id===id;})[0]; if(!a) return;
-  var el=$('npc-side-'+id); if(el){ a.side=el.value; if(!a.avatar) a.avatar={}; if(!a.avatar.preset&&a.side!=='敌人') a.avatar.preset=defaultAvatarForActor('npc',a.side); }
-  saveState(); renderNpcs(); toast('阵营：'+a.side);
-}
+
 function renderSurveyors(){
   var list=state.actors.filter(function(x){return x.kind==='pc';});
   $('pcCountTitle').textContent='调查员库（'+list.length+'）';
   $('pcList').innerHTML=list.length?list.map(pcCardHTML).join(''):'<div class="hint">还没有调查员。把《空白人物卡》.xlsx 拖到上方导入，或手动新建。</div>';
   if(pendingParse) renderImportPreview();
 }
-function renderNpcs(){
-  npcTplOptions();
-  var list=state.actors.filter(function(x){return x.kind==='npc';});
-  var el=$('npcList');
-  if(!list.length){ el.innerHTML='<div class="hint">还没有 NPC。用上方模板生成一批，或手动新建。</div>'; return; }
-  el.innerHTML=list.map(npcCardHTML).join('');
-}
+
 
 /* ---------- NPC 模板（含阵营/头像） ---------- */
 NPC_TPL = [
@@ -3142,118 +2366,7 @@ var HIST_LABELS = [
   ['appearance','形象 / 外貌'],['beliefs','思想与信念'],['people','重要之人'],['places','意义非凡之地'],
   ['belongings','宝贵之物'],['traits','特质'],['secrets','难言之隐'],['scars','伤口与疤痕'],['phobias','恐惧症与狂躁症']
 ];
-function openActorModal(id, kind){
-  var a=null;
-  if(id){ a=state.actors.filter(function(x){return x.id===id;})[0]; }
-  kind=kind||(a?a.kind:'pc');
-  if(!a){
-    var side = kind==='pc'?'调查员':'敌人';
-    a={id:uid(kind==='pc'?'pc':'npc'),kind:kind,side:side,count:1,name:'',player:'',occupation:'',era:'',age:'',sex:'',
-       residence:'',hometown:'',avatar:{preset:AVATAR_DEFAULT_PC,custom:null},
-       attrs:{str:0,con:0,pow:0,dex:0,app:0,siz:0,int:0,edu:0,luck:0},
-       hp:{cur:0,max:0},mp:{cur:0,max:0},san:{cur:0,max:99},mov:8,db:'-2',build:'0',
-       armor:{value:0,type:''},skills:[],weapons:[],inv:[],cash:0,currency:'美元',
-       history:{appearance:'',beliefs:'',people:'',places:'',belongings:'',traits:'',secrets:'',scars:'',phobias:''},
-       backstory:'',notes:'',template:'',note:'',player:''};
-  }
-  if(!a.avatar) a.avatar={preset:a.kind==='npc'?defaultAvatarForActor('npc',sideOf(a)):AVATAR_DEFAULT_PC,custom:null};
-  if(!a.history) a.history={};
-  currentActorModal=a; editingActorId=a.id;
-  var mask=$('actorModal');
-  var skillChips=(a.skills||[]).map(function(s,i){return chipSkillHTML(s.name,s.total);}).join('');
-  var weaponRows=(a.weapons||[]).map(function(w,i){return weaponPresetRowHTML(w);}).join('');
-  var invRows=(a.inv||[]).map(function(it){return invRowHTML(it);}).join('');
-  var s=sideOf(a);
-  var histHTML=(a.kind==='pc'?HIST_LABELS.map(function(h){
-    return '<div style="grid-column: span 1"><label>'+h[1]+'<textarea rows="2" id="am-hist-'+h[0]+'">'+esc(a.history[h[0]]||'')+'</textarea></label></div>';
-  }).join(''):'');
-  var avatarPresetButtons=AVATAR_PRESETS.map(function(e){
-    return '<button type="button" class="'+(a.avatar.preset===e?'on':'')+'" onclick="setAvatarPreset(this,\''+e+'\')">'+e+'</button>';
-  }).join('');
-  mask.innerHTML=`<div class="modal">
-    <div class="modal-head"><b>${a.kind==='npc'?'编辑 NPC / 敌人':'编辑调查员'}：${esc(a.name||'(未命名)')}</b>
-      <div class="row"><button class="ghost small" onclick="saveActorModal()">💾 保存</button><button class="ghost" onclick="closeActorModal()">✕</button></div></div>
-    <div class="modal-body">
-      <div class="avatar-area">
-        <div style="flex:1;min-width:280px">
-          <div class="grid3">
-            <label>名称 <input type="text" id="am-name" value="${esc(a.name)}"></label>
-            ${a.kind==='pc'?'<label>玩家 <input type="text" id="am-player" value="'+esc(a.player)+'"></label>':''}
-            ${a.kind==='npc'?'<label>分类标签 <input type="text" id="am-tpl" value="'+esc(a.template||'')+'" placeholder="如 邪教徒 / 神话生物"></label>':''}
-            ${a.kind==='pc'?'<label>职业 <input type="text" id="am-occ" value="'+esc(a.occupation)+'"></label>':'<label>数量(个体) <input type="number" id="am-count" value="'+(a.count||1)+'" min="1"></label>'}
-            ${a.kind==='pc'?'<label>年龄 <input type="text" id="am-age" value="'+esc(a.age)+'"></label>':''}
-            ${a.kind==='npc'?'<label>备注/行为 <input type="text" id="am-note" value="'+esc(a.note||'')+'"></label>':'<label>性别 <input type="text" id="am-sex" value="'+esc(a.sex)+'"></label>'}
-            ${a.kind==='pc'?'<label>时代 <input type="text" id="am-era" value="'+esc(a.era)+'"></label>':''}
-            ${a.kind==='pc'?'<label>住地 <input type="text" id="am-res" value="'+esc(a.residence)+'"></label>':''}
-            ${a.kind==='pc'?'<label>故乡 <input type="text" id="am-home" value="'+esc(a.hometown||'')+'"></label>':''}
-          </div>
-          <div class="row" style="margin-top:8px">
-            <label>阵营<select id="am-side">${SIDES.map(function(x){return '<option value="'+x+'"'+(s===x?' selected':'')+'>'+x+'</option>';}).join('')}</select></label>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:none">
-          <div id="am-avatar-prev">${avatarView(a,'lg')}</div>
-          <label class="muted" style="flex-direction:row;align-items:center">上传头像
-            <input type="file" id="am-avatar-file" accept="image/*" style="display:none" onchange="onAvatarFile(event)"></label>
-          <div class="row" style="gap:4px">
-            <button class="small ghost" onclick="pickAvatarFile()">📁 选图</button>
-            ${a.avatar.custom?'<button class="small danger" onclick="clearAvatarCustom()">清除自定义</button>':''}
-          </div>
-        </div>
-      </div>
-      <div class="avatar-area" style="margin-top:6px;align-items:flex-start">
-        <div class="hint" style="flex:1">默认头像（点击切换）：</div>
-        <div class="preset-picker" style="flex:3">${avatarPresetButtons}</div>
-      </div>
-      <h4 class="sectiontitle">⚜ 属性（9项 · 3×3，中英对照）</h4>
-      ${attrs3x3(a,true)}
-      <div class="grid3" style="margin-top:10px">
-        <label>移动 MOV<input type="number" id="am-mov" value="${a.mov||8}"></label>
-        <label>护甲值<input type="number" id="am-armor" value="${(a.armor&&a.armor.value)||0}" min="0"></label>
-        <label>护甲类型<input type="text" id="am-armtype" value="${esc(a.armor&&a.armor.type||'')}" placeholder="如 皮夹克"></label>
-      </div>
-      <div class="row" style="margin-top:6px;align-items:flex-end">
-        <label>护甲预置<select id="am-armor-preset" onchange="applyArmorPreset(this)">
-          <option value="">— 参考防具表预置 —</option>
-          ${PRESET_ARMORS.map(function(x){return '<option value="'+x[1]+'">'+esc(x[0])+'（护甲'+x[1]+'）</option>';}).join('')}
-        </select></label>
-        <span class="hint">选择后会自动填值，仍可手改</span>
-      </div>
-      <h4 class="sectiontitle">🩸 生命 / 理智 / 魔力（上限与当前）</h4>
-      <div class="grid3">
-        <label>当前 HP<input type="number" id="am-hpcur" value="${a.hp.cur||0}" min="0"></label>
-        <label>最大 HP<input type="number" id="am-hpmax" value="${a.hp.max||0}" min="0"></label>
-        <label>当前 SAN<input type="number" id="am-sancur" value="${a.san?a.san.cur:0}" min="0"></label>
-        <label>最大 SAN<input type="number" id="am-sanmax" value="${a.san?a.san.max:99}" min="1"></label>
-        <label>当前 MP<input type="number" id="am-mpcur" value="${a.mp?a.mp.cur:0}" min="0"></label>
-        <label>最大 MP<input type="number" id="am-mpmax" value="${a.mp?a.mp.max:0}" min="0"></label>
-      </div>
-      <h4 class="sectiontitle">🎯 技能（紧凑芯片，可随意增删）</h4>
-      <div class="skillchips" id="am-skills">${skillChips}</div>
-      <div style="margin-top:6px"><button class="small" onclick="addSkillRow()">＋ 加一项技能</button></div>
-      <h4 class="sectiontitle">🗡 武器（可参考预置表自动填技能/伤害/射程，仍可修改）</h4>
-      <div id="am-weapons">${weaponRows}</div>
-      <div style="margin-top:6px"><button class="small" onclick="addWeaponRow()">＋ 加一件武器</button>
-        <span class="hint">装弹量：0=不消耗；战斗里每发-1，空枪用背包“弹药”装填。</span></div>
-      <h4 class="sectiontitle">🎒 背包 / 随身用品</h4>
-      <div id="am-inv">${invRows}</div>
-      <div style="margin-top:6px"><button class="small" onclick="addInvRow()">＋ 加一件物品</button>
-        <span class="hint">效果：治疗/回SAN/回MP/弹药(装填用)/其他/无。</span></div>
-      <h4 class="sectiontitle">💰 资产</h4>
-      <div class="row">
-        <label>现金<input type="number" id="am-cash" value="${a.cash||0}" style="width:120px"></label>
-        <label>货币<input type="text" id="am-currency" value="${esc(a.currency||'美元')}" style="width:120px"></label>
-      </div>
-      ${a.kind==='pc'?'<h4 class="sectiontitle">📜 背景故事（拆条 + 正文小段）</h4>':''}
-      ${a.kind==='pc'?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">'+histHTML+'</div>':'<div class="vdiv"></div><label>背景备注<textarea id="am-hist-appearance" rows="2" style="display:none"></textarea><textarea rows="2" id="am-npc-back">'+esc(a.notes||a.note||'')+'</textarea></label>'}
-      ${a.kind==='pc'?'<label style="margin-top:8px">背景故事正文（小段文字）<textarea rows="4" id="am-backstory">'+esc(a.backstory||'')+'</textarea></label>':''}
-      <div class="row" style="justify-content:flex-end;margin-top:16px">
-        ${editingActorId?'<button class="danger ghost small" onclick="deleteActor(\''+a.id+'\')">删除此角色</button>':''}
-        <button class="primary" onclick="saveActorModal()">保存</button>
-      </div>
-    </div></div>`;
-  mask.classList.add('open');
-}
+
 function avatarPrevHTML(){ var el=$('am-avatar-prev'); if(el){ var cur=currentActorModal; var c=cur.avatar&&cur.avatar.custom; el.innerHTML=c? '<span class="avatar lg"><img src="'+esc(c)+'"></span>' : '<span class="avatar lg">'+(cur.avatar&&cur.avatar.preset||AVATAR_DEFAULT_PC)+'</span>'; } }
 function setAvatarPreset(btn, emoji){
   if(!currentActorModal) return;
@@ -3327,25 +2440,9 @@ function fillPresetWeapon(sel){
   var cap=row.querySelector('.w-cap'); if(cap) cap.value=preset[5]||0;
   var tp=row.querySelector('.w-type'); if(tp) tp.value=preset[0];
 }
-function addWeaponRow(){
-  var box=$('am-weapons'); if(!box) return;
-  var d=document.createElement('div'); d.className='listitem wrow';
-  d.innerHTML=weaponPresetRowHTML({name:'',skill:'',damage:'',range:'',type:'',ammoCap:0});
-  box.appendChild(d);
-}
-function chipSkillHTML(name,total){
-  return `<span class="skillchip">
-    <input type="text" class="sk-name" value="${esc(name)}" placeholder="技能">
-    <input type="number" class="sk-total" value="${num(total)||0}" min="0" title="当前值">
-    <button type="button" class="del" onclick="this.closest('.skillchip').remove()">×</button>
-  </span>`;
-}
-function addSkillRow(){
-  var box=$('am-skills'); if(!box) return;
-  var s=document.createElement('span'); s.className='skillchip';
-  s.innerHTML='<input type="text" class="sk-name" placeholder="技能"><input type="number" class="sk-total" value="0" min="0" title="当前值"><button type="button" class="del" onclick="this.closest(\'.skillchip\').remove()">×</button>';
-  box.appendChild(s);
-}
+
+
+
 function invRowHTML(it){
   var eff=it.effect||'';
   return `<div class="listitem" style="margin-bottom:6px"><div class="row" style="gap:6px;flex-wrap:wrap">
@@ -3363,86 +2460,13 @@ function addInvRow(){ var box=$('am-inv'); if(!box)return; var d=document.create
 function bindSkillTable(){}
 function bindWeaponTable(){}
 function bindInvTable(){}
-function collectFromModal(){
-  var m=$('actorModal'); if(!m) return null;
-  var a=currentActorModal; if(!a) return null;
-  a.name=$('am-name').value.trim()||'(未命名)';
-  if($('am-player')) a.player=$('am-player').value.trim();
-  if($('am-occ')) a.occupation=$('am-occ').value.trim();
-  if($('am-era')) a.era=$('am-era').value.trim();
-  if($('am-age')) a.age=$('am-age').value.trim();
-  if($('am-sex')) a.sex=$('am-sex').value.trim();
-  if($('am-res')) a.residence=$('am-res').value.trim();
-  if($('am-home')) a.home=$('am-home').value.trim();
-  if($('am-tpl')) a.template=$('am-tpl').value.trim();
-  if($('am-note')) a.note=$('am-note').value.trim();
-  if($('am-count')) a.count=Math.max(1,Math.round(num($('am-count').value))||1);
-  a.side=$('am-side').value;
-  if(!a.avatar) a.avatar={preset:defaultAvatarForActor(a.kind,a.side),custom:null};
-  ['str','con','pow','dex','app','siz','int','edu','luck'].forEach(function(k){
-    var e=m.querySelector('.am-attr[data-k="'+k+'"]'); if(e) a.attrs[k]=Math.max(0,Math.round(num(e.value)));
-  });
-  a.mov=Math.max(0,Math.round(num($('am-mov').value))||8);
-  a.armor={ value:Math.max(0,num($('am-armor').value)||0), type:$('am-armtype').value.trim() };
-  a.db=dbTextOf(a.attrs);
-  a.hp.cur=Math.max(0,num($('am-hpcur').value));
-  a.hp.max=Math.max(0,num($('am-hpmax').value))||Math.floor((a.attrs.con+a.attrs.siz)/10)||1;
-  a.san.cur=Math.max(0,num($('am-sancur').value));
-  a.san.max=Math.max(1,num($('am-sanmax').value)||99);
-  a.mp.cur=Math.max(0,num($('am-mpcur').value));
-  a.mp.max=Math.max(0,num($('am-mpmax').value))||Math.floor(a.attrs.pow/5);
-  a.skills=[];
-  m.querySelectorAll('#am-skills .skillchip').forEach(function(li){
-    var nm=li.querySelector('.sk-name').value.trim(); var tot=num(li.querySelector('.sk-total').value);
-    if(nm) a.skills.push({name:nm,total:tot});
-  });
-  a.weapons=[];
-  m.querySelectorAll('#am-weapons .wrow').forEach(function(li){
-    var w={name:li.querySelector('.w-name').value.trim(),skill:li.querySelector('.w-skill').value.trim()||'斗殴',
-      damage:li.querySelector('.w-dmg').value.trim()||'1D3+DB',range:li.querySelector('.w-range').value.trim()||'近战',
-      type:li.querySelector('.w-type').value.trim()||'格斗',pierce:'—',attacks:'1',
-      ammoCap:Math.max(0,Math.round(num(li.querySelector('.w-cap').value))),ammoCur:Math.max(0,Math.round(num(li.querySelector('.w-cap').value))),note:''};
-    if(w.name) a.weapons.push(w);
-  });
-  a.inv=[];
-  m.querySelectorAll('#am-inv .listitem').forEach(function(li){
-    var it={name:li.querySelector('.inv-name').value.trim(),qty:Math.max(0,Math.round(num(li.querySelector('.inv-qty').value))),
-      effect:li.querySelector('.inv-effect').value,amount:li.querySelector('.inv-amount').value.trim(),note:li.querySelector('.inv-note').value.trim()};
-    if(it.name) a.inv.push(it);
-  });
-  a.cash=num($('am-cash').value);
-  a.currency=$('am-currency').value.trim()||'美元';
-  a.history=a.history||{};
-  HIST_LABELS.forEach(function(h){ var e=$('am-hist-'+h[0]); if(e) a.history[h[0]]=e.value; });
-  if($('am-backstory')) a.backstory=$('am-backstory').value;
-  if($('am-npc-back')) a.notes=$('am-npc-back').value;
-  return a;
-}
-function saveActorModal(){
-  var a=collectFromModal(); if(!a) return;
-  if(!editingActorId){ a.id=uid(a.kind==='pc'?'pc':'npc'); state.actors.push(a); }
-  else { var idx=state.actors.findIndex(function(x){return x.id===editingActorId;}); if(idx>=0) state.actors[idx]=a; else state.actors.push(a); }
-  saveState(); closeActorModal();
-  if(a.kind==='pc') renderSurveyors(); else renderNpcs();
-  toast('已保存「'+a.name+'」');
-}
+
+
 function recomputeDerived(){ /* v2 不再显示推算条 */ }
 
 /* ================= 地图：角色 / 摆件 / 载具 ================= */
 var MAP_TOOLS_PALETTE=[['🏠','房'],['🏢','楼'],['🏰','堡'],['🌳','树'],['🌲','松'],['🪨','石'],['🪵','柴'],['🚪','门'],['🪟','窗'],['🛏','床'],['🪑','椅'],['🛢','桶'],['🚗','车'],['⛵','船'],['🕯','烛'],['⚰','棺'],['🪦','碑'],['🗿','像']];
-function renderMapsShell(){
-  var sel=$('mapSel'); if(!sel) return;
-  sel.innerHTML=state.maps.map(function(m){return '<option value="'+m.id+'"'+(m.id===state.activeMapId?' selected':'')+'>'+esc(m.name)+'</option>';}).join('')||'<option value="">(无场景)</option>';
-  if(!state.maps.length){ $('mapHint').textContent='请先“新建场景”。'; return; }
-  var m=currentMap(); if(!m) return;
-  $('mapScale').value=m.kmPerPx||0.01;
-  renderMapActorsBox();
-  renderMapVehicles();
-  renderPropPalette();
-  drawMapCanvas();
-  renderMapLists();
-  renderRoutePanel();
-}
+
 function actorSideOrder(side){ return SIDES.indexOf(side)>=0?SIDES.indexOf(side):1; }
 function renderMapActorsBox(){
   var box=$('mapActorsBox'); if(!box) return;
@@ -3475,19 +2499,8 @@ function toggleMapToken(actorId){
   }
   saveState(); renderMapActorsBox(); drawMapCanvas();
 }
-function renderPropPalette(){
-  var pal=$('propPalette'); if(!pal) return;
-  pal.innerHTML=MAP_TOOLS_PALETTE.map(function(p,i){
-    return '<button class="propbtn small" onclick="addProp('+i+')">'+p[0]+'<span>'+p[1]+'</span></button>';
-  }).join('');
-}
-function addProp(i){
-  var m=currentMap(); if(!m) return;
-  var p=MAP_TOOLS_PALETTE[i];
-  m.props=m.props||[];
-  m.props.push({icon:p[0],x:300+Math.random()*400,y:200+Math.random()*260,scale:1});
-  saveState(); drawMapCanvas();
-}
+
+
 function genIsoFloor(){
   var m=currentMap(); if(!m) return;
   m.iso=!m.iso;
@@ -3551,17 +2564,7 @@ function findMapHit(ev, includeTokens){
   (m.props||[]).forEach(function(pr,i){ tryHit(Math.hypot(pr.x-p.x,pr.y-p.y),'prop',i); });
   return best;
 }
-function drawMapCanvas(){
-  var cv=$('mapCanvas'); if(!cv) return;
-  var g=cv.getContext('2d');
-  var m=currentMap(); if(!m) return;
-  g.clearRect(0,0,MAP_W,MAP_H);
-  if(m.background){
-    var img=new Image();
-    img.onload=function(){ try{ g.drawImage(img,0,0,MAP_W,MAP_H); }catch(e){} overlayMap(g,m); };
-    img.src=m.background;
-  } else { g.fillStyle='#151922'; g.fillRect(0,0,MAP_W,MAP_H); overlayMap(g,m); }
-}
+
 function overlayMap(g,m){
   // 伪3D地面
   if(m.iso){
@@ -3779,27 +2782,7 @@ function drawBattleScene(){
   if(sc.bg){ var im=new Image(); im.onload=function(){ try{ctx.drawImage(im,0,0,B_W,B_H);}catch(e){} drawOver(ctx,sc); }; im.src=sc.bg; }
   else { ctx.fillStyle=(typeof themeCanvasColor==='function')?themeCanvasColor():'#1a1e2b'; ctx.fillRect(0,0,B_W,B_H); drawOver(ctx,sc); }
 }
-function drawOver(ctx,sc){
-  // 阵营提示线
-  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.setLineDash([6,8]);
-  ctx.beginPath(); ctx.moveTo(B_W/2,0); ctx.lineTo(B_W/2,B_H); ctx.stroke(); ctx.setLineDash([]);
-  state.combat.participants.forEach(function(c){
-    var p=(sc.pos||{})[c.id]; if(!p) return;
-    var active = combActiveId===c.id;
-    drawAvatarOnCanvas(ctx,p.x,p.y,20,c);
-    ctx.font='11px "PingFang SC",sans-serif'; ctx.fillStyle=active?'#e3c47f':'#fff'; ctx.textAlign='center';
-    ctx.fillText(String(c.name||'').slice(0,12),p.x,p.y+33);
-    ctx.fillStyle='rgba(230,228,223,.85)';
-    ctx.font='10px Menlo,monospace';
-    var st=c.state&&c.state!=='正常'?('  '+c.state):'';
-    ctx.fillText((c.hp?c.hp.cur+'/'+c.hp.max:'—')+' '+((c.san&&c.san.max)?c.san.cur+'':'—')+' '+((c.mp&&c.mp.max)?c.mp.cur:'—')+st,p.x,p.y+46);
-    var hpPct=c.hp.max?Math.max(0,Math.min(100,c.hp.cur/c.hp.max*100)):0;
-    ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(p.x-22,p.y+50,44,5);
-    ctx.fillStyle=hpPct>50?'#6fbf73':(hpPct>25?'#e3c47f':'#d16a6a'); ctx.fillRect(p.x-22,p.y+50,44*hpPct/100,5);
-    if(active){ ctx.strokeStyle='#e3c47f'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,27,0,Math.PI*2); ctx.stroke(); }
-  });
-  ctx.textAlign='left';
-}
+
 function battleHit(ev){
   var cv=$('battleCanvas'); var r=cv.getBoundingClientRect();
   var x=(ev.clientX-r.left)/r.width*B_W, y=(ev.clientY-r.top)/r.height*B_H;
@@ -3842,27 +2825,7 @@ function onBattleBg(e){
 function clearBattleBg(){ combatScene().bg=null; saveState(); drawBattleScene(); }
 
 /* ---------- 战斗成员与面板（无 MOV 列） ---------- */
-function spawnCombatant(actor, tag){
-  var a=JSON.parse(JSON.stringify(actor));
-  var c={
-    id:uid('c'), actorId:a.id, tag:tag||'',
-    name:a.name, side:sideOf(a),
-    avatar:a.avatar?JSON.parse(JSON.stringify(a.avatar)):{preset:defaultAvatarForActor(a.kind,sideOf(a)),custom:null},
-    dex:a.attrs.dex||0, mov:a.mov||8,
-    hp:{cur:0,max:0}, san:{cur:0,max:99}, mp:{cur:0,max:0},
-    db:a.db||dbTextOf(a.attrs), armor:(a.armor&&a.armor.value)||0,
-    skills:(a.skills||[]).slice(), weapons:(a.weapons||[]).map(function(w){return JSON.parse(JSON.stringify(w));}),
-    inv:(a.inv||[]).map(function(i){return JSON.parse(JSON.stringify(i));}),
-    note:a.note||a.notes||'', state:'正常', done:false
-  };
-  c.hp.max=a.hp.max||Math.max(1,Math.floor(((a.attrs.con||0)+(a.attrs.siz||0))/10));
-  c.hp.cur=a.hp.cur||c.hp.max;
-  c.san.max=a.san&&a.san.max?a.san.max:99;
-  c.san.cur=a.san&&a.san.cur!=null?Math.min(a.san.cur,c.san.max):Math.min(a.attrs.pow||0,c.san.max);
-  c.mp.max=a.mp&&a.mp.max?a.mp.max:Math.floor(a.attrs.pow/5);
-  c.mp.cur=a.mp&&a.mp.cur!=null?a.mp.cur:c.mp.max;
-  return c;
-}
+
 function combatKindList(kind){
   return kind==='pc'?state.actors.filter(function(a){return a.kind==='pc';}):state.actors.filter(function(a){return a.kind==='npc';});
 }
@@ -3953,47 +2916,7 @@ function renderCombatRoster(){
   }).join('');
 }
 function selectComb(cid){ combActiveId=cid; renderCombatRoster(); renderActivePanel(); drawBattleScene(); }
-function renderActivePanel(){
-  var c=activeComb(); var el=$('activePanel'); if(!el) return;
-  if(!c){ el.innerHTML='<div class="hint">点场景里的头像或成员行，这里出现 HP/攻击/道具面板。</div>'; return; }
-  var alive=state.combat.participants.filter(function(x){return x.id!==c.id && x.state!=='死亡'&&x.state!=='离场';});
-  var targetOpts=alive.map(function(x){return '<option value="'+x.id+'"'+(combTargetId===x.id?' selected':'')+'>'+esc(x.name)+' ('+esc(sideOf(x))+')</option>';}).join('');
-  var wpnOpts=(c.weapons||[]).map(function(w,i){
-    return '<option value="'+i+'">'+esc(w.name)+(w.skill?' ('+esc(w.skill)+')':'')+' ｜'+esc(w.damage)+(w.ammoCap>0?(' · 弹 '+((w.ammoCur||0))+'/'+w.ammoCap):'')+'</option>';
-  }).join('')||'<option value="-1">（无武器/徒手）</option>';
-  var invOpts=(c.inv||[]).filter(function(it){return it.qty>0;}).map(function(it,i){return '<option value="'+i+'">'+esc(it.name)+' ×'+it.qty+(it.effect==='other'&&it.note?'（'+esc(it.note)+'）':'')+'</option>';}).join('');
-  el.innerHTML=`
-  <h3 style="display:flex;justify-content:space-between;align-items:center">
-    <span class="row" style="gap:10px">${avatarView(c,'md')}<span>${esc(c.name)} <span class="badge ${'side-'+esc(sideOf(c))}">${esc(sideOf(c))}</span></span></span>
-    <span class="row"><button class="small" onclick="toggleState('昏迷')">昏迷</button><button class="small" onclick="toggleState('死亡')">死亡</button></span>
-  </h3>
-  <div class="row" style="gap:14px;flex-wrap:wrap;margin:8px 0">
-    <span class="num">敏捷 ${c.dex}</span>
-    <span class="num">HP ${c.hp.cur}/${c.hp.max}</span>
-    <span class="num">SAN ${c.san?c.san.cur+'/'+c.san.max:'—'}</span>
-    <span class="num">MP ${c.mp?c.mp.cur+'/'+c.mp.max:'—'}</span>
-    <span class="num">DB ${esc(c.db||'0')}</span>
-  </div>
-  <h4 class="small-title">🩹 直接调整</h4>
-  <div class="row" style="gap:6px;flex-wrap:wrap">
-    <label>扣HP<input type="number" id="ap-dmg" value="0" style="width:80px"></label><button class="small" onclick="applyDirectDmg()">扣血</button>
-    <label>回HP<input type="number" id="ap-heal" value="0" style="width:80px"></label><button class="small" onclick="applyDirectHeal()">回血</button>
-    <label>扣SAN<input type="number" id="ap-san" value="0" style="width:80px"></label><button class="small" onclick="applyDirectSan()">SAN损失</button>
-  </div>
-  <h4 class="small-title">🗡 攻击（自动判定）</h4>
-  <div class="row" style="gap:6px;flex-wrap:wrap">
-    <label>武器<select id="ap-wpn">${wpnOpts}</select></label>
-    <label>目标<select id="ap-target">${targetOpts}</select></label>
-    <button class="primary" onclick="combatAttackRoll()" ${!alive.length?'disabled':''}>🎲 攻击检定</button>
-    ${(c.weapons||[]).some(function(w){return w.ammoCap>0;})?'<button class="small" onclick="combReload()">装填</button>':''}
-  </div>
-  <div class="hint">命中档：普通≤技能 / 困难≤半值 / 极难≤1/5；出 1 大成功按满伤；≥96 大失败。有弹匣武器每枪-1。</div>
-  <h4 class="small-title">🎒 背包道具（对自身使用）</h4>
-  <div class="row" style="gap:6px;flex-wrap:wrap">
-    <label>道具<select id="ap-item">${invOpts||'<option value="-1">（背包空）</option>'}</select></label>
-    <button class="small" onclick="combUseItem()">使用</button>
-  </div>`;
-}
+
 
 /* ---------- 收尾：初始化 v2 ---------- */
 function deleteSelectedObj(){
@@ -4009,20 +2932,7 @@ function delVehicle(i){
   state.vehicles.splice(i,1); saveState(); renderMapVehicles();
   if($('routeCard')) renderRoutePanel();
 }
-function ensureV2Data(){
-  (state.actors||[]).forEach(function(a){
-    if(!a.side) a.side = a.kind==='pc'?'调查员':(a.side||'敌人');
-    if(!a.avatar) a.avatar={preset: a.kind==='npc'?defaultAvatarForActor('npc',a.side):AVATAR_DEFAULT_PC, custom:null};
-    if(!a.history) a.history={};
-    if(!a.weapons) a.weapons=[];
-    if(!a.inv) a.inv=[];
-    if(!a.skills) a.skills=[];
-  });
-  if(!state.maps) state.maps=[];
-  if(!state.vehicles) state.vehicles=defaultVehicles();
-  if(!state.combat) state.combat={round:0,participants:[]};
-  if(!state.combat.scene) state.combat.scene={bg:null,pos:{}};
-}
+
 function bindPointer(target){
   if(!target) return;
   ['pointerdown','pointermove','pointerup','pointercancel','pointerleave'].forEach(function(t){
@@ -4056,8 +2966,7 @@ function initApp(){
 /* 骰子日志补丁：类名渲染修正（v2 无独立骰子页，保留战斗日志） */
 function quickDice(expr){ var r=rollExpr(expr); logRoll('🎲 '+expr+' = '+r.total, 'gold'); }
 
-
-/* ================= v3 增量：法术库 / NPC 四列小卡 / 地图缩放与素材 / 战斗三行条 / 快速查询 ================= */
+/* ================= v3 增量：法术库 / NPC 分组小卡 / 多地图缩放与素材 / 战斗场景 / 剧本·骰子 ================= */
 'use strict';
 
 /* ---------- A. 法术库（数据对应你提供的《COC 7th 核心规则书》第十二章 咒文；消耗以 KP 房规为准可改） ---------- */
@@ -4160,12 +3069,7 @@ function spellRowHTML(s){
     </div>
   </div>`;
 }
-function addSpellRow(){
-  var box=$('am-spells'); if(!box) return;
-  var d=document.createElement('div'); d.className='listitem srow';
-  d.innerHTML=spellRowHTML({});
-  box.appendChild(d);
-}
+
 function fillPresetSpell(sel){
   var i=num(sel.value); var sp=SPELLS[i]; if(!sp) return;
   var row=sel.closest('.srow'); if(!row) return;
@@ -6272,6 +5176,7 @@ function stopDecorBits(){
   /* 兜底：无论 DOMContentLoaded 与数据兜底谁先跑，都要按最终 state.ui.decor 同步一次 */
   setTimeout(start, 0);
 })();
+
 </script>
 </body>
 </html>
