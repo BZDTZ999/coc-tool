@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14161c">
 <title>带团妙妙小工具 · COC</title>
 <style>:root{
   --bg:#14161c; --bg2:#1b1f29; --panel:#20242f; --panel2:#262b38; --line:#333a4b;
@@ -136,6 +137,7 @@ footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center;paddi
 .skillchip .del{border:none;background:transparent;color:#c98a8a;cursor:pointer;border-radius:50%;padding:0 5px}
 /* 三栏 */
 .cols3{display:grid;grid-template-columns:230px minmax(0,1fr) 250px;gap:14px;align-items:start}
+.cols3>div{min-width:0}
 @media(max-width:1150px){.cols3{grid-template-columns:1fr}}
 .actorpill{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;margin-bottom:5px;background:#1d212d;cursor:pointer}
 .actorpill:hover{border-color:var(--acc)}
@@ -263,6 +265,90 @@ canvas#mapCanvas{width:auto;height:auto;display:block}
 .quickgrid .card{min-width:0}
 table td{white-space:nowrap}
 table .bigscroll td, .quickwrap td{white-space:normal}
+
+/* ========== 手机/窄屏适配（iPhone 16 等） ========== */
+.tblwrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+html{-webkit-text-size-adjust:100%}
+canvas#mapCanvas,canvas#battleCanvas{touch-action:none}
+canvas#battleCanvas{display:block;width:100%;height:auto}
+body{min-height:100vh}
+@supports(min-height:100dvh){body{min-height:100dvh}}
+
+@media(max-width:1100px){
+  .cols3>div:nth-child(2){order:1}
+  .cols3>div:nth-child(1){order:2}
+  .cols3>div:nth-child(3){order:3}
+}
+@media(max-width:820px){
+  body{font-size:14px}
+  main{padding:10px 10px calc(env(safe-area-inset-bottom,0px) + 14px);overflow-x:hidden}
+  header{flex-wrap:wrap;gap:6px;padding:8px 10px 2px}
+  .brand b{font-size:17px;letter-spacing:.5px}
+  .brand small{display:none}
+  .hbtn{margin-left:0;width:100%;justify-content:flex-end}
+  .hbtn .small{padding:5px 9px;font-size:11.5px}
+  nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 6px 0;margin-top:0}
+  nav::-webkit-scrollbar{display:none}
+  nav button{flex:none;white-space:nowrap;padding:9px 11px;font-size:13.5px;min-height:42px}
+  .card{padding:11px 10px}
+  .card h3{font-size:13.5px}
+  .row{gap:7px}
+  input[type=text],input[type=number],input[type=file],select,textarea{font-size:16px;max-width:100%}
+  input[type=number]{-webkit-appearance:none;-moz-appearance:textfield}
+  button.small{padding:5px 9px;min-height:30px}
+  label{max-width:100%}
+  footer{font-size:11px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}
+  .statusline{bottom:calc(env(safe-area-inset-bottom,0px) + 12px);max-width:92vw;text-align:center}
+  /* 弹窗整屏可用 */
+  .modal-mask{padding:0;align-items:flex-start}
+  .modal{width:100%;max-width:100%;margin:0;border-radius:0;border:none;min-height:100vh;min-height:100dvh;box-shadow:none}
+  .modal-head{position:sticky;top:0;z-index:6;background:#20242f;padding:10px 10px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .modal-body{max-height:none;padding:12px 10px calc(env(safe-area-inset-bottom,0px) + 16px)}
+  .avatar-area{gap:10px}
+  .attrgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .attrgrid .cell{padding:5px 3px}
+  .grid3{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .grid2{grid-template-columns:1fr}
+  /* 调查员小卡：保留大头像，同时给属性块留空间 */
+  .pccard .pchead{grid-template-columns:minmax(0,1fr) minmax(132px,44%)}
+  .pccard .pctile b{font-size:9px}
+  /* NPC 列改为横向堆叠 + 顶部隔线 */
+  .npccol+.npccol{border-left:none;padding-left:0;border-top:1px solid var(--line);padding-top:6px;margin-top:8px}
+  .npcminigrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  /* 地图 */
+  #mapWrap{max-height:62vh}
+  .zoomrow{flex-wrap:wrap}
+  .drag-hint{display:none}
+  #mapTools button{padding:6px 9px;font-size:12.5px}
+  /* 战斗 */
+  #combatTable{min-width:720px}
+  .battlecanvas-wrap{overflow:hidden}
+  .log{max-height:190px}
+  table th,table td{padding:5px 6px;font-size:12.5px}
+  .tblwrap table{min-width:640px}
+  .vehrow{grid-template-columns:1fr 84px}
+}
+@media(max-width:430px){
+  main{padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 10px)}
+  .card{padding:10px 8px}
+  #pcList{grid-template-columns:minmax(0,1fr)!important}
+  .pccard .pchead{grid-template-columns:minmax(0,1fr) minmax(122px,43%)}
+  .pccard .pctile b{font-size:8.5px;letter-spacing:0}
+  .pccard .pchead .pcav .emoji{font-size:44px}
+  .pccard .pchead .pcav{min-height:80px}
+  .avatar-area{flex-direction:column}
+  .preset-picker button{width:44px;height:44px;font-size:22px}
+  .modal-head .row{gap:4px}
+  .hint{font-size:12px}
+}
+
+/* 触屏细节 */
+button,.btn,input,select,label,textarea{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.npcmini button:active,.pccard button:active{transform:translateY(1px)}
+@media(max-width:430px){
+  .npcmini .row{gap:3px}
+  .npcmini button.small{padding:3px 6px;font-size:11px}
+}
 </style>
 </head>
 <body>
@@ -1768,7 +1854,7 @@ function drawRouteOutput(){
       <div><b class="muted">路线：</b> ${rows.length?rows.map(function(r,i){return (i? ' → ':'')+'<b>'+esc(m.points[r.leg.a].name)+'</b>';}).join('')+(rows.length?' → <b>'+esc(m.points[rows[rows.length-1].leg.b].name)+'</b>':'') : ''}</div>
       <div><span class="badge good">总 ${totalKm.toFixed(1)} km · 约 ${fmtDur(total)}</span></div></div>
       ${head?'<div class="hint" style="margin-bottom:6px">'+head+'</div>':''}
-      <table><thead><tr><th>路段</th><th>距离</th><th>载具(可换乘)</th><th>该段耗时</th><th>累计</th></tr></thead><tbody>`+
+      <div class="tblwrap"><table><thead><tr><th>路段</th><th>距离</th><th>载具(可换乘)</th><th>该段耗时</th><th>累计</th></tr></thead><tbody>`+
     rows.map(function(r,i){
       var acc=0; for(var k=0;k<=i;k++) acc+=rows[k].h;
       var opts=r.allowed.map(function(v){return '<option value="'+v.id+'"'+(r.selV===v.id?' selected':'')+'>'+esc(v.name)+'('+v.kmh+')</option>';}).join('');
@@ -1780,7 +1866,7 @@ function drawRouteOutput(){
         <td class="num">${fmtDur(r.h)}</td>
         <td class="num">${fmtDur(cum)}${' · '+fmtClock(cum)}</td>
       </tr>`;
-    }).join('')+`</tbody></table>
+    }).join('')+`</tbody></table></div>
     <div class="row" style="margin-top:8px"><button class="small ghost" onclick="copyRouteText()">📋 复制路线文字</button></div>`;
   drawMapCanvas();
 }
@@ -2093,7 +2179,7 @@ function combUseItem(){
 /* ================= 载具设置 / 骰子 / 备份 ================= */
 function renderVehicleTable(){
   var el=$('vehiclesTable'); if(!el) return;
-  el.innerHTML=`<table><thead><tr><th>载具/方式</th><th class="num">时速 km/h</th><th>备注</th><th></th></tr></thead><tbody>`+
+  el.innerHTML=`<div class="tblwrap"><table><thead><tr><th>载具/方式</th><th class="num">时速 km/h</th><th>备注</th><th></th></tr></thead><tbody>`+
     state.vehicles.map(function(v,i){
       return `<tr>
         <td><input type="text" value="${esc(v.name)}" data-i="${i}" data-k="name" onchange="onVehInput(this)" style="width:150px"></td>
@@ -2101,7 +2187,7 @@ function renderVehicleTable(){
         <td><input type="text" value="${esc(v.note||'')}" data-i="${i}" data-k="note" onchange="onVehInput(this)" style="width:100%"></td>
         <td><button class="small danger" onclick="delVehicle(${i})">✕</button></td>
       </tr>`;
-    }).join('')+`</tbody></table>
+    }).join('')+`</tbody></table></div>
     <div class="hint" style="margin-top:6px">每小时行进公里数 = 时间计算口径；也可把这里的数值改成你的团版规则（如 1920s 破车 35km/h）。</div>`;
 }
 function onVehInput(e){
@@ -2438,10 +2524,10 @@ function scaffoldSections(){
   </div>
   <div class="card">
     <div class="row" style="justify-content:space-between"><b id="combatTitle"></b><span id="combatRoundBadge" class="muted"></span></div>
-    <table id="combatTable"><thead><tr>
+    <div class="tblwrap"><table id="combatTable"><thead><tr>
       <th style="width:26px"></th><th>成员（下方增删）</th><th>阵营</th><th class="num">敏捷</th><th>生命</th>
       <th>SAN/MP</th><th>状态</th><th style="width:130px"></th>
-    </tr></thead><tbody id="combatBody"></tbody></table>
+    </tr></thead><tbody id="combatBody"></tbody></table></div>
     <div id="combatEmpty" class="hint" style="padding:10px">战斗场景为空：从上方加入调查员 / NPC。</div>
   </div>
   <div class="split">
@@ -3139,6 +3225,7 @@ function resetVehicles(){ state.vehicles=defaultVehicles(); saveState(); renderM
 
 /* ---------- 地图画布：地点/道路/角色/摆件 ---------- */
 var mapDrag=null;
+var mapDragMoved=false;
 var mapPanStart=null;
 function findMapHit(ev, includeTokens){
   var m=currentMap(); if(!m) return null;
@@ -3283,6 +3370,7 @@ function fallbackAvatar(g,x,y,r,a){
 }
 /* 选中/拖拽（优先角色与摆件） */
 function onCanvasDown(ev){
+  mapDragMoved=false;
   if(mapTool!=='select') return;
   var hit=findMapHit(ev,true);
   if(hit){ mapSel=hit; mapDrag=hit; }
@@ -3300,7 +3388,7 @@ function onCanvasDown(ev){
 function onCanvasMove(ev){
   if(mapPanStart){
     var dx=ev.clientX-mapPanStart.x, dy=ev.clientY-mapPanStart.y;
-    if(Math.abs(dx)+Math.abs(dy)>3) mapPanStart.moved=true;
+    if(Math.abs(dx)+Math.abs(dy)>3){ mapPanStart.moved=true; mapDragMoved=true; }
     if(mapPanStart.moved){
       var wr=$('mapWrap'); if(wr){
         wr.scrollLeft=mapPanStart.sl-dx;
@@ -3315,8 +3403,9 @@ function onCanvasMove(ev){
   var p=mapCanvasPos(ev);
   var list = mapDrag.type==='point'?m.points:mapDrag.type==='token'?(m.tokens||[]):(m.props||[]);
   var o=list[mapDrag.idx]; if(!o) return;
-  o.x=Math.max(10,Math.min(MAP_W-10,p.x));
-  o.y=Math.max(10,Math.min(MAP_H-10,p.y));
+  var nx=Math.max(10,Math.min(MAP_W-10,p.x)), ny=Math.max(10,Math.min(MAP_H-10,p.y));
+  if(Math.abs(nx-o.x)+Math.abs(ny-o.y)>2) mapDragMoved=true;
+  o.x=nx; o.y=ny;
   drawMapCanvas();
 }
 function onCanvasUp(){
@@ -3329,6 +3418,7 @@ function onCanvasUp(){
   mapDrag=null; saveStateQuiet(); drawMapCanvas();
 }
 function onCanvasClick(ev){
+  if(mapDragMoved){ mapDragMoved=false; return; }
   if(mapTool==='add'){
     var m=currentMap(); if(!m) return;
     var p=mapCanvasPos(ev);
@@ -3408,20 +3498,24 @@ function battleHit(ev){
 var battleDrag=null;
 function bindBattleCanvas(){
   var cv=$('battleCanvas'); if(!cv) return;
-  cv.addEventListener('mousedown',function(ev){
+  function battleDown(ev){
+    try{ if(cv.setPointerCapture) cv.setPointerCapture(ev.pointerId); }catch(e){}
     var h=battleHit(ev);
     if(h.best){ combActiveId=h.best; battleDrag=h.best; renderCombatRoster(); renderActivePanel(); }
     drawBattleScene();
-  });
-  cv.addEventListener('mousemove',function(ev){
+  }
+  function battleMove(ev){
     if(!battleDrag) return;
     var h=battleHit(ev);
     var sc=combatScene();
     if(sc.pos[battleDrag]){ sc.pos[battleDrag].x=Math.max(30,Math.min(B_W-30,h.x)); sc.pos[battleDrag].y=Math.max(30,Math.min(B_H-30,h.y)); }
     drawBattleScene();
-  });
-  cv.addEventListener('mouseup',function(){ battleDrag=null; saveStateQuiet(); });
-  cv.addEventListener('mouseleave',function(){ battleDrag=null; });
+  }
+  function battleUp(){ battleDrag=null; saveStateQuiet(); }
+  cv.addEventListener('pointerdown',battleDown);
+  cv.addEventListener('pointermove',battleMove);
+  cv.addEventListener('pointerup',battleUp);
+  cv.addEventListener('pointercancel',battleUp);
 }
 function onBattleBg(e){
   var f=e.target.files&&e.target.files[0]; if(!f) return;
@@ -3608,20 +3702,23 @@ function ensureV2Data(){
   if(!state.combat) state.combat={round:0,participants:[]};
   if(!state.combat.scene) state.combat.scene={bg:null,pos:{}};
 }
+function bindPointer(target){
+  if(!target) return;
+  ['pointerdown','pointermove','pointerup','pointercancel','pointerleave'].forEach(function(t){
+    target.addEventListener(t,function(ev){
+      if(t==='pointerdown') onCanvasDown(ev);
+      else if(t==='pointermove') onCanvasMove(ev);
+      else onCanvasUp();
+    });
+  });
+}
 function bindCanvasEvents(){
   var cv=$('mapCanvas'), wr=$('mapWrap');
-  var target=wr||cv;
   if(cv && wr){
-    target.addEventListener('mousedown',onCanvasDown);
-    target.addEventListener('mousemove',onCanvasMove);
-    target.addEventListener('mouseup',onCanvasUp);
-    target.addEventListener('mouseleave',onCanvasUp);
+    bindPointer(wr);
     cv.addEventListener('click',onCanvasClick);
   } else if(cv){
-    cv.addEventListener('mousedown',onCanvasDown);
-    cv.addEventListener('mousemove',onCanvasMove);
-    cv.addEventListener('mouseup',onCanvasUp);
-    cv.addEventListener('mouseleave',onCanvasUp);
+    bindPointer(cv);
     cv.addEventListener('click',onCanvasClick);
   }
   bindBattleCanvas();
@@ -3892,7 +3989,7 @@ function npcMiniHTML(a){
       <button class="small ghost" title="复制" onclick="duplicateActor('${a.id}')">⧉</button>
       <button class="small danger" title="删除" onclick="deleteActor('${a.id}')">🗑</button>
       <span style="flex:1"></span>
-      <span class="muted" style="font-size:10px">☰拖</span>
+      ${isCoarseTouch()?''+'<button class="small ghost" title="在阵营内前移" onclick="npcMoveInGroup(\'${a.id}\',-1)">◀</button><button class="small ghost" title="在阵营内后移" onclick="npcMoveInGroup(\'${a.id}\',1)">▶</button>':'<span class="muted" style="font-size:10px">☰拖</span>'}
     </div>
   </div>`;
 }
@@ -3937,6 +4034,24 @@ function npcDrop(ev){
   var nti=list.findIndex(function(a){return a.id===tgt.dataset.id;});
   list.splice(nti+ (di<nti?1:0), 0, it); // drop 目标之后
   saveStateQuiet(); renderNpcs(); toast('已调整顺序');
+}
+function isCoarseTouch(){
+  try{ return window.matchMedia && window.matchMedia('(pointer:coarse)').matches; }catch(e){ return false; }
+}
+function npcMoveInGroup(id, dir){
+  var arr=state.actors.filter(function(a){return a.kind==='npc';});
+  var i=arr.findIndex(function(a){return a.id===id;}); if(i<0) return;
+  var gi=npcGroupIdx(arr[i]);
+  var j=i+dir;
+  while(j>=0&&j<arr.length&&npcGroupIdx(arr[j])!==gi) j+=dir;
+  if(j<0||j>=arr.length) return;
+  var tgtId=arr[j].id;
+  var all=state.actors;
+  var di=all.findIndex(function(a){return a.id===id;}); if(di<0) return;
+  var it=all.splice(di,1)[0];
+  var nti=all.findIndex(function(a){return a.id===tgtId;});
+  all.splice(nti+(dir>0?1:0),0,it);
+  saveStateQuiet(); renderNpcs();
 }
 function quickSetNpcSide(id, sel){
   var a=state.actors.filter(function(x){return x.id===id;})[0]; if(!a) return;
@@ -4249,10 +4364,11 @@ function renderMapsShell(){
   if(!state.maps.length){ var mh=$('mapHint'); if(mh) mh.textContent='请先“新建场景”。'; return; }
   var m=currentMap(); if(!m) return;
   var sc=$('mapScale'); if(sc) sc.value=m.kmPerPx||0.01;
-  if(m.zoom==null){
+  var isTouch=isCoarseTouch()||(window.innerWidth||0)<=900;
+  var wr0=$('mapWrap');
+  if(m.zoom==null || (isTouch && wr0 && wr0.clientWidth>50 && MAP_W*(m.zoom||1)>wr0.clientWidth+8)){
     var fitz=1;
-    var wr0=$('mapWrap');
-    if(wr0 && wr0.clientWidth>50) fitz=Math.max(0.45,Math.min(2,(wr0.clientWidth-6)/MAP_W));
+    if(wr0 && wr0.clientWidth>50) fitz=Math.max(0.32,Math.min(2,(wr0.clientWidth-6)/MAP_W));
     m.zoom=fitz; saveStateQuiet();
   }
   mapZoom=m.zoom||1;
