@@ -400,6 +400,36 @@ body.bgcustom tr:hover td{background:rgba(255,255,255,.03)}
 body.bgcustom .pchead .pcav{background:radial-gradient(120% 90% at 30% 20%,var(--uic-a) 0%,var(--uic-d) 70%)}
 body.bgcustom .avatar{box-shadow:0 1px 6px rgba(0,0,0,.35)}
 body.bgcustom .legcard>summary,.legcard{border-color:var(--uic-line)}
+/* ---- 全量补色：按钮/头像底/芯片/素材摆件/列表行/地图工具/战斗按钮等，全部跟随主题 ---- */
+body.bgcustom button{background:var(--uic-d);border-color:var(--uic-line);color:var(--ink)}
+body.bgcustom button.primary{background:linear-gradient(180deg,var(--acc),var(--acc2));border-color:rgba(201,162,94,.65);color:#241d10}
+body.bgcustom button.ghost{background:transparent}
+body.bgcustom button.danger{background:rgba(160,67,67,.16);color:#f0c6c6;border-color:rgba(224,143,143,.4)}
+body.bgcustom button:hover{border-color:var(--acc);color:var(--gold)}
+body.bgcustom button.primary:hover{color:#241d10;filter:brightness(1.07)}
+body.bgcustom button.danger:hover{color:#ffd9d9}
+body.bgcustom button:disabled{opacity:.45}
+body.bgcustom .avatar{background:radial-gradient(120% 110% at 30% 18%,var(--uic-a) 0%,var(--uic-d) 78%);border-color:rgba(201,162,94,.55)}
+body.bgcustom .preset-picker button{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .preset-picker button.on{border-color:var(--acc);box-shadow:0 0 0 2px rgba(201,162,94,.55);background:rgba(201,162,94,.14)}
+body.bgcustom .chip,body.bgcustom .propchip,body.bgcustom .loadout-mini .chip,body.bgcustom .skillchip{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .skillchip.added{background:rgba(201,162,94,.16);border-color:var(--acc)}
+body.bgcustom .skilldef{background:rgba(0,0,0,.14);border-color:var(--uic-line)}
+body.bgcustom .listitem{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .wrow,body.bgcustom .plotrow{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .propbtn{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .propbtn:hover{border-color:var(--acc)}
+body.bgcustom .propbtn.addfile{color:var(--gold)}
+body.bgcustom .zoomrow,body.bgcustom .tabs-mini button,body.bgcustom #mapTools button{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom #mapTools button.active,body.bgcustom .tabs-mini button.active{border-color:var(--acc);color:var(--gold)}
+body.bgcustom .bar{background:rgba(0,0,0,.5);border-color:rgba(255,255,255,.08)}
+body.bgcustom .adjrow .adjbtns button,body.bgcustom .addbar button,body.bgcustom .pcbtns button,body.bgcustom .pcav button{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .scene-side,body.bgcustom .badge{background:rgba(0,0,0,.22)}
+body.bgcustom .npchead input{background:transparent;color:var(--gold)}
+body.bgcustom .npchead input:focus{background:rgba(255,255,255,.05)}
+body.bgcustom .detail-card,body.bgcustom .comb-actor-mini{background:var(--uic-d)}
+body.bgcustom .mapcard{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .mapcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
 
 /* ================= 折叠卡片（details） ================= */
 details.ccard>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
@@ -479,6 +509,8 @@ body.decoroff .decor-bit{display:none}
 button#decorToggle.on{border-color:rgba(201,162,94,.6);color:var(--gold)}
 @media(max-width:700px){
   .floatpanel{width:calc(100vw - 8px);border-radius:10px}
+  .floatpanel .floathead .hint{display:none}
+  .floatpanel{max-height:calc(100dvh - 8px);max-height:calc(100vh - 8px)}
   .floatpanel .floatbody{max-height:calc(100vh - 170px)}
   .note-editor{min-height:130px}
   .floatpanel.script-on{width:calc(100vw - 8px);height:calc(100dvh - 14px);height:calc(100vh - 14px)}
@@ -491,6 +523,53 @@ button#decorToggle.on{border-color:rgba(201,162,94,.6);color:var(--gold)}
   .comb-side .card{position:static;max-height:none;overflow:visible}
   .mapcols>div:first-child .card{width:100%}
 }
+
+/* ================= 本轮增补：地图多场景卡片 / 骰子页签 / SAN 检定 / 战斗表防溢出 ================= */
+/* 多地图卡片（最多 3 张，卡片切换/改名/删除） */
+.mapcards{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-bottom:8px}
+.maplbl{display:inline-flex;align-items:center;color:var(--muted);font-size:12px;margin-right:2px;flex:none}
+.mapcard{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;
+  padding:3px 6px 3px 10px;background:linear-gradient(180deg,#2c3141,#202530);cursor:pointer;
+  min-width:150px;max-width:270px;flex:1 1 170px}
+.mapcard:hover{border-color:var(--acc)}
+.mapcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc);background:linear-gradient(180deg,#373042,#2a2334)}
+.mapcard .mcname{flex:1;min-width:0;font-weight:600;color:var(--gold);background:transparent;
+  border:1px dashed transparent;padding:2px 4px;border-radius:6px;font-size:12.5px}
+.mapcard .mcname:hover,.mapcard .mcname:focus{border-color:var(--line);background:rgba(255,255,255,.04)}
+.mapcard .mcdel{padding:1px 6px;font-size:11px}
+.mapcard.mcadd,.mapcard.mcdim{border-style:dashed;justify-content:center;cursor:pointer;min-width:120px;flex:0 1 auto;color:var(--muted);text-align:center;font-size:12.5px}
+.mapcard.mcadd:hover{border-color:var(--acc);color:var(--gold)}
+.mapcard.mcdim{opacity:.6;cursor:not-allowed}
+/* 骰子台子页签 + SAN 检定区域 */
+.dice-tabs{margin:0 0 10px}
+.dice-tabs button{font-size:13px;padding:5px 16px}
+.sanrows{display:grid;gap:6px}
+.sanrows .row{margin:0;padding:3px 0}
+.sanstep{display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(180deg,#caa35f,#9a7638);color:#241d10;font-weight:700;font-size:12px;font-family:var(--mono)}
+/* 战斗成员表：紧凑且不溢出 */
+#combatTable td{white-space:nowrap}
+#combatTable .combmn{display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#combatTable .combmn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;display:inline-block;vertical-align:bottom}
+#combatTable .combnm{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+#combatTable .combactns{white-space:nowrap}
+#combatTable .combactns button{padding:2px 7px;font-size:11px;white-space:nowrap;margin-left:2px}
+.comb-mid .tblwrap{overflow-x:auto;overflow-y:visible}
+@media(max-width:820px){
+  #combatTable{min-width:680px}
+}
+/* bgcustom：补上特定高优先级控件（x / 删除 / 头像 / 地图卡片等）的背景适配 */
+body.bgcustom .pccard .pchead .pcav{background:radial-gradient(120% 90% at 30% 20%,var(--uic-a) 0%,var(--uic-d) 70%);border-color:var(--uic-line)}
+body.bgcustom .loadout-mini .chip .x,body.bgcustom .chip .x,body.bgcustom .skillchip .del,
+body.bgcustom .propbtn .delcust,body.bgcustom .mapcard .mcdel{background:rgba(0,0,0,.28);border:none;color:#ffcfcf;box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+body.bgcustom .loadout-mini .chip .x:hover,body.bgcustom .chip .x:hover,body.bgcustom .skillchip .del:hover,
+body.bgcustom .propbtn .delcust:hover,body.bgcustom .mapcard .mcdel:hover{background:#a04343;color:#fff}
+body.bgcustom .mapcard{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
+body.bgcustom .mapcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+body.bgcustom .mapcard .mcname{color:var(--gold)}
+body.bgcustom .dice-tabs button.active{background:rgba(201,162,94,.16)}
+/* 地图“加路”条带内联底色，主题下用 CSS 变量强制覆盖 */
+body.bgcustom #mapLegsCard .listitem.row{background:var(--uic-d) !important;border-color:var(--uic-line)}
 </style>
 </head>
 <body>
@@ -2262,15 +2341,20 @@ function afterHpChange(c){
 function combatAttackRoll(){
   var c=activeComb(); if(!c) return;
   if(c.state==='死亡'||c.state==='离场'){ toast('该成员已退场'); return; }
-  var wi=num($('ap-wpn').value);
-  var weapon = wi>=0 && c.weapons[wi] ? c.weapons[wi] : {name:'徒手',skill:'斗殴',damage:'1D3+DB',ammoCap:0,ammoCur:0};
+  var wpnSel=$('ap-wpn');
+  var wi=(wpnSel&&wpnSel.value!=='')?num(wpnSel.value):0;
+  var weapon = wi>=0 && c.weapons[wi] ? c.weapons[wi] : (c.weapons&&c.weapons[0]?c.weapons[0]:{name:'徒手',skill:'斗殴',damage:'1D3+DB',ammoCap:0,ammoCur:0});
   if(wi>=0&&c.weapons[wi]&&c.weapons[wi].ammoCap>0){
     var w=c.weapons[wi];
     if((w.ammoCur||0)<=0){ toast('「'+w.name+'」没有弹药，先装填'); return; }
   }
-  var tid=$('ap-target')?$('ap-target').value:null;
+  var tgtSel=$('ap-target');
+  var tid=(tgtSel&&tgtSel.value)?tgtSel.value:combTargetId;
   var t=combById(tid);
-  if(!t){ toast('先选目标'); return; }
+  if(!t){
+    t=state.combat.participants.filter(function(x){return x.id!==c.id && x.state!=='死亡'&&x.state!=='离场';})[0]||null;
+    if(!t){ toast('没有可攻击的目标'); return; }
+  }
   var skillName=weapon.skill||'斗殴';
   var skillVal=25;
   (c.skills||[]).forEach(function(s){ if(s.name===skillName) skillVal=s.total; });
@@ -2312,7 +2396,8 @@ function maxRollExpr(expr){
 }
 function combReload(){
   var c=activeComb(); if(!c) return;
-  var wi=num($('ap-wpn').value);
+  var wpnSel=$('ap-wpn');
+  var wi=(wpnSel&&wpnSel.value!=='')?num(wpnSel.value):0;
   var w=c.weapons&&c.weapons[wi]; if(!w||!w.ammoCap) return;
   var idx=(c.inv||[]).findIndex(function(it){return it.effect==='ammo'&&it.qty>0;});
   if(idx<0){ toast('背包里没有“弹药”类道具'); return; }
@@ -2450,6 +2535,7 @@ window.addEventListener('DOMContentLoaded', initApp);
 var AVATAR_PRESETS = ['🎩','👒','🧢','🕶️','🎧','🧣','😎','🤠','🧔','👩','🦸','🧙','🕵️','👮','🧑⚕️','🧑🎓','🧟','👽','🐱','🦉'];
 var SIDES = ['调查员','盟友','中立','敌人'];
 function sideOf(a){ return a.side || (a.kind==='pc'?'调查员':'敌人'); }
+function sideShort(side){ var m={调查员:'调',盟友:'盟',中立:'中',敌人:'敌'}; return m[side]||String(side||'').slice(0,1)||'?'; }
 /* 预置武器库：字段 [分组, 名称, 技能, 伤害, 射程, 弹匣] —— 数值对齐卡内“武器列表”工作表与规则书 */
 var PRESET_WEAPONS = [
   ['近战·徒手','拳打脚踢','斗殴','1D3+DB','接触',0],
@@ -2613,11 +2699,9 @@ function scaffoldSections(){
     <div>
       <div class="card">
         <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
-          <div class="row" style="gap:6px">
-            <label>场景<select id="mapSel" onchange="onMapSelect()"></select></label>
-            <button class="small" onclick="newMap()">＋ 新建</button>
-            <button class="small ghost" onclick="renameMap()">重命名</button>
-            <button class="small danger" onclick="deleteMap()">删场景</button>
+          <div style="flex:1;min-width:280px">
+            <div class="mapcards" id="mapCardBar"></div>
+            <select id="mapSel" style="display:none" onchange="onMapSelect()"></select>
           </div>
           <div class="row" style="gap:6px;flex-wrap:wrap">
             <button class="small ghost" onclick="loadDemoMap()">示例地图</button>
@@ -2699,7 +2783,7 @@ function scaffoldSections(){
         <div class="row" style="justify-content:space-between"><b id="combatTitle"></b><span id="combatRoundBadge" class="muted"></span></div>
         <div class="tblwrap"><table id="combatTable"><thead><tr>
           <th style="width:26px"></th><th>成员（下方增删）</th><th>阵营</th><th class="num">敏捷</th><th>生命</th>
-          <th>SAN/MP</th><th>状态</th><th style="width:130px"></th>
+          <th>SAN</th><th>MP</th><th>状态</th><th style="width:128px"></th>
         </tr></thead><tbody id="combatBody"></tbody></table></div>
         <div id="combatEmpty" class="hint" style="padding:10px">战斗场景为空：从上方加入调查员 / NPC。</div>
       </div>
@@ -3791,20 +3875,22 @@ function renderCombatRoster(){
     var st=c.state||'正常';
     var cls=st==='死亡'?'bad':(st==='正常'?'good':(st==='昏迷'||st==='濒死'||st==='疯狂'?'warn':''));
     var hpPct=c.hp.max?Math.max(0,Math.min(100,c.hp.cur/c.hp.max*100)):0;
-    var sideClass='side-'+sideOf(c);
+    var side=sideOf(c), sideClass='side-'+side;
+    var note=(c.note||c.notes||'');
     return `<tr data-id="${c.id}" style="cursor:pointer" onclick="selectComb('${c.id}')">
       <td class="num">${i+1}</td>
-      <td><div class="row" style="gap:8px;flex-wrap:nowrap">${avatarView(c,'sm')}<div>
-        <b>${esc(c.name)}</b>${c.tag?' <span class=muted>'+esc(c.tag)+'</span>':''}
-        <div class="hint">${esc((c.note||'').slice(0,40))}</div></div></div></td>
-      <td><span class="sidebadge ${esc(sideClass)}">${esc(sideOf(c))}</span></td>
+      <td><div class="row" style="gap:8px;flex-wrap:nowrap;max-width:260px">${avatarView(c,'sm')}<div style="min-width:0">
+        <div class="combmn"><b>${esc(c.name)}</b>${c.tag?' <span class="muted">'+esc(c.tag)+'</span>':''}</div>
+        ${note?'<div class="combnm" title="'+esc(note)+'">'+esc(note.slice(0,22))+'</div>':''}</div></div></td>
+      <td><span class="sidebadge ${esc(sideClass)}" title="${esc(side)}">${esc(sideShort(side))}</span></td>
       <td class="num">${c.dex||0}</td>
-      <td><div style="display:flex;align-items:center;gap:6px"><div class="bar hp" style="width:56px"><i style="width:${hpPct}%"></i></div><span class="num" style="font-size:11px">${c.hp.cur}/${c.hp.max}</span></div></td>
-      <td class="num" style="font-size:11px">SAN ${c.san&&c.san.max?c.san.cur+'/'+c.san.max:'—'} · MP ${c.mp&&c.mp.max?c.mp.cur+'/'+c.mp.max:'—'}</td>
+      <td><div style="display:flex;align-items:center;gap:6px;white-space:nowrap"><div class="bar hp" style="width:52px"><i style="width:${hpPct}%"></i></div><span class="num" style="font-size:11px">${c.hp.cur}/${c.hp.max}</span></div></td>
+      <td class="num" style="font-size:11px">${c.san&&c.san.max?c.san.cur+'/'+c.san.max:'—'}</td>
+      <td class="num" style="font-size:11px">${c.mp&&c.mp.max?c.mp.cur+'/'+c.mp.max:'—'}</td>
       <td><span class="badge ${cls}">${esc(st)}</span></td>
-      <td style="text-align:right">
-        <button class="small" onclick="event.stopPropagation();combSelectTarget('${c.id}')">🎯目标</button>
-        <button class="small danger" onclick="event.stopPropagation();combatRemove('${c.id}')">移出</button></td>
+      <td class="combactns" style="text-align:right">
+        <button class="small" title="设为攻击目标" onclick="event.stopPropagation();combSelectTarget('${c.id}')">🎯</button>
+        <button class="small danger" title="移出战斗" onclick="event.stopPropagation();combatRemove('${c.id}')">移出</button></td>
     </tr>`;
   }).join('');
 }
@@ -4563,9 +4649,70 @@ function zoomFit(){
   var z=Math.max(0.35,Math.min(2.2,(wr.clientWidth-6)/MAP_W));
   mapZoomTo(z);
 }
+/* 多地图卡片：最多 3 张，卡片切换/改名/删除，隐藏的 #mapSel 仅作兼容 */
+function mapCardBarHTML(){
+  var maps=state.maps||[];
+  var html=maps.map(function(m){
+    var act=(m.id===state.activeMapId)?' on':'';
+    return '<span class="mapcard'+act+'" title="点击切换场景" onclick="setActiveMap(\''+m.id+'\')">'
+      +'<input class="mcname" value="'+esc(m.name)+'" spellcheck="false" title="点这里改名" onclick="event.stopPropagation()" onfocus="this.select()" onchange="renameMapIdFromInput(this,\''+m.id+'\')">'
+      +'<button class="mcdel small danger" title="删除这张地图" onclick="event.stopPropagation();deleteMapId(\''+m.id+'\')">🗑</button></span>';
+  }).join('');
+  if(maps.length>=3) html+='<span class="mapcard mcdim" title="最多保留 3 张地图">＋ 新建（已满 3 张）</span>';
+  else html+='<span class="mapcard mcadd" title="新建地图（最多 3 张）" onclick="newMap()">＋ 新建地图</span>';
+  return '<span class="maplbl">场景</span>'+html;
+}
+function renderMapCards(){
+  var bar=$('mapCardBar'); if(!bar) return;
+  bar.innerHTML=mapCardBarHTML();
+}
+function setActiveMap(id){
+  if((state.maps||[]).filter(function(x){return x.id===id;}).length===0) return;
+  state.activeMapId=id;
+  routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
+  saveStateQuiet(); renderMapsShell();
+}
+function renameMapIdFromInput(inp,id){
+  if(!inp) return;
+  var m=(state.maps||[]).filter(function(x){return x.id===id;})[0];
+  if(!m) return;
+  var nm=String(inp.value||'').trim()||m.name;
+  if(m.name!==nm){ m.name=nm; saveStateQuiet(); }
+  inp.value=m.name;
+  var sel=$('mapSel'); if(sel) sel.value=m.id;
+  renderMapsShell();
+}
+function renameMapId(id){
+  var m=(state.maps||[]).filter(function(x){return x.id===id;})[0]; if(!m) return;
+  var name=prompt('给地图重命名：', m.name);
+  if(name===null) return;
+  m.name=String(name).trim()||m.name;
+  saveStateQuiet(); renderMapsShell();
+}
+function deleteMapId(id){
+  var m=(state.maps||[]).filter(function(x){return x.id===id;})[0]; if(!m) return;
+  if(!confirmBox('删除地图「'+m.name+'」？（地点/道路会被一并删除，角色不受影响）')) return;
+  state.maps=state.maps.filter(function(x){return x.id!==id;});
+  if(state.activeMapId===id) state.activeMapId=state.maps.length?state.maps[0].id:null;
+  routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
+  saveState(); renderMapsShell();
+  if(!state.maps.length) toast('没有地图了，点“新建地图”重建');
+}
+function newMap(){
+  if((state.maps||[]).length>=3){ toast('最多同时保留 3 张地图'); return; }
+  var name=prompt('新地图名称：','地图 '+(state.maps.length+1));
+  if(name===null) return;
+  var m={id:uid('map'),name:String(name||'').trim()||'未命名地图',kmPerPx:0.02,background:null,points:[],legs:[],props:[],tokens:[],zoom:1};
+  state.maps.push(m); state.activeMapId=m.id; routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
+  saveState(); renderMapsShell();
+  toast('已新建地图「'+m.name+'」');
+}
 function renderMapsShell(){
+
+  renderMapCards();
   var sel=$('mapSel'); if(!sel) return;
   sel.innerHTML=state.maps.map(function(m){return '<option value="'+m.id+'"'+(m.id===state.activeMapId?' selected':'')+'>'+esc(m.name)+'</option>';}).join('')||'<option value="">(无场景)</option>';
+  if(sel.value!==(state.activeMapId||'')) sel.value=state.activeMapId||'';
   if(!state.maps.length){ var mh=$('mapHint'); if(mh) mh.textContent='请先“新建场景”。'; return; }
   var m=currentMap(); if(!m) return;
   var sc=$('mapScale'); if(sc) sc.value=m.kmPerPx||0.01;
@@ -4672,35 +4819,47 @@ function addCustomPropFiles(e){
 function drawOver(ctx,sc){
   ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.setLineDash([6,8]);
   ctx.beginPath(); ctx.moveTo(B_W/2,0); ctx.lineTo(B_W/2,B_H); ctx.stroke(); ctx.setLineDash([]);
+  // 更大的名牌与三行彩条：约为旧尺寸的 1.5~2 倍，标出 H/S/M 与 cur/max，方便 Keeper 看清
   function miniBar(cx,y,cur,max,hex,ch){
-    var bw=46,h=6, pct=max>0?Math.max(0,Math.min(1,cur/max)):0;
-    ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(cx-bw/2-1,y-1,bw+2,h+2);
-    ctx.fillStyle=hex; ctx.fillRect(cx-bw/2,y,bw*pct,h);
-    ctx.font='bold 9px Menlo,monospace'; ctx.fillStyle='#fff';
-    ctx.textAlign='left'; ctx.fillText(ch,cx-bw/2-8,y+6);
+    var bw=58,h=11, pct=max>0?Math.max(0,Math.min(1,cur/max)):0;
+    ctx.font='bold 15px Menlo,monospace';
+    var lw=ctx.measureText(ch).width;
+    var txt=(max>0)?(cur+'/'+max):'—';
+    ctx.font='bold 11px Menlo,monospace';
+    var tw=ctx.measureText(txt).width;
+    var x0=cx-bw/2, px=x0-lw-7;
+    var groupW=bw+lw+tw+14;
+    ctx.fillStyle='rgba(0,0,0,.62)';
+    ctx.fillRect(px-2,y-2,groupW,h+4);
+    ctx.fillStyle=hex; ctx.fillRect(x0,y,bw*pct,h);
+    if(pct<1){ ctx.fillStyle='rgba(255,255,255,.12)'; ctx.fillRect(x0+bw*pct,y,bw*(1-pct),h); }
+    ctx.font='bold 15px Menlo,monospace'; ctx.textAlign='left'; ctx.fillStyle='#fff';
+    ctx.fillText(ch,px+3,y+10);
+    ctx.font='bold 11px Menlo,monospace'; ctx.fillStyle='#fff';
+    ctx.fillText(txt,x0+bw+5,y+10);
     ctx.textAlign='center';
   }
   state.combat.participants.forEach(function(c){
     var p=(sc.pos||{})[c.id]; if(!p) return;
     var active = combActiveId===c.id;
-    drawAvatarOnCanvas(ctx,p.x,p.y,20,c);
-    // 名牌与护甲同排但分开的黑底白字，不再互相遮挡
-    ctx.font='bold 12px "PingFang SC",sans-serif';
-    var nm=String(c.name||'').slice(0,10);
+    drawAvatarOnCanvas(ctx,p.x,p.y,24,c);
+    ctx.font='bold 16px "PingFang SC",sans-serif';
+    var nm=String(c.name||'').slice(0,8);
     var armStr=c.armor>0?('🛡'+c.armor):'';
     var nw=ctx.measureText(nm).width;
     var aw=armStr?ctx.measureText(armStr).width:0;
     var groupW=nw+aw+(armStr?12:0);
     var x0=p.x-groupW/2;
-    if(nm) plateText(ctx,nm,x0+nw/2,p.y+34,'bold 12px "PingFang SC",sans-serif');
-    if(armStr) plateText(ctx,armStr,x0+nw+8+aw/2,p.y+34,'bold 11px "PingFang SC",sans-serif');
-    miniBar(p.x,p.y+46, (c.hp&&c.hp.cur)||0,(c.hp&&c.hp.max)||0,'#6fbf73','H');
-    miniBar(p.x,p.y+56, (c.san&&c.san.cur)||0,(c.san&&c.san.max)||0,'#a78fd1','S');
-    miniBar(p.x,p.y+66, (c.mp&&c.mp.cur)||0,(c.mp&&c.mp.max)||0,'#6fa7d6','M');
-    if(active){ ctx.strokeStyle='#e3c47f'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(p.x,p.y,30,0,Math.PI*2); ctx.stroke(); }
+    if(nm) plateText(ctx,nm,x0+nw/2,p.y+38,'bold 16px "PingFang SC",sans-serif');
+    if(armStr) plateText(ctx,armStr,x0+nw+8+aw/2,p.y+38,'bold 13px "PingFang SC",sans-serif');
+    miniBar(p.x,p.y+52, (c.hp&&c.hp.cur)||0,(c.hp&&c.hp.max)||0,'#6fbf73','H');
+    miniBar(p.x,p.y+66, (c.san&&c.san.cur)||0,(c.san&&c.san.max)||0,'#a78fd1','S');
+    miniBar(p.x,p.y+80, (c.mp&&c.mp.cur)||0,(c.mp&&c.mp.max)||0,'#6fa7d6','M');
+    if(active){ ctx.strokeStyle='#e3c47f'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(p.x,p.y,32,0,Math.PI*2); ctx.stroke(); }
   });
   ctx.textAlign='left';
 }
+
 function combAdjustVal(kind,sign){
   var c=activeComb(); if(!c) return;
   var key=kind==='hp'?'ap-dmg':(kind==='mp'?'ap-mp':'ap-san');
@@ -4745,12 +4904,7 @@ function combatCastSpell(idx){
 }
 function renderActivePanel(){
   var c=activeComb(); var el=$('activePanel'); if(!el) return;
-  if(!c){ el.innerHTML='<div class="hint">点场景里的头像或成员行，这里出现 HP/攻击/道具/法术面板。</div>'; return; }
-  var alive=state.combat.participants.filter(function(x){return x.id!==c.id && x.state!=='死亡'&&x.state!=='离场';});
-  var targetOpts=alive.map(function(x){return '<option value="'+x.id+'"'+(combTargetId===x.id?' selected':'')+'>'+esc(x.name)+' ('+esc(sideOf(x))+')</option>';}).join('');
-  var wpnOpts=(c.weapons||[]).map(function(w,i){
-    return '<option value="'+i+'">'+esc(w.name)+(w.skill?' ('+esc(w.skill)+')':'')+' ｜'+esc(w.damage)+(w.ammoCap>0?(' · 弹 '+((w.ammoCur||0))+'/'+w.ammoCap):'')+'</option>';
-  }).join('')||'<option value="-1">（无武器/徒手）</option>';
+  if(!c){ el.innerHTML='<div class="hint">点场景里的头像或成员行，这里出现 HP/SAN/MP/属性/法术/背包面板。</div>'; return; }
   var invOpts=(c.inv||[]).filter(function(it){return it.qty>0;}).map(function(it,i){return '<option value="'+i+'">'+esc(it.name)+' ×'+it.qty+(it.effect==='other'&&it.note?'（'+esc(it.note)+'）':'')+'</option>';}).join('');
   var spellBtns=(c.spells||[]).map(function(sp,i){
     var costDesc=[];
@@ -4806,14 +4960,6 @@ function renderActivePanel(){
     <button class="small primary" onclick="combSetAttrs()">💾 保存属性并同步档案</button>
     <span class="hint">DB 自动按力量+体型重算；上限不覆盖手填值</span>
   </div>
-  <h4 class="small-title">🗡 攻击（自动判定）</h4>
-  <div class="row" style="gap:6px;flex-wrap:wrap">
-    <label>武器<select id="ap-wpn">${wpnOpts}</select></label>
-    <label>目标<select id="ap-target">${targetOpts}</select></label>
-    <button class="primary" onclick="combatAttackRoll()" ${!alive.length?'disabled':''}>🎲 攻击检定</button>
-    ${(c.weapons||[]).some(function(w){return w.ammoCap>0;})?'<button class="small" onclick="combReload()">装填</button>':''}
-  </div>
-  <div class="hint">命中档：普通≤技能 / 困难≤半值 / 极难≤1/5；出 1 大成功按满伤；≥96 大失败。有弹匣武器每枪-1。</div>
   <h4 class="small-title">🔮 施放法术</h4>
   <div class="row" style="gap:6px;flex-wrap:wrap">${spellBtns||'<span class="hint">没有可施放的法术，可在下方“法术清单”即时添加。</span>'}</div>
   <div class="vdiv"></div>
@@ -5039,6 +5185,8 @@ function ensureV2Data(){
   diceThrBig=Math.max(1,Math.min(100,Math.round(num(state.ui.dice.bf)||100)));
   if(diceThrSmall>diceThrBig){ var _dt=diceThrSmall; diceThrSmall=diceThrBig; diceThrBig=_dt; }
   diceHistory=Array.isArray(state.ui.dice.hist)?state.ui.dice.hist.slice(0,120):[];
+  diceTab=(state.ui.dice.tab==='san')?'san':'roll';
+  var _san=sanCfg();
   if(state.ui.decor==null) state.ui.decor=true;
 }
 function switchTab(name){
@@ -5311,6 +5459,7 @@ var diceTarget=null;            // {id,name,kind,skills[]}
 var diceHistory=[];             // 本次会话保留，不再随面板关闭清空
 var diceThrSmall=1;             // 大成功阈值：1D100 掷出 ≤ 此值
 var diceThrBig=96;              // 大失败阈值：1D100 掷出 ≥ 此值
+var diceTab='roll';            // 骰子台子页签：roll / san
 
 function renderNav(){
   var nav=$('nav'); if(!nav) return;
@@ -5411,6 +5560,255 @@ function renameNoteTab(i){
   var tw=$('noteTabs'); if(tw) tw.innerHTML=noteTabsHTML();
   toast('笔记卡已改名：'+nm);
 }
+/* ---------- 骰子台：子页签（掷骰 / SAN 检定）+ 规则书 SAN 流程 ---------- */
+var SAN_SYMPTOMS_BOOK=[
+  {n:'失忆', d:'只记得最后身处的安全地点，却不知如何来到这里', dur:'1D10 轮'},
+  {n:'假性残疾', d:'心理性的失明、失聪或躯体缺失感', dur:'1D10 轮'},
+  {n:'暴力倾向', d:'对身边的敌人与友方进行无差别攻击', dur:'1D10 轮'},
+  {n:'偏执', d:'以为有人窥视、同伴中有叛徒，万事皆虚', dur:'1D10 轮'},
+  {n:'人际依赖', d:'把某人误认成背景中的“重要之人”并紧抓不放', dur:'1D10 轮'},
+  {n:'昏厥', d:'当场昏倒', dur:'1D10 轮'},
+  {n:'逃避行为', d:'用尽手段逃离当前所在（可能抛下同伴）', dur:'1D10 轮'},
+  {n:'歇斯底里', d:'大笑、哭泣、嘶吼、恐惧等极端情绪', dur:'1D10 轮'},
+  {n:'恐惧', d:'患上恐惧症：可再 D100 查恐惧症状表挑一个恐惧源', dur:'1D10 轮'},
+  {n:'躁狂', d:'陷入某种躁狂诱因：可再 D100 查躁狂症状表', dur:'1D10 轮'}
+];
+var SAN_CUSTOM_DEFAULT='尖叫着指认月亮｜1D10 轮\n抱着“珍贵之物”反复喃喃自语｜1D10 轮';
+function sanCfg(){
+  if(!state.ui) state.ui={};
+  if(!state.ui.san) state.ui.san={};
+  var c=state.ui.san;
+  if(!(c.checkN>0)) c.checkN=1;
+  if(!(c.checkSides>=2)) c.checkSides=100;
+  if(!(c.lossN>0)) c.lossN=1;
+  if(!(c.lossSides>=2)) c.lossSides=6;
+  if(!(c.trig>0)) c.trig=5;
+  if(c.set!=='custom') c.set='book';
+  if(c.custom==null) c.custom=SAN_CUSTOM_DEFAULT;
+  return c;
+}
+function diceTabsBarHTML(){
+  return `<div class="row tabs-mini dice-tabs">
+    <button id="dtab-roll" class="${diceTab!=='san'?'active':''}" onclick="switchDiceTab('roll')">🎲 掷骰</button>
+    <button id="dtab-san" class="${diceTab==='san'?'active':''}" onclick="switchDiceTab('san')">🧠 SAN 检定</button>
+  </div>`;
+}
+function switchDiceTab(t){
+  if(t!=='san') t='roll';
+  diceTab=t;
+  if(state&&state.ui){ if(!state.ui.dice) state.ui.dice={bs:1,bf:96,hist:[]}; state.ui.dice.tab=t; }
+  storeDiceState();
+  if(openFloatPanel==='dice'){ buildFloatPanel(); positionFloatPanel(); }
+}
+function diceActorBarHTML(useSkill){
+  var skillHTML=useSkill?'<select id="diceSkill" style="min-width:170px" onchange="diceSkillChanged(this)"><option value="">（不使用技能）</option></select><span class="muted" id="diceSkillVal"></span>':'';
+  return `<div class="note-tools" style="border-top:1px dashed var(--line);border-bottom:none;padding-top:6px;margin-bottom:6px">
+      <span class="muted" style="font-size:12px">选择掷骰角色：</span>
+      <span id="diceActorChips">${floatActorsChips('target')}</span>${skillHTML}
+    </div>
+    <div class="hint" id="diceTargetLbl" style="margin-bottom:6px"></div>`;
+}
+function diceRollBodyHTML(){
+  return `
+      <div class="dice-num row" style="gap:10px;align-items:flex-end">
+        <label>骰子个数<input type="number" id="dieCount" value="1" min="1" max="100" step="1"></label>
+        <label>骰子面数<input type="number" id="dieSides" value="100" min="2" max="1000000" step="1"></label>
+        <button class="primary" style="height:34px" onclick="rollFloatDice()">🎲 掷骰</button>
+      </div>
+      <div class="row" style="gap:6px;margin-top:4px;flex-wrap:wrap">
+        <label style="flex-direction:row;align-items:center;gap:4px">大成功（掷出 ≤）<input type="number" id="diceBs" value="${diceThrSmall}" min="1" max="100" style="width:64px" onchange="saveDiceThrUI()"></label>
+        <label style="flex-direction:row;align-items:center;gap:4px">大失败（掷出 ≥）<input type="number" id="diceBf" value="${diceThrBig}" min="1" max="100" style="width:64px" onchange="saveDiceThrUI()"></label>
+        <span class="hint">仅 1D100 判定时生效</span>
+      </div>
+      <div class="dice-big" id="diceBig">—</div>
+      <div class="dice-detail" id="diceDetail"></div>
+      ${diceActorBarHTML(true)}
+      <div class="row" style="justify-content:space-between;margin-bottom:4px">
+        <span class="muted" style="font-size:12px">掷骰日志（关闭面板不丢失）</span>
+        <button class="small ghost" onclick="clearDiceHistory()">清空日志</button>
+      </div>
+      <div class="log dicehist" id="diceHist"></div>`;
+}
+function diceSanBodyHTML(){
+  var c=sanCfg();
+  return `
+      <div class="sanrows">
+        <div class="row" style="gap:6px;flex-wrap:wrap;align-items:center">
+          <b class="sanstep">①</b><span class="muted">理智检定骰（成功 = 掷出 ≤ 当前 SAN）</span>
+          <label style="flex-direction:row;align-items:center;gap:3px">个数<input type="number" id="sanCheckN" value="${c.checkN}" min="1" max="100" style="width:58px" onchange="saveSanUI()"></label>
+          <label style="flex-direction:row;align-items:center;gap:3px">面数<input type="number" id="sanCheckSides" value="${c.checkSides}" min="2" max="1000000" style="width:70px" onchange="saveSanUI()"></label>
+        </div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;align-items:center">
+          <b class="sanstep">②</b><span class="muted">失败后损失骰（如规则书写 “SAN 0/1D6” 的损失部分）</span>
+          <label style="flex-direction:row;align-items:center;gap:3px">个数<input type="number" id="sanLossN" value="${c.lossN}" min="1" max="100" style="width:58px" onchange="saveSanUI()"></label>
+          <label style="flex-direction:row;align-items:center;gap:3px">面数<input type="number" id="sanLossSides" value="${c.lossSides}" min="2" max="1000000" style="width:70px" onchange="saveSanUI()"></label>
+        </div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;align-items:center">
+          <b class="sanstep">③</b><span class="muted">单次损失 ≥</span>
+          <input type="number" id="sanTrig" value="${c.trig}" min="1" max="99" style="width:56px" onchange="saveSanUI()">
+          <span class="muted">点 → 做 INT 检定（通过 = 陷入临时疯狂发作，见规则书理智摘要）</span>
+        </div>
+        <div class="row" style="gap:6px;flex-wrap:wrap;align-items:center">
+          <b class="sanstep">④</b><span class="muted">疯狂症状来源</span>
+          <select id="sanSet" onchange="saveSanUI()" style="width:220px">
+            <option value="book"${c.set==='book'?' selected':''}>规则书·疯狂发作表（1D10）</option>
+            <option value="custom"${c.set==='custom'?' selected':''}>完全自定义列表</option>
+          </select>
+        </div>
+        <div id="sanCustomRow" style="margin:2px 0 6px;padding-left:20px"></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center;margin:2px 0 8px">
+          <button class="primary" onclick="rollSanCheck()">🧠 进行理智检定</button>
+          <button class="small ghost" title="只做一次 INT 检定（损失≥5 后是否发作）" onclick="rollSanIntOnly()">仅 INT 判定</button>
+          <button class="small ghost" title="只掷一次疯狂症状（不扣 SAN）" onclick="rollSanSymptom()">只掷症状</button>
+          <span class="hint">损失≥触发值时，本工具自动做 INT 判定与症状表掷骰</span>
+        </div>
+        ${diceActorBarHTML(false)}
+        <div class="dice-big" id="sanResult">—</div>
+        <div class="dice-detail" id="sanDetail"></div>
+      </div>
+      <div class="row" style="justify-content:space-between;margin-bottom:4px;margin-top:6px">
+        <span class="muted" style="font-size:12px">掷骰日志（关闭面板不丢失）</span>
+        <button class="small ghost" onclick="clearDiceHistory()">清空日志</button>
+      </div>
+      <div class="log dicehist" id="diceHist"></div>`;
+}
+function updateSanSetUI(){
+  var c=sanCfg();
+  var row=$('sanCustomRow'); if(!row) return;
+  if(c.set==='custom'){
+    row.innerHTML='<textarea id="sanCustomList" placeholder="每行一条症状；可用「症状｜持续时间」书写，例：'+esc(SAN_CUSTOM_DEFAULT)+'" style="min-height:72px" onchange="saveSanUI()">'+esc(c.custom||'')+'</textarea>'
+      +'<div class="hint" style="margin-top:2px">每行一条；写“症状｜持续时间”可带自己的时长，不写则默认 1D10 轮。</div>';
+  } else row.innerHTML='';
+}
+function saveSanUI(){
+  if(!state.ui) state.ui={};
+  var c=sanCfg();
+  var g=function(id,d){ var e=$(id); return e?Math.max(d==='n'?1:2,Math.round(num(e.value))) : c[id]; };
+  c.checkN=Math.min(100,g('sanCheckN','n')); if(!(c.checkN>0)) c.checkN=1;
+  c.checkSides=Math.min(1000000,g('sanCheckSides','s'));
+  c.lossN=Math.min(100,g('sanLossN','n')); if(!(c.lossN>0)) c.lossN=1;
+  c.lossSides=Math.min(1000000,g('sanLossSides','s'));
+  c.trig=Math.max(1,Math.min(99,Math.round(num(($('sanTrig')||{}).value!=null?$('sanTrig').value:c.trig))||5));
+  var se=$('sanSet'); if(se) c.set=se.value==='custom'?'custom':'book';
+  var ta=$('sanCustomList'); if(ta) c.custom=ta.value;
+  saveStateQuiet();
+}
+function multiRollDice(n,sides){
+  var arr=[];
+  n=Math.max(1,Math.min(100,Math.round(n)||1));
+  sides=Math.max(2,Math.min(1000000,Math.round(sides)||100));
+  for(var i=0;i<n;i++) arr.push(1+Math.floor(Math.random()*sides));
+  return arr;
+}
+function sumRolls(arr){ var t=0; (arr||[]).forEach(function(v){ t+=v; }); return t; }
+function applySanLossToActor(aid, loss){
+  var a=actorById(aid); if(!a) return 0;
+  if(!a.san) a.san={cur:0,max:99};
+  var before=Math.max(0,num(a.san.cur)||0);
+  var after=Math.max(0,before-loss);
+  a.san.cur=after;
+  (state.combat.participants||[]).forEach(function(cc){
+    if(cc.actorId===aid){
+      if(!cc.san) cc.san={cur:0,max:99};
+      cc.san.cur=Math.max(0,(cc.san.cur||0)-loss);
+    }
+  });
+  saveState();
+  try{ if(a.kind==='pc'&&typeof renderSurveyors==='function') renderSurveyors(); else if(typeof renderNpcs==='function') renderNpcs(); }catch(e1){}
+  renderCombatRoster();
+  if(typeof drawBattleScene==='function') drawBattleScene();
+  return after;
+}
+function logDiceLine(line){ diceHistory.unshift(line); if(diceHistory.length>120) diceHistory.pop(); storeDiceState(); renderDiceHist(); }
+function rollSanIntOnly(){
+  var a=diceTarget?actorById(diceTarget.id):null;
+  if(!a){ toast('请先选择目标角色'); return; }
+  var j=sanIntJudge(a);
+  var msg=diceTarget.name+' INT 检定 D100='+j.roll+'（目标 INT×5='+j.target+'）→ '+(j.pass?'通过：陷入临时疯狂发作（规则书理智摘要）':'未通过：不发作，KP 可选一个不由自主动作');
+  showSanDetail(msg,'',j.pass?'#f0c3c3':'#c9d6f0');
+  logDiceLine('['+nowStamp()+'] 🧠 '+diceTarget.name+' INT 判定 '+j.roll+' / '+j.target+' → '+(j.pass?'发作':'未发作'));
+}
+function sanIntJudge(a){
+  var intv=a&&a.attrs?Math.max(0,Math.round(num(a.attrs.int)||0)):50;
+  var roll=rollDie(100);
+  return {roll:roll,int:intv,target:intv*5,pass:roll<=intv*5};
+}
+function pickBookSymptom(){
+  var i=Math.floor(Math.random()*SAN_SYMPTOMS_BOOK.length);
+  var s=SAN_SYMPTOMS_BOOK[i];
+  return {label:s.n,desc:s.d,dur:s.dur,idx:i+1};
+}
+function pickCustomSymptom(c){
+  var lines=(c.custom||'').split(/\r?\n/).map(function(x){return String(x||'').trim();}).filter(Boolean);
+  if(!lines.length) return null;
+  var line=lines[Math.floor(Math.random()*lines.length)];
+  var i=line.indexOf('｜');
+  if(i>=0) return {label:line.slice(0,i).trim(),desc:'',dur:line.slice(i+1).trim()||'1D10 轮',raw:line};
+  return {label:line,desc:'',dur:'1D10 轮',raw:line};
+}
+function showSanDetail(html,bigText,bg){
+  var d=$('sanDetail'); if(d) d.innerHTML=html;
+  var b=$('sanResult'); if(b) b.textContent=bigText||'—';
+  if(b&&bg) b.style.color=bg;
+}
+function rollSanSymptom(){
+  var c=sanCfg();
+  var s=c.set==='custom'?pickCustomSymptom(c):pickBookSymptom();
+  var who=diceTarget?diceTarget.name+'（'+(diceTarget.kind==='pc'?'调查员':'NPC')+'）':'';
+  if(!s){ toast('自定义列表是空的，先写几行症状'); return; }
+  var head='症状'+(c.set==='book'?('：掷出 '+(s.idx)+'（规则书·疯狂发作表）'):'（自定义）')+(who?' · '+who:'');
+  showSanDetail(esc(head)+'<br><b style="color:#e3c47f">'+esc(s.label)+'</b>'+(s.desc?'<br>'+esc(s.desc):'')+'<br><span class="muted">持续 '+esc(s.dur)+'</span>'+(c.set==='book'?'<br><span class="muted" style="font-size:12px">发作期结束后按“潜在疯狂”处理：任何理智损失都会再次引发发作；从疯狂中恢复需 1D10 小时（参考规则书）。</span>':''),'💥 疯狂发作');
+  logDiceLine('['+nowStamp()+'] 🧠 '+(who||'')+' 疯狂症状：'+s.label+'（持续 '+s.dur+'）');
+}
+function rollSanCheck(){
+  saveSanUI();
+  var c=sanCfg();
+  var a=diceTarget?actorById(diceTarget.id):null;
+  if(!a){ toast('请先在“选择掷骰角色”点一名调查员/NPC'); return; }
+  var who=a.name+'（'+(a.kind==='pc'?'调查员':'NPC')+'）';
+  var checkRolls=multiRollDice(c.checkN,c.checkSides);
+  var checkTotal=sumRolls(checkRolls);
+  var isPct=(c.checkN===1&&c.checkSides===100);
+  var sanCur=a.san?Math.max(0,Math.round(num(a.san.cur)||0)):0;
+  var ok=checkTotal<=sanCur;
+  var expr=c.checkN+'D'+c.checkSides;
+  var detail=who+'　理智检定 '+expr+' = '+checkTotal+(isPct?('（对照当前 SAN '+sanCur+'）'):'');
+  var big='', txtColor='';
+  var lines=['['+nowStamp()+'] 🧠 '+who+' SAN 检定 '+expr+'='+checkTotal+' vs SAN '+sanCur];
+  if(ok){
+    detail+=' → <b style="color:#bfe6c2">成功：本次理智稳住，不损失</b>';
+    showSanDetail(detail, '✅ 成功');
+    var b=$('sanResult'); if(b) b.style.color='#bfe6c2';
+    lines[0]+=' → 成功（不损失）';
+    logDiceLine(lines[0]);
+    return;
+  }
+  var lossRolls=multiRollDice(c.lossN,c.lossSides);
+  var loss=sumRolls(lossRolls);
+  var lossExpr=c.lossN+'D'+c.lossSides;
+  detail+=' → <b style="color:#f0c3c3">失败</b><br>损失骰 '+lossExpr+' = '+(lossRolls.join('+'))+' = '+loss+' 点 SAN';
+  lines[0]+=' → 失败，损失 '+loss+' SAN';
+  var after=applySanLossToActor(a.id,loss);
+  detail+='<br>'+esc(who)+' SAN '+sanCur+' → <b>'+after+'</b>';
+  if(after<=0){ detail+='<br><b style="color:#f0c3c3">SAN 归零：目标陷入永久疯狂/精神崩溃（按规则书处理）</b>'; lines.push('['+nowStamp()+'] 💀 '+who+' SAN 归零！'); }
+  var mad='';
+  if(loss>=c.trig){
+    var j=sanIntJudge(a);
+    detail+='<br>单次损失 '+loss+' ≥ '+c.trig+'：INT 检定 D100='+j.roll+'（INT×5='+j.target+'）→ '+(j.pass?'<b style="color:#f0c3c3">通过：陷入临时疯狂发作</b>':'<b style="color:#c9d6f0">未通过：不发作</b>');
+    lines.push('['+nowStamp()+'] 🧠 '+who+' INT '+j.roll+' / '+j.target+' → '+(j.pass?'发作':'未发作'));
+    if(j.pass){
+      var s=c.set==='custom'?pickCustomSymptom(c):pickBookSymptom();
+      if(s){
+        mad=(c.set==='book'?('症状掷出 '+s.idx+' · 规则书疯狂发作表'):'自定义症状');
+        detail+='<br><b style="color:#e3c47f">💥 '+mad+'：'+esc(s.label)+'</b>'+(s.desc?('<br>'+esc(s.desc)):'')+'<br><span class="muted">持续 '+esc(s.dur)+'；发作期结束后进入“潜在疯狂”（任何理智损失都会再次发作），从疯狂中恢复需 1D10 小时。</span>';
+        lines.push('['+nowStamp()+'] 💥 '+who+' 疯狂症状：'+s.label+'（持续 '+s.dur+'）');
+      }
+    }
+  }
+  showSanDetail(detail,'SAN -'+loss,txtColor||'#f0c3c3');
+  logDiceLine(lines[0]);
+  lines.slice(1).forEach(logDiceLine);
+}
 function buildFloatPanel(){
   var p=$('floatPanel'); if(!p) return;
   p.classList.toggle('script-on', openFloatPanel==='script');
@@ -5435,34 +5833,13 @@ function buildFloatPanel(){
       </div>`;
   } else {
     p.innerHTML=`<div class="floathead"><b>🎲 骰子台</b>
-      <span class="hint">几个骰子 × 几面骰，自由填数字（例：1d100、3d6）</span>
+      <span class="hint">${diceTab==='san'?'理智检定 / SAN 损失 / 疯狂症状':'几个骰子 × 几面骰，自由填数字（例：1d100、3d6）'}</span>
       <button class="small ghost" style="margin-left:auto" onclick="closeFloatPanel()">收起 ✕</button></div>
       <div class="floatbody">
-        <div class="dice-num row" style="gap:10px;align-items:flex-end">
-          <label>骰子个数<input type="number" id="dieCount" value="1" min="1" max="100" step="1"></label>
-          <label>骰子面数<input type="number" id="dieSides" value="100" min="2" max="1000000" step="1"></label>
-          <button class="primary" style="height:34px" onclick="rollFloatDice()">🎲 掷骰</button>
-        </div>
-        <div class="row" style="gap:6px;margin-top:4px;flex-wrap:wrap">
-          <label style="flex-direction:row;align-items:center;gap:4px">大成功（掷出 ≤）<input type="number" id="diceBs" value="${diceThrSmall}" min="1" max="100" style="width:70px" onchange="saveDiceThrUI()"></label>
-          <label style="flex-direction:row;align-items:center;gap:4px">大失败（掷出 ≥）<input type="number" id="diceBf" value="${diceThrBig}" min="1" max="100" style="width:70px" onchange="saveDiceThrUI()"></label>
-          <span class="hint">仅 1D100 判定时生效</span>
-        </div>
-        <div class="dice-big" id="diceBig">—</div>
-        <div class="dice-detail" id="diceDetail"></div>
-        <div class="note-tools" style="border-top:1px dashed var(--line);border-bottom:none;padding-top:6px;margin-bottom:6px">
-          <span class="muted" style="font-size:12px">选择掷骰角色：</span>
-          <span id="diceActorChips">${floatActorsChips('target')}</span>
-          <select id="diceSkill" style="min-width:180px" onchange="diceSkillChanged(this)"><option value="">（不使用技能）</option></select>
-          <span class="muted" id="diceSkillVal"></span>
-        </div>
-        <div class="hint" id="diceTargetLbl" style="margin-bottom:6px"></div>
-        <div class="row" style="justify-content:space-between;margin-bottom:4px">
-          <span class="muted" style="font-size:12px">掷骰日志（关闭面板不丢失）</span>
-          <button class="small ghost" onclick="clearDiceHistory()">清空日志</button>
-        </div>
-        <div class="log dicehist" id="diceHist"></div>
+        ${diceTabsBarHTML()}
+        <div id="diceTabBody">${diceTab==='san'?diceSanBodyHTML():diceRollBodyHTML()}</div>
       </div>`;
+    if(diceTab==='san') updateSanSetUI();
     refreshDiceActorUI();
     renderDiceHist();
   }
@@ -5498,11 +5875,24 @@ function saveNoteFromEditor(){
 }
 function refreshDiceActorUI(){
   var lbl=$('diceTargetLbl');
-  if(lbl) lbl.textContent=diceTarget?('🎯 掷骰目标：'+diceTarget.name+'（'+(diceTarget.kind==='pc'?'调查员':'NPC')+'） · 技能自动读取人物卡'):'（未选择目标，直接掷骰也可以）';
+  if(lbl){
+    if(diceTarget){
+      var a=actorById(diceTarget.id);
+      var sanTxt=(a&&a.san)?(a.san.cur+'/'+a.san.max):'—';
+      var intV=(a&&a.attrs)?(Math.round(num(a.attrs.int)||0)):0;
+      if(diceTab==='san'){
+        lbl.textContent='🎯 掷骰目标：'+diceTarget.name+'（'+(diceTarget.kind==='pc'?'调查员':'NPC')+'） · SAN '+sanTxt+' · INT '+intV+'（INT×5='+(intV*5)+'）';
+      } else {
+        lbl.textContent='🎯 掷骰目标：'+diceTarget.name+'（'+(diceTarget.kind==='pc'?'调查员':'NPC')+'） · 技能自动读取人物卡';
+      }
+    } else {
+      lbl.textContent=(diceTab==='san')?'（先在上方点选一名调查员/NPC 作理智检定目标）':'（未选择目标，直接掷骰也可以）';
+    }
+  }
   document.querySelectorAll('#diceActorChips .fchip').forEach(function(c){
     c.classList.toggle('on', !!(diceTarget&&c.dataset.aid===diceTarget.id));
   });
-  populateDiceSkills();
+  if(diceTab!=='san') populateDiceSkills();
 }
 function setDiceTarget(chip){
   if(!chip) return;
@@ -5538,6 +5928,7 @@ function storeDiceState(){
   if(!state.ui.dice) state.ui.dice={bs:1,bf:96,hist:[]};
   state.ui.dice.bs=diceThrSmall; state.ui.dice.bf=diceThrBig;
   state.ui.dice.hist=diceHistory.slice(0,120);
+  state.ui.dice.tab=diceTab||'roll';
   saveStateQuiet();
 }
 function saveDiceThrUI(){
