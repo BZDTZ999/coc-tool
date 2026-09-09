@@ -1,17 +1,19 @@
 'use strict';
-/* 一键构建：把 src/ 下按功能拆分的源码拼成可直接双击使用的单文件 index.html。
-   npm run build        → 用 xlsx.full.min.js（支持 .xlsx / .xls，体积较大）
-   npm run build:slim   → 用 xlsx.mini.min.js（支持 .xlsx，体积约省一半，不读 .xls）
+/* 一键构建（源码都在 src/，改完跑 npm run build 等即出成品）。
+   三种产物：
+     npm run build         → offline.html  离线单文件版（xlsx 内嵌，双击即用，支持 .xlsx/.xls）
+     npm run build:slim    → offline.html  离线单文件瘦身版（xlsx 精简引擎，仅 .xlsx，约省一半体积）
+     npm run build:web     → index.html    在线多文件版（引用 src/*.js + 样式，xlsx 首屏不加载、
+                                             第一次读卡时才从 CDN 懒加载；适合放 GitHub Pages，首屏小）
    先 npm install 一次（拉取 xlsx 与测试用的 jsdom）。 */
 const fs = require('fs');
 const path = require('path');
 const ROOT = __dirname;
 const SRC = path.join(ROOT, 'src');
-const OUT = path.join(ROOT, 'index.html');
-const MODE = (process.argv[2] || 'full') === 'slim' ? 'slim' : 'full';
+const MODE = process.argv[2] || 'offline';
 
-/* 主程序模块：src 下所有 .js（parse-card.js 除外，它单独作为“解析器”注入）。
-   文件名以 01/02/… 编号，排序即拼接顺序；新增功能文件时同样按顺序编号即可。 */
+/* 主程序模块：src 下所有 .js（parse-card.js 除外，它单独作为“解析器”）。
+   文件名以 01/02/… 编号，排序即加载顺序；新增功能文件时同样按顺序编号即可。 */
 const APP_FILES = fs.readdirSync(SRC)
   .filter(f => f.endsWith('.js') && f !== 'parse-card.js')
   .sort();
@@ -19,25 +21,51 @@ if (APP_FILES.length < 20){
   console.error('src 下模块文件数量异常（' + APP_FILES.length + '），请检查是否缺少模块。');
   process.exit(1);
 }
-
 function read(f){ return fs.readFileSync(path.join(SRC, f), 'utf8'); }
-const LIB_FILE = MODE === 'slim' ? 'xlsx.mini.min.js' : 'xlsx.full.min.js';
-const libPath = path.join(ROOT, 'node_modules', 'xlsx', 'dist', LIB_FILE);
-if (!fs.existsSync(libPath)){
-  console.error('缺少 xlsx 库：请先执行  npm install');
-  process.exit(1);
+
+function buildOffline(libName, outFile){
+  const libPath = path.join(ROOT, 'node_modules', 'xlsx', 'dist', libName);
+  if (!fs.existsSync(libPath)){
+    console.error('缺少 xlsx 库：请先执行  npm install');
+    process.exit(1);
+  }
+  let html = read('skeleton.html');
+  html = html.replace('__CSS__', () => read('style.css'));
+  const parser = read('parse-card.js');
+  const app = APP_FILES.map(read).join('\n');
+  const lib = fs.readFileSync(libPath, 'utf8');
+  html = html
+    .replace('<script>__XLSX__</script>', () => '<script>' + lib + '</script>')
+    .replace('<script>__PARSER__</script>', () => '<script>' + parser + '</script>')
+    .replace('<script>__APP__</script>', () => '<script>' + app + '</script>');
+  const leftover = ['__CSS__','__XLSX__','__PARSER__','__APP__'].filter(t => html.indexOf(t) >= 0);
+  if (leftover.length){ console.error('仍有未替换占位符：', leftover.join(', ')); process.exit(1); }
+  fs.writeFileSync(path.join(ROOT, outFile), html);
+  console.log('built [offline:' + (libName.indexOf('mini') >= 0 ? 'slim' : 'full') + ']', outFile, fs.statSync(path.join(ROOT, outFile)).size, 'bytes');
 }
-let html = read('skeleton.html');
-html = html.replace('__CSS__', () => read('style.css'));
-const parser = read('parse-card.js');
-const app = APP_FILES.map(read).join('\n');
-const lib = fs.readFileSync(libPath, 'utf8');
-html = html
-  .replace('<script>__XLSX__</script>', () => '<script>' + lib + '</script>')
-  .replace('<script>__PARSER__</script>', () => '<script>' + parser + '</script>')
-  .replace('<script>__APP__</script>', () => '<script>' + app + '</script>');
-const leftover = ['__CSS__','__XLSX__','__PARSER__','__APP__'].filter(t => html.indexOf(t) >= 0);
-if (leftover.length){ console.error('仍有未替换占位符：', leftover.join(', ')); process.exit(1); }
-fs.writeFileSync(OUT, html);
-console.log('built [' + MODE + ']', OUT, fs.statSync(OUT).size, 'bytes');
+
+function buildWeb(){
+  let html = read('skeleton.html');
+  html = html.replace('<style>__CSS__</style>', () => '<link rel="stylesheet" href="src/style.css">');
+  const scripts = [
+    '    <!-- 在线多文件版：脚本按序加载 src/*.js（与离线版同一份源码）。 -->',
+    '    <!-- 读 .xlsx 人物卡时才从 CDN 懒加载 xlsx 引擎；完全离线请改用 offline.html。 -->',
+    '    <script src="src/parse-card.js"></script>'
+  ];
+  for (const f of APP_FILES) scripts.push('    <script src="src/' + f + '"></script>');
+  html = html
+    .replace('<script>__XLSX__</script>', () => '')
+    .replace('<script>__PARSER__</script>', () => scripts.slice(0, 2).join('\n') + '\n' + scripts[2])
+    .replace('<script>__APP__</script>', () => scripts.slice(3).join('\n'));
+  const leftover = ['__CSS__','__XLSX__','__PARSER__','__APP__'].filter(t => html.indexOf(t) >= 0);
+  if (leftover.length){ console.error('仍有未替换占位符：', leftover.join(', ')); process.exit(1); }
+  fs.writeFileSync(path.join(ROOT, 'index.html'), html);
+  console.log('built [web] index.html', fs.statSync(path.join(ROOT, 'index.html')).size, 'bytes');
+}
+
+if (MODE === 'slim') buildOffline('xlsx.mini.min.js', 'offline.html');
+else if (MODE === 'web') buildWeb();
+else if (MODE === 'all'){ buildOffline('xlsx.full.min.js', 'offline.html'); buildWeb(); }
+else buildOffline('xlsx.full.min.js', 'offline.html');
+
 console.log('modules:', APP_FILES.join(', '));

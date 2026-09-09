@@ -14,6 +14,7 @@ function bindDropZone(){
   });
 }
 function parseCardData(data, fname){
+  if (typeof XLSX === 'undefined'){ ensureXLSX(function(){ parseCardData(data, fname); }); return; }
   try{
     var wb=XLSX.read(data,{type:'array',cellFormula:false});
     if(!window.CoCParser){ toast('解析模块未加载'); return; }

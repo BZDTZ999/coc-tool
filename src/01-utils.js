@@ -3,6 +3,39 @@
 var LS_KEY = 'coc-tool-v1';
 var XLSX_OK = typeof XLSX !== 'undefined';
 
+/* 在线多文件版：表格解析库 xlsx 不在首屏内嵌，第一次读人物卡时才从 CDN 懒加载。
+   离线单文件版里 XLSX 已内嵌，这里永远直接回调，不影响原行为。 */
+var __XLSX_CDNS = [
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+];
+function ensureXLSX(cb){
+  if (typeof XLSX !== 'undefined'){ cb(); return; }
+  if (window.__xlsxLoading){ (window.__xlsxQueue = window.__xlsxQueue || []).push(cb); return; }
+  window.__xlsxLoading = true;
+  window.__xlsxQueue = [cb];
+  function load(i){
+    if (i >= __XLSX_CDNS.length){
+      window.__xlsxLoading = false;
+      window.__xlsxQueue = [];
+      toast('⚠ 在线表格解析库加载失败，请检查网络后重试（本地用请双击 offline.html）', 5000);
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = __XLSX_CDNS[i];
+    s.onload = function(){
+      window.__xlsxLoading = false;
+      var q = window.__xlsxQueue || [];
+      window.__xlsxQueue = [];
+      q.forEach(function(f){ try{ f(); }catch(e){ toast('解析失败：' + e.message, 5000); } });
+    };
+    s.onerror = function(){ s.parentNode && s.parentNode.removeChild(s); load(i + 1); };
+    document.head.appendChild(s);
+  }
+  load(0);
+}
+
 /* ---------- 基础工具 ---------- */
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }

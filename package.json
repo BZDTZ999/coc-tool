@@ -5,11 +5,14 @@
   "description": "带团妙妙小工具（COC7th）：从《空白人物卡》读卡 + NPC / 地图路线 / 战斗 / 笔记 / 骰子的单文件网页。",
   "type": "commonjs",
   "scripts": {
-    "build": "node build.js full",
-    "build:full": "node build.js full",
+    "build": "node build.js offline",
+    "build:full": "node build.js offline",
     "build:slim": "node build.js slim",
+    "build:web": "node build.js web",
+    "build:all": "node build.js offline && node build.js web",
     "test": "node test/smoke.js",
-    "check": "node test/audit.js"
+    "check": "node test/audit.js",
+    "test:web": "node test/web.js"
   },
   "dependencies": {
     "jsdom": "^30.0.1",

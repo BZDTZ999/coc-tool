@@ -16,7 +16,7 @@ function bindEvents(){
     // 任何标签重新渲染
   }
 }
-window.addEventListener('DOMContentLoaded', initApp);
+window.addEventListener('DOMContentLoaded', function(){ initApp(); });
 
 /* ================= v2 UI 覆盖层 ================= */
 'use strict';

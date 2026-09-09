@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
 
-const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf-8');
+const HTML = fs.readFileSync(path.join(__dirname, '..', 'offline.html'), 'utf-8');
 const failures = [];
 let passed = 0;
 function ok(name, cond, extra){
