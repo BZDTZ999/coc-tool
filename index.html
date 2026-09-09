@@ -584,6 +584,32 @@ body.bgcustom .mapcard .mapren{background:transparent;color:var(--muted);border:
 body.bgcustom .mapcard .mapren:hover{color:var(--gold)}
 body.bgcustom .mapcard .mcdel{background:transparent;color:#ffcfcf;border:none;border-left:1px solid var(--uic-line);box-shadow:none}
 body.bgcustom .mapcard .mcdel:hover{background:#a04343;color:#fff}
+
+/* ================= 本轮增补：调查员经历小卡外框 / 头像点击上传 / 骰子技能芯片 ================= */
+#pcList .pccard .pchead .pcav{cursor:pointer}
+.pccard .runstar{position:absolute;top:2px;left:50%;transform:translateX(-50%);z-index:4;font-size:15px;line-height:1;
+  pointer-events:none;filter:drop-shadow(0 0 6px rgba(255,200,90,.95));animation:runstar-pulse 2.4s ease-in-out infinite}
+@keyframes runstar-pulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.18)}}
+/* 1~5 团：逐团叠一条 2px 金属边（由内到外铁→铜→银→金→白金） */
+.pccard.runs1{box-shadow:inset 0 0 0 2px #8b8d94}
+.pccard.runs2{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333}
+.pccard.runs3{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333,inset 0 0 0 6px #cdd3dc}
+.pccard.runs4{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333,inset 0 0 0 6px #cdd3dc,inset 0 0 0 8px #d6af37}
+.pccard.runs5{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333,inset 0 0 0 6px #cdd3dc,inset 0 0 0 8px #d6af37,inset 0 0 0 10px #e7ecf2}
+/* 6 团以上：4px 发光边（翡翠→钻石→火焰）；9 团以上再加星星 */
+.pccard.runs6{box-shadow:inset 0 0 0 4px #34d399,0 0 14px 2px rgba(52,211,153,.6)}
+.pccard.runs7{box-shadow:inset 0 0 0 4px #6fdcff,0 0 14px 2px rgba(111,220,255,.6)}
+.pccard.runs8{box-shadow:inset 0 0 0 4px #ff9a3d,0 0 16px 3px rgba(255,154,61,.65)}
+/* 骰子台：技能芯片（高→低排列，☆＝已加点） */
+.dice-skills{display:flex;flex-wrap:wrap;gap:4px;flex:1;min-width:0}
+.skchip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:#1c212e;
+  color:var(--ink);border-radius:14px;padding:1px 8px;font-size:11.5px;font-family:var(--mono);cursor:pointer;margin:2px;user-select:none}
+.skchip:hover{border-color:var(--acc);color:var(--gold)}
+.skchip.added{color:#ffd98a;border-color:rgba(201,162,94,.5);background:rgba(201,162,94,.09)}
+.skchip.on{background:rgba(111,191,115,.16);border-color:#6fbf73;color:#bfe6c2}
+body.bgcustom .skchip{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .skchip.added{background:rgba(201,162,94,.14);border-color:rgba(201,162,94,.6);color:#ffe3a0}
+body.bgcustom .skchip.on{background:rgba(111,191,115,.18);border-color:#6fbf73;color:#d5f2d8}
 </style>
 </head>
 <body>
@@ -712,7 +738,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function parseWorkbook(wb) {
     var result = {
       ok:false, sheet:null, basic:{}, attrs:{}, derived:{}, skills:[], weapons:[],
-      items:[], assets:{}, backstory:{ sections:{}, text:'' }, story:[], warnings:[]
+      items:[], assets:{}, backstory:{ sections:{}, text:'' }, story:[], campaigns:[], warnings:[]
     };
     if (!wb || !wb.Sheets || !wb.SheetNames || !wb.SheetNames.length) {
       result.warnings.push('无法读取该文件，请确认是有效的 .xlsx。');
@@ -855,6 +881,21 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
     }
     result.items = items;
+
+    // —— 调查员经历（每 1 行 = 多跑过 1 个团；位于例子的下方/上方区域 97..111 行） ——
+    var campaigns = [];
+    if (rowsMain) {
+      for (var ca = 97; ca <= 111; ca++) {
+        var crow = rowsMain[ca] || [];
+        var mod = clean(crow[colIdx('B')]);
+        var desc = clean(crow[colIdx('J')]);
+        if (/^例[:：]/.test(mod) || /^例[:：]/.test(desc)) continue;   // 跳过示例行
+        if (!mod && !desc) continue;
+        if (/^(经历模组|调查员经历)$/.test(mod)) continue;             // 防呆：跳过表头
+        campaigns.push({ module: mod || '', note: desc || '' });
+      }
+    }
+    result.campaigns = campaigns;
 
     // —— 资产 ——
     result.assets = {
@@ -4193,8 +4234,42 @@ NPC_TPL = NPC_TPL.concat([
 ]);
 
 /* ---------- C. 调查员卡：紧凑信息+右上头像+HP/SAN/MP/法术+DB/武器+剧情道具 ---------- */
+/* 调查员经历 → “跑过几个团” → 小卡外框等级：
+   0 = 默认；1~5 = 每团叠一条 2px 金属边（铁/铜/银/金/白金）；
+   6 = 4px 发光翡翠；7 = 发光钻石；8+ = 发光火焰；9+ = 火焰 + 顶部星星。 */
+function runCount(a){ return Array.isArray(a&&a.campaigns)?a.campaigns.length:0; }
+function pcRunClass(a){
+  var n=runCount(a);
+  if(n<=0) return '';
+  if(n<=5) return 'runs'+n;
+  if(n===6) return 'runs6';
+  if(n===7) return 'runs7';
+  return 'runs8';
+}
+function pcAvatarClick(ev, aid){
+  ev.preventDefault(); ev.stopPropagation();
+  var inp=document.querySelector('#pcList .actorcard[data-id="'+aid+'"] .pcav input[type=file]');
+  if(inp) inp.click();
+}
+function onPcAvatarFile(ev, aid){
+  var f=ev.target.files && ev.target.files[0];
+  if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var a=actorById(aid);
+    if(!a) return;
+    if(!a.avatar) a.avatar={preset:defaultAvatarForActor(a.kind,a.side),custom:null};
+    a.avatar.custom=String(rd.result||'');
+    saveState();
+    try{ if(a.kind==='npc') renderNpcs(); else renderSurveyors(); }catch(e){}
+    toast('头像已更新');
+  };
+  rd.readAsDataURL(f);
+}
 function pcCardHTML(a){
   var at=a.attrs||{};
+  var runCls=pcRunClass(a);
+  var runStar=runCount(a)>=9?'<span class="runstar" aria-hidden="true">⭐</span>':'';
   var line1=[a.occupation&&('职业 '+a.occupation),a.sex,a.age&&(a.age+'岁')]
     .filter(Boolean).join(' · ');
   var line2=[a.player&&('玩家 '+a.player),a.residence&&('住地 '+a.residence),a.hometown&&('故乡 '+a.hometown)]
@@ -4206,7 +4281,7 @@ function pcCardHTML(a){
     var lb=ATTR_LABELS.filter(function(x){return x[0]===k;})[0];
     return '<span class="pctile" title="'+(lb?esc(lb[2]):'')+'"><b>'+(lb?esc(lb[1]):k)+'</b><em>'+(at[k]||0)+'</em></span>';
   }).join('');
-  return `<div class="actorcard pccard" data-id="${a.id}">
+  return `<div class="actorcard pccard${runCls?' '+runCls:''}" data-id="${a.id}">${runStar}
     <div class="pchead">
       <div class="pcinfo">
         <div class="pcnameline"><span class="badge blue">调查员</span><b class="nm">${esc(a.name||'未命名')}</b></div>
@@ -4214,8 +4289,9 @@ function pcCardHTML(a){
         ${line2?'<div class="pcmeta muted">'+esc(line2)+'</div>':''}
         <div class="pcatts9">${attrCells}</div>
       </div>
-      <div class="pcav">
+      <div class="pcav" onclick="pcAvatarClick(event,'${a.id}')">
         ${(a.avatar&&a.avatar.custom)?'<img src="'+esc(a.avatar.custom)+'" alt="">':'<span class="emoji">'+esc((a.avatar&&a.avatar.preset)||AVATAR_DEFAULT_PC)+'</span>'}
+        <input type="file" accept="image/*" style="display:none" onchange="onPcAvatarFile(event,'${a.id}')">
       </div>
     </div>
     ${barsHTML(a)}
@@ -4371,7 +4447,7 @@ function openActorModal(id, kind){
        hp:{cur:0,max:0},mp:{cur:0,max:0},san:{cur:0,max:99},mov:8,db:'-2',build:'0',
        armor:{value:0,type:''},skills:[],weapons:[],inv:[],spells:[],cash:0,currency:'美元',
        history:{appearance:'',beliefs:'',people:'',places:'',belongings:'',traits:'',secrets:'',scars:'',phobias:''},
-       backstory:'',notes:'',template:'',note:'',player:''};
+       backstory:'',campaigns:[],notes:'',template:'',note:'',player:''};
   }
   if(!a.avatar) a.avatar={preset:a.kind==='npc'?defaultAvatarForActor('npc',sideOf(a)):AVATAR_DEFAULT_PC,custom:null};
   if(!a.history) a.history={};
@@ -4400,6 +4476,7 @@ function openActorModal(id, kind){
   var histHTML=(a.kind==='pc'?HIST_LABELS.map(function(h){
     return '<div style="grid-column: span 1"><label>'+h[1]+'<textarea rows="2" id="am-hist-'+h[0]+'">'+esc(a.history[h[0]]||'')+'</textarea></label></div>';
   }).join(''):'');
+  var campaignRows=(a.kind==='pc'?(Array.isArray(a.campaigns)?a.campaigns:[]).map(function(c){return campaignRowHTML(c);}).join(''):'');
   var avatarPresetButtons=AVATAR_PRESETS.map(function(e){
     return '<button type="button" class="'+(a.avatar.preset===e?'on':'')+'" onclick="setAvatarPreset(this,\''+e+'\')">'+e+'</button>';
   }).join('');
@@ -4464,7 +4541,7 @@ function openActorModal(id, kind){
       <h4 class="sectiontitle" id="am-skill-title">🎯 已加点 / 自定义技能（${skillRows.filter(function(r){return r.added;}).length}）</h4>
       <div class="skillchips" id="am-skills">${skillChips||'<span class="hint sk-empty-hint">（暂无——加点过的技能会高亮出现在这里）</span>'}</div>
       <div style="margin-top:6px"><button class="small" onclick="addSkillRow()">＋ 加一项技能</button>
-        <span class="hint"> 值＝默认基础值时自动折叠到下方；改过以后自动回到上方。</span></div>
+        <span class="hint"> 只有高于基础值才算已加点；等于或低于基础值会自动收进下方默认区（可点开编辑）。</span></div>
       <details class="skilldef" id="am-default-wrap" ${defaultSkillCount?'':'style="display:none"'}>
         <summary id="am-skill-summary">更多默认值技能（${defaultSkillCount} 项 · 未加点 · 点开可编辑）</summary>
         <div class="skillchips" id="am-default-skills">${defaultSkillChips}</div>
@@ -4493,12 +4570,29 @@ function openActorModal(id, kind){
       ${a.kind==='pc'?'<h4 class="sectiontitle">📜 背景故事（拆条 + 正文小段）</h4>':''}
       ${a.kind==='pc'?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">'+histHTML+'</div>':'<div class="vdiv"></div><label>背景备注<textarea id="am-hist-appearance" rows="2" style="display:none"></textarea><textarea rows="2" id="am-npc-back">'+esc(a.notes||a.note||'')+'</textarea></label>'}
       ${a.kind==='pc'?'<label style="margin-top:8px">背景故事正文（小段文字）<textarea rows="4" id="am-backstory">'+esc(a.backstory||'')+'</textarea></label>':''}
+      ${a.kind==='pc'?'<div style="margin-top:10px"><h4 class="sectiontitle">🗂 调查员经历（1 段 = 多跑过 1 个团）</h4>'
+        +'<div id="am-campaigns">'+(campaignRows||'')+'</div>'
+        +'<div style="margin-top:6px"><button class="small" type="button" onclick="addCampaignRow()">＋ 添加一段经历</button>'
+        +'<span class="hint"> 每跑过一个团记一行（经历模组 ＋ 人物变化），小卡外框会随团数升级。</span></div></div>':''}
       <div class="row" style="justify-content:flex-end;margin-top:16px">
         ${editingActorId?'<button class="danger ghost small" onclick="deleteActor(\''+a.id+'\')">删除此角色</button>':''}
         <button class="primary" onclick="saveActorModal()">保存</button>
       </div>
     </div></div>`;
   mask.classList.add('open');
+}
+function campaignRowHTML(c){
+  c=c||{};
+  return `<div class="listitem camprow" style="margin-bottom:6px"><div class="row" style="gap:6px;flex-wrap:wrap">
+    <input type="text" class="camp-mod" value="${esc(c.module||'')}" placeholder="经历模组 / 跑过的团名" style="flex:1;min-width:150px">
+    <input type="text" class="camp-note" value="${esc(c.note||'')}" placeholder="人物变化描述，如 SAN-2 / HP-1 / 侦查+5" style="flex:1.5;min-width:170px">
+    <button class="small danger" type="button" onclick="this.closest('.camprow').remove()">✕</button>
+  </div></div>`;
+}
+function addCampaignRow(){
+  var box=$('am-campaigns'); if(!box) return;
+  var d=document.createElement('div'); d.innerHTML=campaignRowHTML({module:'',note:''});
+  box.appendChild(d.firstChild);
 }
 function collectFromModal(){
   var m=$('actorModal'); if(!m) return null;
@@ -4565,6 +4659,13 @@ function collectFromModal(){
   HIST_LABELS.forEach(function(h){ var e=$('am-hist-'+h[0]); if(e) a.history[h[0]]=e.value; });
   if($('am-backstory')) a.backstory=$('am-backstory').value;
   if($('am-npc-back')) a.notes=$('am-npc-back').value;
+  a.campaigns=[];
+  m.querySelectorAll('#am-campaigns .camprow').forEach(function(li){
+    var mod=(li.querySelector('.camp-mod')||{}).value||'';
+    var note=(li.querySelector('.camp-note')||{}).value||'';
+    mod=String(mod).trim(); note=String(note).trim();
+    if(mod||note) a.campaigns.push({module:mod,note:note});
+  });
   return a;
 }
 function saveActorModal(){
@@ -4623,6 +4724,7 @@ function doImport(){
     spells:[],
     cash:p.assets.cash||0, currency:p.assets.currency||'美元',
     history:history, backstory:p.backstory.text||'',
+    campaigns:(p.campaigns||[]).map(function(c){ return {module:(c&&c.module)||'',note:(c&&c.note)||''}; }),
     notes:'', count:1, template:'', note:''
   };
   state.actors.push(actor);
@@ -5159,6 +5261,7 @@ function ensureV2Data(){
     if(!a.spells) a.spells=[];
     if(!a.skills) a.skills=[];
     if(!a.plot) a.plot=[];
+    if(!a.campaigns) a.campaigns=[];
   });
   if(!state.maps) state.maps=[];
   state.maps.forEach(function(m){ m.iso=false; if(m.zoom==null) m.zoom=1; });
@@ -5261,8 +5364,8 @@ function addSpellRow(){ var box=$('am-spells'); if(!box) return; box.insertAdjac
 function addWeaponRow(){ var box=$('am-weapons'); if(!box) return; box.insertAdjacentHTML('beforeend', weaponPresetRowHTML({name:'',skill:'',damage:'',range:'',type:'',ammoCap:0})); }
 
 /* ---------- 技能“已加点 / 默认值”自动分区 ----------
-   以卡片自带的“基础值 base”判断：total==base → 默认/未加点，收进下方折叠区；
-   total!=base 或没有默认基础可对照 → 已加点/自定义，高亮前置。手改后同样自动归类。 */
+   以卡片自带的“基础值 base”判断：只有 total>base 才算“已加点”高亮前置；
+   total==base 与 total<base 都收进下方默认区折叠（没有默认基础可对照的自定义技能仍放上方）。 */
 var SKILL_DEFAULTS = {
   '会计':5,'法律':5,'人类学':1,'估价':5,'考古学':1,'锁匠':1,'技艺':5,'机械维修':10,'医学':1,
   '博物学':10,'取悦':15,'魅惑':15,'领航':10,'导航':10,'攀爬':20,'计算机使用':5,'操作重型机械':1,
@@ -5280,10 +5383,15 @@ function skillBaseOf(name){
   if(bare!==nm && Object.prototype.hasOwnProperty.call(SKILL_DEFAULTS,bare)) return SKILL_DEFAULTS[bare];
   return null;
 }
+function skillIsAdded(name,total,base){
+  var b=(base!=null&&base!=='')?num(base):skillBaseOf(name);
+  if(b==null&&base!=null) b=num(base);
+  return b==null || num(total)>b;
+}
 function skillChipParts(name,total,base){
   var b = (base!=null && base!=='') ? num(base) : skillBaseOf(name);
   if(b==null && base!=null) b=num(base);
-  return { base:(b!=null?b:null), added:!(b!=null && num(total)===b) };
+  return { base:(b!=null?b:null), added:skillIsAdded(name,total,base) };
 }
 function chipSkillHTML(name,total,base){
   var p=skillChipParts(name,total,base);
@@ -5626,6 +5734,7 @@ function diceActorBarHTML(useSkill){
   return `<div class="note-tools" style="border-top:1px dashed var(--line);border-bottom:none;padding-top:6px;margin-bottom:6px">
       <span class="muted" style="font-size:12px">选择掷骰角色：</span>
       <span id="diceActorChips">${floatActorsChips('target')}</span>${skillHTML}
+      ${useSkill?'<div id="diceSkillChips" class="dice-skills-box" style="flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:4px"></div>':''}
     </div>
     <div class="hint" id="diceTargetLbl" style="margin-bottom:6px"></div>`;
 }
@@ -5894,6 +6003,14 @@ function saveNoteFromEditor(){
 }
 function refreshDiceActorUI(){
   var lbl=$('diceTargetLbl');
+  if(diceTarget){
+    var curA=actorById(diceTarget.id);
+    if(curA){
+      diceTarget.name=curA.name||diceTarget.name;
+      diceTarget.kind=curA.kind||diceTarget.kind;
+      diceTarget.skills=(curA.skills||[]).slice();   // 每次刷新按当前档案重新读取技能
+    }
+  }
   if(lbl){
     if(diceTarget){
       var a=actorById(diceTarget.id);
@@ -5920,20 +6037,40 @@ function setDiceTarget(chip){
   else { diceTarget={id:a.id,name:a.name,kind:a.kind||'pc',skills:(a.skills||[]).slice()}; }
   refreshDiceActorUI();
 }
+function diceSkillAdded(s){
+  if(!s) return false;
+  return skillIsAdded(s.name,s.total,s.base);
+}
 function populateDiceSkills(){
   var sel=$('diceSkill'); if(!sel) return;
   var keep=sel.value;
   if(!diceTarget){
     sel.innerHTML='<option value="">（不使用技能）</option>';
     var sv=$('diceSkillVal'); if(sv) sv.textContent='';
+    var cbox=$('diceSkillChips'); if(cbox) cbox.innerHTML='';
     return;
   }
-  var opts=diceTarget.skills||[];
-  sel.innerHTML='<option value="">（不使用技能）</option>'+opts.map(function(s,i){
-    return '<option value="'+i+'">'+esc(s.name||'未名技能')+' '+Math.round(s.total||0)+'%</option>';
+  var arr=(diceTarget.skills||[]).map(function(s,i){
+    return { i:i, name:String((s&&s.name)||'').trim(), total:Math.max(0,Math.round(num(s&&s.total)||0)), added:diceSkillAdded(s) };
+  }).filter(function(x){ return x.name; });
+  arr.sort(function(a,b){
+    if(b.total!==a.total) return b.total-a.total;
+    return a.name<b.name?-1:(a.name>b.name?1:0);
+  });
+  sel.innerHTML='<option value="">（不使用技能）</option>'+arr.map(function(x){
+    return '<option value="'+x.i+'">'+esc(x.name)+' '+x.total+'%'+(x.added?' ☆加点':'')+'</option>';
   }).join('');
-  if(!opts.length) sel.innerHTML='<option value="">（该角色没有技能数据）</option>';
-  if(keep) sel.value=keep;
+  if(!arr.length) sel.innerHTML='<option value="">（该角色没有技能数据）</option>';
+  var cbox=$('diceSkillChips');
+  if(cbox){
+    cbox.innerHTML=arr.length
+      ? '<span class="muted" style="font-size:11px">技能（按数值高→低 · ☆＝已加点，点选）：</span>'
+        +'<div class="dice-skills">'+arr.map(function(x){
+          return '<button type="button" class="skchip'+(x.added?' added':'')+'" data-i="'+x.i+'" onclick="diceSkillPick(this)">'+esc(x.name)+' '+x.total+'%'+(x.added?' ☆':'')+'</button>';
+        }).join('')+'</div>'
+      : '<span class="hint">（该角色没有技能数据）</span>';
+  }
+  if(keep && keep!=='' && sel.querySelector('option[value="'+keep+'"]')) sel.value=keep;
   diceSkillChanged(sel);
 }
 function diceSkillChanged(sel){
@@ -5941,6 +6078,21 @@ function diceSkillChanged(sel){
   var i=sel.value===''?-1:num(sel.value);
   var sk=(i>=0&&diceTarget&&diceTarget.skills&&diceTarget.skills[i])?diceTarget.skills[i]:null;
   var sv=$('diceSkillVal'); if(sv) sv.textContent=sk?('→ '+Math.round(sk.total||0)+'%'):'';
+  markDiceSkillChips();
+}
+function markDiceSkillChips(){
+  var sel=$('diceSkill'); if(!sel) return;
+  var cur=sel.value;
+  var chips=document.querySelectorAll('#diceSkillChips .skchip');
+  for(var i=0;i<chips.length;i++){
+    chips[i].classList.toggle('on', String(chips[i].getAttribute('data-i'))===String(cur));
+  }
+}
+function diceSkillPick(btn){
+  if(!btn) return;
+  var sel=$('diceSkill'); if(!sel) return;
+  sel.value=String(btn.getAttribute('data-i')||'');
+  diceSkillChanged(sel);
 }
 function storeDiceState(){
   if(!state||!state.ui) return;
@@ -6075,7 +6227,8 @@ function spawnDecorBits(){
     body.appendChild(el);
     var sz=13+Math.random()*30;
     el.style.fontSize=Math.round(sz)+'px';
-    el.style.opacity=bg?(0.10+Math.random()*0.20):(0.06+Math.random()*0.14);
+    /* 用户反馈太透明：提高不透明度，同时每次重开都随机取一套新的图标/姿态 */
+    el.style.opacity=bg?(0.20+Math.random()*0.34):(0.14+Math.random()*0.28);
     var dir=Math.random()<0.5?-1:1;
     _decorBits.push({
       el:el, x:Math.random()*vw, y:Math.random()*vh,
