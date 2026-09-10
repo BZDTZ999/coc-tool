@@ -1,4 +1,21 @@
 /* ---------- G. 战斗：场景三行条 + 护甲 + MP 调整 + 施放法术 ---------- */
+/* 战斗页二级菜单栏：👥 添加角色 / ⚔️ 战斗桌 两个面板，点开就用、再点收起。
+   战斗场景占满菜单栏下面的整个宽度，战斗成员与行动日志依次排在场景下面。 */
+var COMBAT_POD=null;
+function toggleCombatPod(which){
+  COMBAT_POD = (COMBAT_POD===which) ? null : which;
+  applyCombatPod();
+}
+function applyCombatPod(){
+  ['add','table'].forEach(function(k){
+    var pod=$('pod-'+k), btn=$('cp-'+k);
+    if(pod) pod.hidden = (COMBAT_POD!==k);
+    if(btn) btn.classList.toggle('on', COMBAT_POD===k);
+  });
+  if(COMBAT_POD==='add'){ try{ refreshCombatAddSel(); }catch(e){} }
+  try{ if(typeof fsResize==='function') fsResize(); }catch(e){}
+}
+function combatPodsInit(){ applyCombatPod(); }
 function drawOver(ctx,sc){
   ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.setLineDash([6,8]);
   ctx.beginPath(); ctx.moveTo(B_W/2,0); ctx.lineTo(B_W/2,B_H); ctx.stroke(); ctx.setLineDash([]);
@@ -409,8 +426,8 @@ function switchTab(name){
   document.querySelectorAll('section.tab').forEach(function(s){ s.classList.toggle('active', s.id==='tab-'+name); });
   if (name==='surveyors') renderSurveyors();
   if (name==='npcs') renderNpcs();
-  if (name==='maps') renderMapsShell();
-  if (name==='combat') renderCombatShell();
+  if (name==='maps'){ renderMapsShell(); if(typeof applyMapPod==='function') applyMapPod(); }
+  if (name==='combat'){ renderCombatShell(); if(typeof applyCombatPod==='function') applyCombatPod(); }
 }
 
 /* 快速查询页已按需求移除（详见带团妙妙小工具其它页面速查）。 */

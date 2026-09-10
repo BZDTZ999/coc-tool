@@ -1,0 +1,724 @@
+/* ---------- 右半屏：📖 模组 与 📚 规则书 ----------
+   点菜单栏的「📖 模组 / 📚 规则书」，页面按左右分栏：左边还是当前功能，右边是面板。
+   中间的细条可拖动调整比例（双击回到一半一半），比例记在本机。
+   · 模组：上传 word(.docx) / pdf / txt / md 查看；文件存在浏览器 IndexedDB 里，刷新后还在。
+   · 规则书：整套 COC7 核心规则书的正文 + 书签目录 + 全文搜索跳转（数据按需加载）。 */
+var SIDE_PANE_MIN=0.25, SIDE_PANE_MAX=0.8;
+
+function sidePaneCfg(){
+  if(!state) return {open:false,kind:'module',ratio:0.5};
+  if(!state.ui) state.ui={};
+  if(!state.ui.sidePane || typeof state.ui.sidePane!=='object') state.ui.sidePane={open:false,kind:'module',ratio:0.5};
+  var c=state.ui.sidePane;
+  if(c.ratio==null || !isFinite(c.ratio)) c.ratio=0.5;
+  if(c.kind!=='module' && c.kind!=='rulebook') c.kind='module';
+  return c;
+}
+function sidePaneIsOpen(kind){
+  var c=sidePaneCfg();
+  return !!c.open && (!kind || c.kind===kind);
+}
+/* 菜单栏按钮：打开 / 收起 */
+function toggleSidePane(kind){
+  var c=sidePaneCfg();
+  if(c.open && c.kind===kind){ c.open=false; }
+  else { c.open=true; c.kind=kind; }
+  saveStateQuiet();
+  applySidePane();
+  renderNav();
+  renderSidePane();
+}
+function closeSidePane(){ sidePaneCfg().open=false; saveStateQuiet(); applySidePane(); renderNav(); }
+function applySidePane(){
+  var c=sidePaneCfg(), pane=$('sidePane'), bar=$('splitBar'), left=$('splitLeft');
+  if(!pane || !bar) return;
+  var open=!!c.open;
+  pane.hidden=!open; bar.hidden=!open;
+  document.body.classList.toggle('sideopen', open);
+  if(open){
+    pane.style.flexBasis=(Math.round(c.ratio*1000)/10)+'%';
+    if(left) left.style.flexBasis=(Math.round((1-c.ratio)*1000)/10)+'%';
+  } else {
+    pane.style.flexBasis=''; if(left) left.style.flexBasis='';
+  }
+}
+function initSidePane(){
+  var pane=$('sidePane'), bar=$('splitBar');
+  if(!pane) return;
+  if(!pane.dataset.bound){
+    pane.dataset.bound='1';
+    if(bar){
+      var dragging=false;
+      var onMove=function(ev){
+        if(!dragging) return;
+        var wrap=$('splitWrap'); if(!wrap) return;
+        var r=wrap.getBoundingClientRect();
+        var x=(ev.touches&&ev.touches[0]?ev.touches[0].clientX:ev.clientX);
+        var ratio=1-(x-r.left)/r.width;
+        ratio=Math.max(SIDE_PANE_MIN, Math.min(SIDE_PANE_MAX, ratio));
+        sidePaneCfg().ratio=ratio;
+        applySidePane();
+      };
+      var onUp=function(){
+        if(!dragging) return;
+        dragging=false;
+        document.body.classList.remove('spdragging');
+        saveStateQuiet();
+      };
+      bar.addEventListener('pointerdown', function(ev){ dragging=true; document.body.classList.add('spdragging'); ev.preventDefault(); });
+      bar.addEventListener('dblclick', function(){ sidePaneCfg().ratio=0.5; applySidePane(); saveStateQuiet(); });
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onUp);
+    }
+  }
+  applySidePane();
+  renderSidePane();
+}
+/* 需要「窗口够宽」才分栏：窄屏时右半屏改为整块显示在下方 */
+function sidePaneNarrow(){ return window.innerWidth < 900; }
+
+function renderSidePane(){
+  var pane=$('sidePane'); if(!pane) return;
+  var c=sidePaneCfg();
+  if(!c.open){ pane.innerHTML=''; return; }
+  if(c.kind==='rulebook') renderRulebookPane(pane);
+  else renderModulePane(pane);
+}
+
+/* ================= 📖 模组 ================= */
+var moduleFile=null;                 // {name, kind, text, url}
+function moduleKindOf(name, type){
+  var s=(name||'').toLowerCase();
+  if(/\.pdf$/.test(s)) return 'pdf';
+  if(/\.docx$/.test(s)) return 'docx';
+  if(/\.(txt|md|markdown)$/.test(s)) return 'text';
+  if(type==='application/pdf') return 'pdf';
+  if(/wordprocessingml/.test(type||'')) return 'docx';
+  return 'text';
+}
+/* ---- IndexedDB：把上传的模组存在浏览器里，刷新后还在 ---- */
+function idbOpen(cb, fail){
+  if(!window.indexedDB){ if(fail) fail(new Error('浏览器不支持本地存储')); return; }
+  var req=indexedDB.open('coc-tool-side', 1);
+  req.onupgradeneeded=function(){ var db=req.result; if(!db.objectStoreNames.contains('files')) db.createObjectStore('files'); };
+  req.onsuccess=function(){ cb(req.result); };
+  req.onerror=function(){ if(fail) fail(req.error); };
+}
+function idbPut(key, val, cb){
+  idbOpen(function(db){
+    var tx=db.transaction('files','readwrite');
+    tx.objectStore('files').put(val, key);
+    tx.oncomplete=function(){ if(cb) cb(); };
+  }, function(){ if(cb) cb(); });
+}
+function idbGet(key, cb){
+  idbOpen(function(db){
+    var tx=db.transaction('files','readonly');
+    var rq=tx.objectStore('files').get(key);
+    rq.onsuccess=function(){ cb(rq.result||null); };
+    rq.onerror=function(){ cb(null); };
+  }, function(){ cb(null); });
+}
+function idbDel(key, cb){
+  idbOpen(function(db){
+    var tx=db.transaction('files','readwrite');
+    tx.objectStore('files').delete(key);
+    tx.oncomplete=function(){ if(cb) cb(); };
+  }, function(){ if(cb) cb(); });
+}
+function modulePickFile(){ var f=$('moduleFileInput'); if(f) f.click(); }
+function onModulePick(ev){
+  var f=ev.target.files && ev.target.files[0];
+  ev.target.value='';
+  if(f) loadModuleFile(f);
+}
+function loadModuleFile(file, cb){
+  var kind=moduleKindOf(file.name, file.type);
+  if(kind==='pdf'){
+    if(moduleFile && moduleFile.url) try{ URL.revokeObjectURL(moduleFile.url); }catch(e){}
+    moduleFile={name:file.name, kind:'pdf', url:URL.createObjectURL(file), size:file.size};
+    idbPut('module', {name:file.name, kind:'pdf', blob:file});
+    renderSidePane(); if(cb) cb();
+    return;
+  }
+  if(kind==='docx'){
+    var rd2=new FileReader();
+    rd2.onload=function(){
+      var buf=rd2.result, html;
+      try{
+        html=docxToHTML(buf);
+      }catch(e){
+        html='<div class="sp-empty"><p><b>这个 .docx 打不开</b></p><p class="hint">'+esc(e.message||e)+'</p>'+
+             '<p class="hint">可以先用 Word 另存为 PDF 再拖进来（老的 .doc 格式也请先另存为 .docx）。</p></div>';
+      }
+      moduleFile={name:file.name, kind:'docx', text:html, size:file.size};
+      idbPut('module', {name:file.name, kind:'docx', text:html});
+      renderSidePane(); if(cb) cb();
+    };
+    rd2.readAsArrayBuffer(file);
+    return;
+  }
+  var rd=new FileReader();
+  rd.onload=function(){
+    var text=String(rd.result||'');
+    moduleFile={name:file.name, kind:kind, text:text, size:file.size};
+    idbPut('module', {name:file.name, kind:kind, text:text});
+    renderSidePane(); if(cb) cb();
+  };
+  rd.readAsText(file, 'utf-8');
+}
+function restoreModuleFromStore(){
+  idbGet('module', function(rec){
+    if(!rec) return;
+    if(rec.kind==='pdf' && rec.blob){
+      moduleFile={name:rec.name, kind:'pdf', url:URL.createObjectURL(rec.blob), size:rec.blob.size};
+    } else if(rec.text!=null){
+      moduleFile={name:rec.name, kind:rec.kind, text:rec.text, size:(rec.text||'').length};
+    }
+    if(sidePaneIsOpen('module')) renderSidePane();
+  });
+}
+function moduleClear(){
+  if(!moduleFile) return;
+  if(moduleFile.url) try{ URL.revokeObjectURL(moduleFile.url); }catch(e){}
+  moduleFile=null; idbDel('module');
+  renderSidePane();
+}
+function moduleSizeText(n){
+  if(!n) return '';
+  if(n<1024) return n+' B';
+  if(n<1024*1024) return Math.round(n/1024)+' KB';
+  return (n/1024/1024).toFixed(1)+' MB';
+}
+function renderModulePane(pane){
+  var m=moduleFile;
+  var head='<div class="sp-head"><b>📖 模组</b>'+
+    '<span class="hint">左边照常带团，右边看模组</span>'+
+    '<div class="row sp-tools">'+
+      '<button class="small" onclick="modulePickFile()">'+(m?'🔁 换一个':'⬆ 上传模组')+'</button>'+
+      (m?'<button class="small ghost" onclick="moduleClear()" title="从本机清除（不删你自己的文件）">🗑 清除</button>':'')+
+      '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
+    '</div></div>';
+  var body='';
+  if(!m){
+    body='<div class="sp-empty">'+
+      '<p><b>把模组文件拖进来，或点「⬆ 上传模组」</b></p>'+
+      '<p class="hint">支持 <b>Word（.docx）</b>、<b>PDF</b>、<b>txt / md</b>；PDF 用浏览器自带的阅读器（可缩放、可搜），'+
+      'Word 会直接排成网页看。文件只存在你自己的浏览器里，刷新后还在，不上传任何服务器。</p>'+
+      '<p class="hint">想左右调宽度：拖中间那条细线，双击回到一半一半。</p></div>';
+  } else if(m.kind==='pdf'){
+    body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📄 '+esc(m.name)+'</span>'+
+         '<span class="hint">'+moduleSizeText(m.size)+' · PDF 可用右上角工具缩放/搜索</span></div>'+
+         '<iframe class="sp-frame" src="'+esc(m.url)+'" title="模组 PDF"></iframe>';
+  } else if(m.kind==='docx'){
+    body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📝 '+esc(m.name)+'</span>'+
+         '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
+         '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
+         '<div class="sp-doc" id="spDoc">'+moduleDocxHTML(m.text)+'</div>';
+  } else {
+    body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📄 '+esc(m.name)+'</span>'+
+         '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
+         '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
+         '<div class="sp-doc" id="spDoc"><pre class="sp-pre">'+esc(m.text)+'</pre></div>';
+  }
+  var drop='<div class="sp-drop" id="spDrop">⬇ 拖模组文件到这里也可以（docx / pdf / txt / md）</div>';
+  pane.innerHTML=head+'<div class="sp-body">'+body+drop+'</div>'+
+    '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown" style="display:none" onchange="onModulePick(event)">';
+  moduleBindDrop();
+}
+function moduleFont(d){
+  var el=$('spDoc'); if(!el) return;
+  var cur=parseFloat(el.dataset.fs||'14')+d;
+  cur=Math.max(11, Math.min(24, cur));
+  el.dataset.fs=cur; el.style.fontSize=cur+'px';
+}
+function moduleBindDrop(){
+  var z=$('spDrop'); if(!z) return;
+  ['dragenter','dragover'].forEach(function(ev){ z.addEventListener(ev, function(e){ e.preventDefault(); z.classList.add('on'); }); });
+  ['dragleave','drop'].forEach(function(ev){ z.addEventListener(ev, function(e){ e.preventDefault(); z.classList.remove('on'); }); });
+  z.addEventListener('drop', function(e){
+    var f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) loadModuleFile(f, function(){ toast('模组已载入'); });
+  });
+}
+
+/* ---- .docx → HTML：docx 就是个 zip，自己解压 + 自己排版 ----
+   不依赖浏览器的 DecompressionStream（老 Safari / 某些内核没有它，会直接打不开），
+   内置一个纯 JS 的 raw-deflate 解码器，任何浏览器都能用。
+   正文里的图片（word/media/*）也一起抽出来内联成 data: URL，模组里的地图 / 立绘不会丢。 */
+var LBASE=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+var LEXT=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+var DBASE=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+var DEXT=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+var CLORDER=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+/* raw deflate（无 zlib 头）解压 */
+function inflateRaw(input){
+  var ip=0, bitbuf=0, bitcnt=0, op=0;
+  var out=new Uint8Array(Math.max(1024, (input.length||1)*5));
+  function room(n){ if(op+n<=out.length) return; var cap=out.length; while(cap<op+n) cap*=2; var t=new Uint8Array(cap); t.set(out.subarray(0,op)); out=t; }
+  function bits(n){
+    var v=0, i=0;
+    while(i<n){
+      if(bitcnt===0){ if(ip>=input.length) throw new Error('压缩数据不完整'); bitbuf=input[ip++]; bitcnt=8; }
+      var take=Math.min(n-i,bitcnt);
+      v |= (bitbuf & ((1<<take)-1)) << i;
+      bitbuf >>>= take; bitcnt -= take; i += take;
+    }
+    return v;
+  }
+  function build(lengths,n){
+    var counts=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], i;
+    for(i=0;i<n;i++) counts[lengths[i]]++;
+    counts[0]=0;
+    var offs=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    for(i=1;i<16;i++) offs[i]=offs[i-1]+counts[i-1];
+    var syms=new Array(n);
+    for(i=0;i<n;i++) if(lengths[i]) syms[offs[lengths[i]]++]=i;
+    return {counts:counts, syms:syms};
+  }
+  function decode(h){
+    var code=0, first=0, index=0;
+    for(var len=1; len<16; len++){
+      code |= bits(1);
+      var count=h.counts[len];
+      if(code-first<count) return h.syms[index+(code-first)];
+      index+=count; first=(first+count)<<1; code<<=1;
+    }
+    throw new Error('压缩数据里有坏码');
+  }
+  function copy(len,dist){
+    if(dist>op) throw new Error('压缩数据越界');
+    room(len);
+    for(var i=0;i<len;i++){ out[op]=out[op-dist]; op++; }
+  }
+  var fixedL=null, fixedD=null;
+  for(;;){
+    var last=bits(1), type=bits(2);
+    if(type===0){                                  // 不压缩块
+      bitcnt=0;                                    // 丢掉当前字节里剩下的位（已读进 bitbuf，不能再前进 ip）
+      var len0=input[ip]|(input[ip+1]<<8); ip+=4;
+      room(len0); out.set(input.subarray(ip,ip+len0), op); op+=len0; ip+=len0;
+    } else {
+      var hlit, hdist, lh, dh;
+      if(type===1){
+        if(!fixedL){
+          var fl=[], fd=[], k;
+          for(k=0;k<144;k++) fl.push(8);
+          for(;k<256;k++) fl.push(9);
+          for(;k<280;k++) fl.push(7);
+          for(;k<288;k++) fl.push(8);
+          for(k=0;k<30;k++) fd.push(5);
+          fixedL=build(fl,288); fixedD=build(fd,30);
+        }
+        lh=fixedL; dh=fixedD;
+      } else if(type===2){
+        hlit=bits(5)+257; hdist=bits(5)+1;
+        var hclen=bits(4)+4, cl=new Array(19).fill(0);
+        for(var ci=0;ci<hclen;ci++) cl[CLORDER[ci]]=bits(3);
+        var clh=build(cl,19);
+        var lens=[], n2=hlit+hdist;
+        while(lens.length<n2){
+          var sym=decode(clh), rep=0, val=0;
+          if(sym<16) lens.push(sym);
+          else if(sym===16){ rep=bits(2)+3; val=lens[lens.length-1]; }
+          else if(sym===17){ rep=bits(3)+3; val=0; }
+          else { rep=bits(7)+11; val=0; }
+          while(rep--) lens.push(val);
+        }
+        var ll=lens.slice(0,hlit), dl=lens.slice(hlit);
+        lh=build(ll,hlit); dh=build(dl,hdist);
+      } else throw new Error('压缩数据格式不对');
+      for(;;){
+        var s=decode(lh);
+        if(s<256){ room(1); out[op++]=s; }
+        else if(s===256) break;
+        else {
+          var le=s-257; if(le>=LBASE.length) throw new Error('压缩数据里的长度码越界');
+          var length=LBASE[le]+bits(LEXT[le]);
+          var ds=decode(dh);
+          copy(length, DBASE[ds]+bits(DEXT[ds]));
+        }
+      }
+    }
+    if(last) break;
+  }
+  return out.subarray(0,op);
+}
+/* ---- zip（docx）读取 ---- */
+function zipCentral(buf){
+  var dv=new DataView(buf), eocd=-1;
+  for(var i=buf.byteLength-22; i>=0 && i>buf.byteLength-22-65557; i--){
+    if(dv.getUint32(i,true)===0x06054b50){ eocd=i; break; }
+  }
+  if(eocd<0) throw new Error('不是有效的 .docx（找不到 ZIP 结尾）');
+  var count=dv.getUint16(eocd+10,true), p=dv.getUint32(eocd+16,true), entries={};
+  for(var k=0;k<count;k++){
+    if(p+46>buf.byteLength || dv.getUint32(p,true)!==0x02014b50) break;
+    var nlen=dv.getUint16(p+28,true), elen=dv.getUint16(p+30,true), clen=dv.getUint16(p+32,true);
+    var name=new TextDecoder('utf-8').decode(new Uint8Array(buf,p+46,nlen));
+    entries[name]={method:dv.getUint16(p+10,true), csize:dv.getUint32(p+20,true), offset:dv.getUint32(p+42,true)};
+    p+=46+nlen+elen+clen;
+  }
+  return entries;
+}
+function zipReadEntry(buf, e){
+  var dv=new DataView(buf);
+  var start=e.offset+30+dv.getUint16(e.offset+26,true)+dv.getUint16(e.offset+28,true);
+  var raw=new Uint8Array(buf, start, e.csize);
+  return e.method===0 ? raw : inflateRaw(raw);
+}
+/* 兼容旧调用：取单个条目 */
+function zipEntryBytes(buf, want){
+  var entries=zipCentral(buf), e=entries[want];
+  if(!e) return null;
+  try{ return {method:e.method, bytes:zipReadEntry(buf,e)}; }catch(err){ return null; }
+}
+/* 字节 → base64（图片内联用；分块避免超长参数） */
+function bytesToB64(u8){
+  var s='';
+  for(var i=0;i<u8.length;i+=0x8000) s+=String.fromCharCode.apply(null, u8.subarray(i, i+0x8000));
+  return btoa(s);
+}
+function docxPartPath(t){
+  t=String(t||'');
+  if(t.charAt(0)==='/') return t.slice(1);
+  var parts=t.split('/');
+  while(parts.length && parts[0]==='..') parts.shift();
+  if(parts[0]==='word') return parts.join('/');
+  return 'word/'+parts.join('/');
+}
+var DOCX_MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',
+  webp:'image/webp',tif:'image/tiff',tiff:'image/tiff',emf:'image/emf',wmf:'image/wmf',svg:'image/svg+xml'};
+function docxRelMap(xml){
+  var map={}, re=/<Relationship\b[^>]*\/?>/g, m;
+  while((m=re.exec(xml))){
+    var id=/Id="([^"]*)"/.exec(m[0]), tgt=/Target="([^"]*)"/.exec(m[0]);
+    if(id && tgt && !/\/$/.test(tgt[1])) map[id[1]]=docxPartPath(tgt[1]);
+  }
+  return map;
+}
+function docxToHTML(buf){
+  /* 调用方通常给 ArrayBuffer；万一给的是 Uint8Array（测试 / 别的入口）也照样能用 */
+  if(typeof ArrayBuffer!=='undefined' && ArrayBuffer.isView && ArrayBuffer.isView(buf))
+    buf=buf.buffer.slice(buf.byteOffset, buf.byteOffset+buf.byteLength);
+  var W='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  var A='http://schemas.openxmlformats.org/drawingml/2006/main';
+  var R='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  var entries;
+  try{ entries=zipCentral(buf); }catch(e){ throw new Error(e.message||'不是有效的 .docx 文件'); }
+  if(!entries['word/document.xml']) throw new Error('这个 .docx 里找不到正文（可能是 .doc 老格式或加密文件）');
+  var xml=new TextDecoder('utf-8').decode(zipReadEntry(buf, entries['word/document.xml']));
+  var rels={};
+  if(entries['word/_rels/document.xml.rels']){
+    try{ rels=docxRelMap(new TextDecoder('utf-8').decode(zipReadEntry(buf, entries['word/_rels/document.xml.rels']))); }catch(e){ rels={}; }
+  }
+  var imgCache={};
+  function imgSrc(rid){
+    if(!rid) return '';
+    if(imgCache[rid]!==undefined) return imgCache[rid];
+    var part=rels[rid];
+    var url='';
+    if(part && entries[part]){
+      try{
+        var ext=(part.split('.').pop()||'').toLowerCase();
+        url='data:'+(DOCX_MIME[ext]||'application/octet-stream')+';base64,'+bytesToB64(zipReadEntry(buf, entries[part]));
+      }catch(e){ url=''; }
+    }
+    imgCache[rid]=url;
+    return url;
+  }
+  var doc=new DOMParser().parseFromString(xml,'application/xml');
+  if(doc.getElementsByTagName('parsererror').length) throw new Error('这个 .docx 的正文解析失败');
+  var node=doc.documentElement;
+  var problems=(node.getElementsByTagNameNS ? node.getElementsByTagNameNS('*','p') : null);
+
+  function attr(el, ns, name){ return el.getAttributeNS(ns, name) || el.getAttribute('w:'+name) || ''; }
+  function first(el, ns, name){
+    var l=el.getElementsByTagNameNS(ns,name);
+    return l && l.length ? l[0] : null;
+  }
+  function runHTML(r){
+    var W2=W, t='';
+    var kids=r.childNodes;
+    for(var i=0;i<kids.length;i++){
+      var n=kids[i];
+      if(n.namespaceURI!==W2){ continue; }
+      if(n.localName==='t') t+=(n.textContent||'');
+      else if(n.localName==='tab') t+='\u00a0\u00a0\u00a0\u00a0';
+      else if(n.localName==='br') t+= (attr(n,W2,'type')==='page' ? '\u0000' : '\n');
+      else if(n.localName==='noBreakHyphen') t+='-';
+      else if(n.localName==='drawing' || n.localName==='pict' || n.localName==='object'){
+        var blip=first(n,A,'blip') || first(n,'urn:schemas-microsoft-com:vml','imagedata');
+        var rid=blip ? (blip.getAttributeNS(R,'embed')||blip.getAttribute('r:embed')||blip.getAttributeNS(R,'id')||blip.getAttribute('r:id')) : '';
+        var src=imgSrc(rid);
+        if(!src) continue;
+        var w=0, ext=first(n,'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing','extent');
+        if(ext){ w=Math.round((parseInt(ext.getAttribute('cx'),10)||0)/9525); }
+        t+='\u0001'+src+'\u0001'+(w||'')+'\u0001';
+      }
+    }
+    if(!t) return '';
+    var html='';
+    var chunks=t.replace(/\u0000/g,'\u0000').split(/(\u0001[^\u0001]*\u0001[^\u0001]*\u0001)/);
+    for(var c=0;c<chunks.length;c++){
+      var ck=chunks[c];
+      if(ck.charAt(0)==='\u0001'){
+        var p2=ck.split('\u0001');
+        var wpx=parseInt(p2[2],10);
+        html+='<img class="sp-img" src="'+p2[1]+'"'+(wpx?' style="width:'+Math.min(wpx,860)+'px"':'')+' alt="">';
+        continue;
+      }
+      if(!ck) continue;
+      var parts=ck.split('\u0000');
+      for(var q=0;q<parts.length;q++){
+        if(q>0) html+='<hr class="sp-pb">';
+        html+=esc(parts[q]).replace(/\n/g,'<br>');
+      }
+    }
+    if(!html) return '';
+    var props=(r.getElementsByTagNameNS(W2,'rPr')[0])||null;
+    var style='', open='', close='';
+    if(props){
+      if(first(props,W2,'b')) open+='<b>', close='</b>';
+      if(first(props,W2,'i')) open+='<i>', close='</i>';
+      if(first(props,W2,'u')) open+='<u>', close+='</u>';
+      if(first(props,W2,'strike')||first(props,W2,'dstrike')) open+='<s>', close+='</s>';
+      var col=first(props,W2,'color');
+      if(col){ var cv=col.getAttributeNS(W2,'val')||col.getAttribute('w:val'); if(cv && cv!=='auto' && /^[0-9A-Fa-f]{6}$/.test(cv)) style+='color:#'+cv+';'; }
+      var sz=first(props,W2,'sz');
+      if(sz){ var sv=parseInt(sz.getAttributeNS(W2,'val')||sz.getAttribute('w:val'),10); if(sv) style+='font-size:'+(sv/2)+'pt;'; }
+      var hl=first(props,W2,'highlight');
+      if(hl){ var hv=hl.getAttributeNS(W2,'val')||hl.getAttribute('w:val'); if(hv && hv!=='none') style+='background:'+hv+';'; }
+      var va=first(props,W2,'vertAlign');
+      if(va){ var vv=va.getAttributeNS(W2,'val')||va.getAttribute('w:val'); if(vv==='superscript') open+='<sup>', close='</sup>'; if(vv==='subscript') open+='<sub>', close+='</sub>'; }
+    }
+    return '<span'+(style?' style="'+style+'"':'')+'>'+open+html+close+'</span>';
+  }
+  function paraHTML(p){
+    var inner='';
+    var runs=p.getElementsByTagNameNS(W,'r');
+    for(var i=0;i<runs.length;i++) inner+=runHTML(runs[i]);
+    var style='', jc='', ind='';
+    var ps=first(p,W,'pStyle');
+    if(ps) style=ps.getAttributeNS(W,'val')||ps.getAttribute('w:val')||'';
+    var j=first(p,W,'jc'); if(j) jc=(j.getAttributeNS(W,'val')||j.getAttribute('w:val')||'');
+    var ppr=first(p,W,'pPr');
+    if(ppr){ var nu=first(ppr,W,'numPr'); if(nu) inner='<span class="sp-bullet">•</span>'+inner;
+      var pInd=first(ppr,W,'ind');
+      if(pInd){ var fl=pInd.getAttributeNS(W,'firstLine')||pInd.getAttribute('w:firstLine')||pInd.getAttributeNS(W,'left')||pInd.getAttribute('w:left')||'';
+        var flv=parseInt(fl,10); if(flv) ind='padding-left:'+Math.min(Math.round(flv/15),120)+'px;'; }
+    }
+    var extra=(jc?'text-align:'+(jc==='both'?'justify':jc)+';':'')+ind;
+    var hm=/^Heading\s*([1-6])$/i.exec(style) || /^([1-6])$/.exec(style);
+    var tag = /^Title$/i.test(style) ? 'h1' : (hm ? 'h'+hm[1] : 'p');
+    var cls = tag==='p' ? 'sp-p' : 'sp-h';
+    if(!inner.replace(/<[^>]*>/g,'').trim() && !/<img|<hr/.test(inner)) return '<p class="sp-p sp-gap"></p>';
+    return '<'+tag+' class="'+cls+'"'+(extra?' style="'+extra+'"':'')+'>'+inner+'</'+tag+'>';
+  }
+  function tableHTML(tbl){
+    var html='<div class="sp-tblwrap"><table class="sp-tbl">';
+    var rows=tbl.getElementsByTagNameNS(W,'tr');
+    for(var r=0;r<rows.length;r++){
+      var isHead = !!first(rows[r],W,'tblHeader');
+      html+= isHead ? '<thead><tr>' : '<tr>';
+      var cells=rows[r].getElementsByTagNameNS(W,'tc');
+      for(var c=0;c<cells.length;c++){
+        var span=first(cells[c],W,'gridSpan');
+        var cs=span ? (parseInt(span.getAttributeNS(W,'val')||span.getAttribute('w:val'),10)||1) : 1;
+        var inner='';
+        var ps=cells[c].getElementsByTagNameNS(W,'p');
+        for(var k=0;k<ps.length;k++) inner+=paraHTML(ps[k]);
+        var vm=first(cells[c],W,'vMerge');
+        var tag = isHead ? 'th' : 'td';
+        var more = cs>1 ? ' colspan="'+cs+'"' : '';
+        html+='<'+tag+more+' class="sp-td'+(vm?' sp-vm':'')+'">'+inner+'</'+tag+'>';
+      }
+      html+= isHead ? '</tr></thead>' : '</tr>';
+    }
+    return html+'</table></div>';
+  }
+  var out=[];
+  function walk(node, inTable){
+    var kids=node.childNodes;
+    for(var i=0;i<kids.length;i++){
+      var n=kids[i];
+      if(n.nodeType!==1) continue;
+      if(n.namespaceURI!==W) continue;
+      if(n.localName==='p') out.push(paraHTML(n));
+      else if(n.localName==='tbl') out.push(tableHTML(n));
+      else if(n.localName==='sdt'){ var c2=n.getElementsByTagNameNS(W,'sdtContent')[0]; if(c2) walk(c2); }
+      else if(n.localName==='sectPr'){ /* 节属性，不渲染 */ }
+      else walk(n);
+    }
+  }
+  var body=null;
+  for(var i=0;i<node.childNodes.length;i++) if(node.childNodes[i].localName==='body'){ body=node.childNodes[i]; break; }
+  walk(body||node);
+  var html=out.join('\n');
+  if(!html.trim()) html='<p class="hint">（这个文档没读到正文文字，可能内容都在文本框/图片里）</p>';
+  return html;
+}
+function moduleDocxHTML(text){
+  /* text 里存的是已经排好的 HTML（docx 解析在 loadModuleFile 里做），
+     万一存的是解析失败提示，就直接显示。 */
+  return text || '<p class="hint">（空文档）</p>';
+}
+
+/* ================= 📚 规则书 ================= */
+var rulebookData=null, rulebookLoading=false, rulebookPage=1, rulebookHits=null, rulebookQuery='';
+function ensureRulebook(cb, fail){
+  if(window.__COC_RULEBOOK){ rulebookData=window.__COC_RULEBOOK; cb(rulebookData); return; }
+  if(rulebookData){ cb(rulebookData); return; }
+  if(rulebookLoading){ window.__cocRbQueue.push(cb); return; }
+  rulebookLoading=true;
+  window.__cocRbQueue=[cb];
+  var url=window.__COC_RULEBOOK_URL;
+  if(!url){ if(fail) fail(new Error('规则书数据缺失（请用 offline.html 或重新构建）')); return; }
+  var done=function(){
+    rulebookLoading=false;
+    rulebookData=window.__COC_RULEBOOK||null;
+    var q=window.__cocRbQueue||[]; window.__cocRbQueue=[];
+    if(rulebookData) q.forEach(function(f){ f(rulebookData); });
+    else if(fail) fail(new Error('规则书数据加载失败'));
+  };
+  var s=document.createElement('script');
+  s.src=url; s.onload=done; s.onerror=function(){ rulebookLoading=false; if(fail) fail(new Error('规则书数据加载失败（在线版需能访问 '+url+'）')); };
+  document.head.appendChild(s);
+}
+function rbPageCount(){ return rulebookData ? (rulebookData.pages||[]).length : 0; }
+/* 规则书正文用「浏览器自带的 PDF 阅读器」显示原版页面 —— 表格、颜色、流程图、排版全都跟纸书一致。
+   我们自己的那套文本数据只用来做目录与全文检索（点一下命中页 → PDF 跳到那一页）。
+   离线单文件版把 PDF 内联成 base64，打开时解成 Blob URL 再交给 iframe；
+   解不了 Blob（个别环境没有 URL.createObjectURL）就退回 data: URL，照样能显示；
+   在线版直接用仓库里的 assets/rulebook/coc7.pdf。 */
+var rulebookPdfUrl=null, rbZoom=100;
+function rulebookPdf(){
+  if(rulebookPdfUrl!==null) return rulebookPdfUrl;
+  var b64=window.__COC_RULEBOOK_PDF_B64;
+  if(b64){
+    var blobUrl='';
+    try{
+      if(typeof Blob==='function' && typeof URL!=='undefined' && URL.createObjectURL)
+        blobUrl=URL.createObjectURL(new Blob([b64ToBytes(b64)],{type:'application/pdf'}));
+    }catch(e){ blobUrl=''; }
+    rulebookPdfUrl=blobUrl||('data:application/pdf;base64,'+b64);
+  } else if(window.__COC_RULEBOOK_PDF_URL){
+    rulebookPdfUrl=window.__COC_RULEBOOK_PDF_URL;
+  } else rulebookPdfUrl='';
+  return rulebookPdfUrl;
+}
+function rbFrameSrc(p){
+  var base=rulebookPdf(); if(!base) return '';
+  return base+'#page='+p+'&zoom='+rbZoom+'&view=FitH';
+}
+function renderRulebookPane(pane){
+  pane.innerHTML='<div class="sp-head"><b>📚 规则书</b>'+
+    '<span class="hint">'+(rulebookData? '原版 · 全书 '+rbPageCount()+' 页 · 目录 '+((rulebookData.toc||[]).length)+' 条':'正在加载…')+'</span>'+
+    '<div class="row sp-tools">'+
+      '<button class="small ghost" id="rbTocBtn" onclick="rbToggleToc()" title="展开/收起目录与搜索">☰ 目录</button>'+
+      '<button class="small ghost" onclick="rbZoomBy(-1)" title="缩小">A－</button>'+
+      '<button class="small ghost" onclick="rbZoomBy(1)" title="放大">A＋</button>'+
+      '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
+    '</div></div>'+
+    '<div class="sp-body rb-wrap" id="rbWrap">'+
+      '<div class="rb-side" id="rbSide">'+
+        '<div class="rb-searchrow"><input type="text" id="rbSearch" placeholder="搜索全书（回车）" onkeydown="if(event.key===\'Enter\')rbSearch()">'+
+        '<button class="small" onclick="rbSearch()">🔍</button></div>'+
+        '<div class="rb-toc" id="rbToc"></div>'+
+        '<div class="rb-hits" id="rbHits" hidden></div>'+
+      '</div>'+
+      '<div class="rb-main">'+
+        '<div class="rb-bar">'+
+          '<button class="small ghost" onclick="rbGoto(rulebookPage-1)">‹ 上一页</button>'+
+          '<span class="rb-pageno"><input type="number" id="rbPageInput" value="'+rulebookPage+'" min="1" onchange="rbGoto(parseInt(this.value,10))"> / <span id="rbPageMax">'+rbPageCount()+'</span></span>'+
+          '<button class="small ghost" onclick="rbGoto(rulebookPage+1)">下一页 ›</button>'+
+          '<span class="hint" id="rbHint">左侧目录 / 搜索定位，正文用浏览器阅读器看原版</span>'+
+          '<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗ 新窗口</button>'+
+        '</div>'+
+        '<iframe class="rb-frame" id="rbFrame" title="COC7th 核心规则书"></iframe>'+
+      '</div>'+
+    '</div>';
+  ensureRulebook(function(){
+    rbRenderToc();
+    rbPaintFrame();
+    var mx=$('rbPageMax'); if(mx) mx.textContent=rbPageCount();
+  }, function(err){
+    var f=$('rbFrame');
+    if(f) f.outerHTML='<div class="sp-empty"><p><b>规则书没能加载</b></p><p class="hint">'+esc(err.message)+'</p></div>';
+  });
+}
+function rbPaintFrame(){
+  var f=$('rbFrame'); if(!f) return;
+  var src=rbFrameSrc(rulebookPage);
+  if(!src){
+    f.outerHTML='<div class="sp-empty"><p><b>找不到规则书 PDF</b></p><p class="hint">离线版请用重新构建后的 offline.html；在线版需要能访问 assets/rulebook/coc7.pdf。</p></div>';
+    return;
+  }
+  f.setAttribute('src',src);
+}
+function rbOpenTab(){
+  var base=rulebookPdf(); if(!base){ toast('规则书 PDF 还没加载好'); return; }
+  window.open(base+'#page='+rulebookPage, '_blank');
+}
+function rbToggleToc(){ var el=$('rbSide'); if(el) el.classList.toggle('hide'); }
+function rbZoomBy(d){
+  rbZoom=Math.max(50,Math.min(200,rbZoom+d*10));
+  rbPaintFrame();
+}
+function rbRenderToc(){
+  var box=$('rbToc'); if(!box) return;
+  var toc=(rulebookData&&rulebookData.toc)||[];
+  box.innerHTML=toc.map(function(t,i){
+    return '<div class="rb-tocitem lv'+t[0]+'" data-i="'+i+'" onclick="rbGoto('+t[2]+')" title="第 '+t[2]+' 页">'+esc(t[1])+'</div>';
+  }).join('') || '<div class="hint" style="padding:8px">这本书没有内置书签目录，用上面的搜索定位。</div>';
+  box.hidden=false;
+  var hits=$('rbHits'); if(hits) hits.hidden=true;
+}
+function rbTocIndexForPage(p){
+  var toc=(rulebookData&&rulebookData.toc)||[], best=-1;
+  for(var i=0;i<toc.length;i++) if(toc[i][2]<=p) best=i;
+  return best;
+}
+function rbGoto(p){
+  var n=rbPageCount()||1;
+  rulebookPage=Math.max(1,Math.min(n, p|0 || 1));
+  var inp=$('rbPageInput'); if(inp) inp.value=rulebookPage;
+  var f=$('rbFrame'), src=rbFrameSrc(rulebookPage);
+  if(f && src) f.setAttribute('src', src);
+  var side=$('rbSide');
+  if(side){
+    var items=side.querySelectorAll('.rb-tocitem');
+    for(var i=0;i<items.length;i++) items[i].classList.toggle('on', +items[i].dataset.i===rbTocIndexForPage(rulebookPage));
+  }
+}
+/* 全文搜索：命中页列在左侧，点一条 → PDF 跳到那一页（搜索词在左侧上下文里能直接看到） */
+function rbSearch(){
+  if(!rulebookData) return;
+  var inp=$('rbSearch'); if(!inp) return;
+  var q=(inp.value||'').trim();
+  rulebookQuery=q;
+  var toc=$('rbToc'), box=$('rbHits');
+  if(!q){ if(toc) toc.hidden=false; if(box){ box.hidden=true; box.innerHTML=''; } rbGoto(rulebookPage); return; }
+  var hits=[], pages=rulebookData.pages||[], lower=q.toLowerCase();
+  for(var i=0;i<pages.length;i++){
+    var txt=(pages[i]||[]).join('\n');
+    var idx=txt.toLowerCase().indexOf(lower);
+    if(idx>=0){
+      var from=Math.max(0, idx-24);
+      hits.push({p:i+1, ctx:(from>0?'…':'')+txt.slice(from, idx+q.length+40).replace(/\n/g,' ')+'…'});
+    }
+    if(hits.length>=400) break;
+  }
+  rulebookHits=hits;
+  if(toc) toc.hidden=true;
+  if(!box) return;
+  box.hidden=false;
+  box.innerHTML='<div class="rb-hithead"><button class="small ghost" onclick="rbRenderToc()">‹ 目录</button> 「'+esc(q)+'」命中 '+hits.length+' 页'+
+    (hits.length>=400?'（只显示前 400 页）':'')+'</div>'+
+    (hits.length ? hits.map(function(h){
+      return '<div class="rb-hit" onclick="rbGoto('+h.p+')" title="跳到第 '+h.p+' 页">'+
+        '<b>第 '+h.p+' 页</b><span>'+esc(h.ctx)+'</span></div>';
+    }).join('') : '<div class="hint" style="padding:10px">没找到，换个词试试（比如「侦查」「理智」「战斗」）。</div>');
+  box.scrollTop=0;
+}

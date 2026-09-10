@@ -20,6 +20,7 @@ function parseCardData(data, fname){
     if(!window.CoCParser){ toast('解析模块未加载'); return; }
     var parsed=CoCParser.parseWorkbook(wb);
     if(!parsed || parsed.ok===false){ toast('未能识别这张卡的表格结构',5000); return; }
+    try{ parsed.cardTpl=(typeof cocCardDetect==='function')?cocCardDetect(wb):''; }catch(e){ parsed.cardTpl=''; }
     pendingParse=parsed;
     pendingFile=fname||'人物卡.xlsx';
     renderImportPreview();
@@ -41,7 +42,7 @@ function renderImportPreview(){
   box.innerHTML=`
     <div style="margin-top:8px" class="grid2">
       <div class="notice" style="margin:0">已读取「${esc(p.sheet)}」：${esc(p.basic.name||'（姓名空）')} · ${esc(p.basic.occupation||'职业空')} · 属性已读 · 技能 ${p.skills.length} 项 · 武器 ${p.weapons.length} 件 · 物品 ${p.items.length} 件${warn}</div>
-      <div class="hint">背景拆条 ${secs.length} 条${p.backstory.text?' + 正文'+p.backstory.text.length+'字':''}</div>
+      <div class="hint">识别为「${esc((typeof cocCard==='function'&&cocCard(p.cardTpl)?cocCard(p.cardTpl).short:'未知卡'))}」· 背景拆条 ${secs.length} 条${p.backstory.text?' + 正文'+p.backstory.text.length+'字':''}</div>
     </div>`;
 }
 

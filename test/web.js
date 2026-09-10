@@ -52,7 +52,7 @@ const interceptor = requestInterceptor(async (request) => {
 
   const fails = [];
   const ok = (name, cond) => { console.log((cond ? 'PASS ' : 'FAIL ') + name); if (!cond) fails.push(name); };
-  ok('导航6个入口', d.querySelectorAll('#nav button').length === 6);
+  ok('导航8个入口(4页+剧本+骰子+模组+规则书)', d.querySelectorAll('#nav button').length === 8);
   ok('示例数据已初始化', w.state && w.state.actors.length >= 1 && w.state.maps.length >= 1);
   ok('品牌为带团妙妙小工具', /带团妙妙小工具/.test((d.querySelector('.brand') || {}).textContent || ''));
   ok('首屏未加载 xlsx(懒加载)', typeof w.XLSX === 'undefined');
@@ -72,8 +72,8 @@ const interceptor = requestInterceptor(async (request) => {
     JSON.stringify({credit:last&&last.credit, other:last&&last.otherAssets}));
   ok('真实卡导入：其他资产表（5 格）读入', !!last && !!last.assetsTable && 'vehicle' in last.assetsTable && 'other' in last.assetsTable);
   ok('真实卡导入：导入即建立对比快照', !!last && !!last.importSnapshot && !!last.importSnapshot.skills);
-  ok('在线版：模板走按需 URL 且未内联', w.__COC_BLANK_CARD_URL === 'assets/blank-card.xlsx' && typeof w.__COC_BLANK_CARD_B64 === 'undefined');
-  const blankPath = path.join(ROOT, 'assets', 'blank-card.xlsx');
+  ok('在线版：模板走按需 URL 且未内联', w.__COC_BLANK_CARD_URL === 'assets/cards/pink.xlsx' && typeof w.__COC_BLANK_CARD_B64 === 'undefined');
+  const blankPath = path.join(ROOT, 'assets', 'cards', 'pink.xlsx');
   ok('在线版：空白人物卡模板随包提供', fs.existsSync(blankPath) && fs.statSync(blankPath).size > 100000);
   ok('在线版：能生成导出用的卡片字节', typeof w.buildCardXlsx === 'function' && !!w.importSnapshotOf && !!w.exportActorCard);
   w.close();

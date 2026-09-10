@@ -55,7 +55,7 @@ function main(){
 
   // 4) 在线多文件版结构
   const web = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  if (/__CSS__|__ICON__|__XLSX__|__PARSER__|__BLANKCARD__|__APP__/.test(web)){
+  if (/__CSS__|__ICON__|__XLSX__|__PARSER__|__BLANKCARD__|__RULEBOOK_PDF__|__APP__/.test(web)){
     console.error('index.html(在线版) 仍有占位符未替换');
     process.exit(1);
   }
@@ -65,6 +65,10 @@ function main(){
   }
   if (web.indexOf('<link rel="icon" type="image/png" href="assets/favicon.png">') < 0){
     console.error('index.html(在线版) 缺少标签图标链接');
+    process.exit(1);
+  }
+  if (web.indexOf("window.__COC_RULEBOOK_PDF_URL='assets/rulebook/coc7.pdf'") < 0){
+    console.error('index.html(在线版) 缺少规则书 PDF 路径');
     process.exit(1);
   }
   const order = ['parse-card.js'].concat(appFiles());

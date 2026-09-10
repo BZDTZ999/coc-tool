@@ -26,6 +26,16 @@ function renderNav(){
     b.onclick=function(){ toggleFloat(x[2]); };
     nav.appendChild(b);
   });
+  /* 右半屏：模组 / 规则书（不切换左边页面，只把右半边打开） */
+  [['nav-module','📖 模组','module','上传模组（word / pdf）在右半屏看，左边照常带团'],
+   ['nav-rulebook','📚 规则书','rulebook','右半屏查规则书：目录 + 全文搜索跳转']].forEach(function(x){
+    var b=document.createElement('button');
+    b.id=x[0]; b.textContent=x[1];
+    if(sidePaneIsOpen(x[2])) b.className='active';
+    b.title=x[3];
+    b.onclick=function(){ toggleSidePane(x[2]); };
+    nav.appendChild(b);
+  });
 }
 /* 本次团名：放在导航栏正中间，可随时改名；导出人物卡 / 写入调查员经历都会用到它。 */
 function campaignName(){

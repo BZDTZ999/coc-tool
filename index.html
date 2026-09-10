@@ -26,11 +26,17 @@
   <nav id="nav"></nav>
 </div>
 <main>
-  <section class="tab" id="tab-surveyors"></section>
-  <section class="tab" id="tab-npcs"></section>
-  <section class="tab" id="tab-maps"></section>
-  <section class="tab" id="tab-combat"></section>
-  <section class="tab" id="tab-settings"></section>
+  <div class="splitwrap" id="splitWrap">
+    <div class="splitleft" id="splitLeft">
+      <section class="tab" id="tab-surveyors"></section>
+      <section class="tab" id="tab-npcs"></section>
+      <section class="tab" id="tab-maps"></section>
+      <section class="tab" id="tab-combat"></section>
+      <section class="tab" id="tab-settings"></section>
+    </div>
+    <div class="splitbar" id="splitBar" hidden title="拖动调整宽度；双击回到一半一半"></div>
+    <aside class="sidepane" id="sidePane" hidden></aside>
+  </div>
 </main>
 <footer>
   <div>数据保存在本机浏览器(可随时导出 json 备份)</div>
@@ -41,12 +47,16 @@
 <div class="modal-mask" id="actorModal" onclick="if(event.target===this)closeActorModal()"></div>
 <div class="modal-mask" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')"></div>
 <div class="modal-mask" id="bgModal" onclick="if(event.target===this)this.classList.remove('open')"></div>
+<div class="modal-mask" id="welcomeModal" onclick="if(event.target===this)closeWelcome()"></div>
 <div class="statusline" id="status"></div>
 
     <!-- 在线多文件版：脚本按序加载 src/*.js（与离线版同一份源码）。 -->
     <!-- 读 .xlsx 人物卡时才从 CDN 懒加载 xlsx 引擎；完全离线请改用 offline.html。 -->
     <script src="src/parse-card.js"></script>
-<script>window.__COC_BLANK_CARD_URL='assets/blank-card.xlsx';</script>
+<script>window.__COC_CARDS_URL={"pink":"assets/cards/pink.xlsx","cy23":"assets/cards/cy23.xlsx","cy2lus":"assets/cards/cy2lus.xlsx","cn":"assets/cards/cn.xlsx"};</script>
+<script>window.__COC_RULEBOOK_URL='assets/rulebook/coc7.js';</script>
+<script>window.__COC_RULEBOOK_PDF_URL='assets/rulebook/coc7.pdf';</script>
+<script>window.__COC_BLANK_CARD_URL='assets/cards/pink.xlsx';</script>
     <script src="src/01-utils.js"></script>
     <script src="src/02-data-store.js"></script>
     <script src="src/03-nav-templates.js"></script>
@@ -72,5 +82,9 @@
     <script src="src/23-decor.js"></script>
     <script src="src/24-fullscreen-tags.js"></script>
     <script src="src/25-card-export.js"></script>
+    <script src="src/26-cards.js"></script>
+    <script src="src/27-radar.js"></script>
+    <script src="src/28-side-pane.js"></script>
+    <script src="src/29-welcome.js"></script>
 </body>
 </html>

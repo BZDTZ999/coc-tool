@@ -40,7 +40,12 @@ function initApp(){
   bindDropZone();
   renderNav();
   bindCanvasEvents();
+  initSidePane();
+  restoreModuleFromStore();
+  if(typeof mapPodsInit==='function') mapPodsInit();
+  if(typeof combatPodsInit==='function') combatPodsInit();
   switchTab('surveyors');
+  maybeShowWelcome();
   window.setTimeout(function(){ logRoll('🔧 已就绪。首次使用已预置示例 NPC 与示例地图（可删）。','info'); },60);
 }
 /* 骰子日志补丁：类名渲染修正（v2 无独立骰子页，保留战斗日志） */

@@ -75,6 +75,10 @@ function openActorModal(id, kind){
           </div>
           <div class="row" style="margin-top:8px">
             <label>阵营<select id="am-side" onchange="onSideEdit(this)">${sideOptions}</select></label>
+            ${a.kind==='pc'?'<label title="这张角色是从哪张卡读进来的：导出时会填回同一张模板（公式、雷达图都保留）">导出的卡<select id="am-cardtpl">'+
+              (typeof COC_CARDS!=='undefined'?COC_CARDS:[]).map(function(c){
+                return '<option value="'+c.id+'"'+((a.cardTpl||'')===c.id?' selected':'')+'>'+esc(c.short||c.name)+'</option>';
+              }).join('')+'</select></label>':''}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:none">
@@ -92,7 +96,13 @@ function openActorModal(id, kind){
         <div class="preset-picker" style="flex:3">${avatarPresetButtons}</div>
       </div>
       <h4 class="sectiontitle">⚜ 属性（9项 · 3×3，中英对照）</h4>
-      ${attrs3x3(a,true)}
+      <div class="attrsplit">
+        <div>${attrs3x3(a,true)}</div>
+        <div class="radarbox" title="与卡里「附表」的九维雷达图同一套数值，改属性会实时重画">
+          <canvas id="am-radar" width="320" height="286"></canvas>
+          <div class="hint radarcap">📊 属性雷达（力量 / 体质 / 体型 / 敏捷 / 外貌 / 智力 / 意志 / 教育 / 幸运）</div>
+        </div>
+      </div>
       <div class="grid3" style="margin-top:10px">
         <label>移动 MOV<input type="number" id="am-mov" value="${a.mov||8}"></label>
         <label>护甲值<input type="number" id="am-armor" value="${(a.armor&&a.armor.value)||0}" min="0"></label>
@@ -169,8 +179,16 @@ function openActorModal(id, kind){
       </div>
     </div></div>`;
   mask.classList.add('open');
+  paintActorRadar(a);
+  if(!mask.dataset.radarbound){
+    mask.dataset.radarbound='1';
+    mask.addEventListener('input', function(ev){
+      var t=ev.target;
+      if(t && t.classList && t.classList.contains('am-attr')) paintActorRadar(currentActorModal);
+    });
+  }
   /* 武器「类型」下拉：预热一次卡里的「武器列表」（离线版直接读内联模板，在线版按需 fetch） */
-  try{ if(typeof cocWeaponTypes==='function'){ cocWeaponTypes(); fillWeaponTypeDatalist(); } }catch(e){}
+  try{ if(typeof cocWeaponTypes==='function'){ cocWeaponTypes(a.cardTpl&&cocCard(a.cardTpl)?a.cardTpl:undefined); fillWeaponTypeDatalist(); } }catch(e){}
 }
 function campaignRowHTML(c){
   c=c||{};
@@ -199,6 +217,7 @@ function collectFromModal(){
   if($('am-tpl')) a.template=$('am-tpl').value.trim();
   if($('am-note')) a.note=$('am-note').value.trim();
   if($('am-count')) a.count=Math.max(1,Math.round(num($('am-count').value))||1);
+  if($('am-cardtpl')) a.cardTpl=$('am-cardtpl').value;
   a.side=$('am-side')?$('am-side').value:a.side;
   if(!a.avatar) a.avatar={preset:defaultAvatarForActor(a.kind,a.side),custom:null};
   ['str','con','pow','dex','app','siz','int','edu','luck'].forEach(function(k){
@@ -349,7 +368,8 @@ function doImport(){
       other:(p.assets&&p.assets.table&&p.assets.table.other)||'' },
     history:history, backstory:p.backstory.text||'',
     campaigns:(p.campaigns||[]).map(function(c){ return {module:(c&&c.module)||'',note:(c&&c.note)||''}; }),
-    notes:'', count:1, template:'', note:''
+    notes:'', count:1, template:'', note:'',
+    cardTpl:p.cardTpl||(typeof COC_CARD_DEFAULT!=='undefined'?COC_CARD_DEFAULT:'')
   };
   if(typeof importSnapshotOf==='function') actor.importSnapshot=importSnapshotOf(actor);   // 记下“导入时”的样子，导出时用来算数据变化
   state.actors.push(actor);

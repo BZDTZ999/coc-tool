@@ -23,6 +23,32 @@ if (APP_FILES.length < 20){
 }
 function read(f){ return fs.readFileSync(path.join(SRC, f), 'utf8'); }
 
+/* 随包资源（assets/ 下的静态文件）：离线版内联进单文件，在线版只写路径按需取。 */
+const RULEBOOK_FILE = path.join('assets', 'rulebook', 'coc7.js');       // 目录 + 全文检索用的正文文本
+const RULEBOOK_PDF  = path.join('assets', 'rulebook', 'coc7.pdf');      // 原版 PDF（保持原有排版：表格 / 颜色 / 流程图）
+/* 受支持的 4 张人物卡模板，id 与 src/26-cards.js 的 COC_CARDS 一致 */
+const CARD_FILES = ['pink', 'cy23', 'cy2lus', 'cn'];
+const COC_CARD_DEFAULT = 'pink';
+function cardPath(id){ return path.join(ROOT, 'assets', 'cards', id + '.xlsx'); }
+function readAsset(rel){
+  const p = path.join(ROOT, rel);
+  if (!fs.existsSync(p)){ console.error('缺少资源：' + rel); process.exit(1); }
+  return fs.readFileSync(p, 'utf8');
+}
+function cardsB64Json(){
+  const out = {};
+  for (const id of CARD_FILES){
+    if (!fs.existsSync(cardPath(id))){ console.error('缺少人物卡模板：assets/cards/' + id + '.xlsx'); process.exit(1); }
+    out[id] = fs.readFileSync(cardPath(id)).toString('base64');
+  }
+  return JSON.stringify(out);
+}
+function cardsUrlJson(){
+  const out = {};
+  for (const id of CARD_FILES) out[id] = 'assets/cards/' + id + '.xlsx';
+  return JSON.stringify(out);
+}
+
 /* 网页标签图标：assets/favicon.png（由 icon 原图缩小而来）。
    离线单文件版内联成 base64（依旧自包含），在线版引用文件路径。 */
 function iconDataUri(){
@@ -37,6 +63,7 @@ function buildOffline(libName, outFile){
     console.error('缺少 xlsx 库：请先执行  npm install');
     process.exit(1);
   }
+  if (!fs.existsSync(path.join(ROOT, RULEBOOK_PDF))){ console.error('缺少规则书 PDF：' + RULEBOOK_PDF); process.exit(1); }
   let html = read('skeleton.html');
   html = html.replace('__CSS__', () => read('style.css'));
   // 离线单文件版：同一张图内联一次就够，删掉 apple-touch 那行免得 base64 占两份体积
@@ -45,15 +72,17 @@ function buildOffline(libName, outFile){
   const parser = read('parse-card.js');
   const app = APP_FILES.map(read).join('\n');
   const lib = fs.readFileSync(libPath, 'utf8');
-  // 空白人物卡模板（导出调查员卡用）内联为 base64，离线版依旧自包含
-  const blankPath = path.join(ROOT, 'assets', 'blank-card.xlsx');
-  const blank = fs.existsSync(blankPath) ? fs.readFileSync(blankPath).toString('base64') : '';
   html = html
     .replace('<script>__XLSX__</script>', () => '<script>' + lib + '</script>')
     .replace('<script>__PARSER__</script>', () => '<script>' + parser + '</script>')
-    .replace('<script>__BLANKCARD__</script>', () => '<script>window.__COC_BLANK_CARD_B64="' + blank + '";</script>')
+    .replace('<script>__CARDS__</script>', () => '<script>window.__COC_CARDS_B64=' + cardsB64Json() + ';</script>')
+    .replace('<script>__RULEBOOK__</script>', () => '<script>' + readAsset(RULEBOOK_FILE) + '</script>')
+    // 规则书原版 PDF 内联成 base64（离线单文件依旧自包含；打开时解成 Blob URL 给浏览器自带阅读器）
+    .replace('<script>__RULEBOOK_PDF__</script>', () => '<script>window.__COC_RULEBOOK_PDF_B64="' + fs.readFileSync(path.join(ROOT, RULEBOOK_PDF)).toString('base64') + '";</script>')
+    // 旧名兼容：__COC_BLANK_CARD_B64 指向默认模板（同一个字符串，不额外占体积）
+    .replace('<script>__BLANKCARD__</script>', () => '<script>window.__COC_BLANK_CARD_B64=window.__COC_CARDS_B64.' + COC_CARD_DEFAULT + '||"";</script>')
     .replace('<script>__APP__</script>', () => '<script>' + app + '</script>');
-  const leftover = ['__CSS__','__ICON__','__XLSX__','__PARSER__','__BLANKCARD__','__APP__'].filter(t => html.indexOf(t) >= 0);
+  const leftover = ['__CSS__','__ICON__','__XLSX__','__PARSER__','__CARDS__','__RULEBOOK__','__RULEBOOK_PDF__','__BLANKCARD__','__APP__'].filter(t => html.indexOf(t) >= 0);
   if (leftover.length){ console.error('仍有未替换占位符：', leftover.join(', ')); process.exit(1); }
   fs.writeFileSync(path.join(ROOT, outFile), html);
   console.log('built [offline:' + (libName.indexOf('mini') >= 0 ? 'slim' : 'full') + ']', outFile, fs.statSync(path.join(ROOT, outFile)).size, 'bytes');
@@ -72,10 +101,14 @@ function buildWeb(){
   html = html
     .replace('<script>__XLSX__</script>', () => '')
     .replace('<script>__PARSER__</script>', () => scripts.slice(0, 2).join('\n') + '\n' + scripts[2])
+    // 在线版：4 张卡模板与规则书都按需取（首屏只留路径，不内联内容）
+    .replace('<script>__CARDS__</script>', () => '<script>window.__COC_CARDS_URL=' + cardsUrlJson() + ';</script>')
+    .replace('<script>__RULEBOOK__</script>', () => '<script>window.__COC_RULEBOOK_URL=\'assets/rulebook/coc7.js\';</script>')
+    .replace('<script>__RULEBOOK_PDF__</script>', () => '<script>window.__COC_RULEBOOK_PDF_URL=\'assets/rulebook/coc7.pdf\';</script>')
     // 在线版不内联模板，首次导出时按需 fetch assets/blank-card.xlsx，保持首屏轻量
-    .replace('<script>__BLANKCARD__</script>', () => '<script>window.__COC_BLANK_CARD_URL=\'assets/blank-card.xlsx\';</script>')
+    .replace('<script>__BLANKCARD__</script>', () => '<script>window.__COC_BLANK_CARD_URL=\'assets/cards/' + COC_CARD_DEFAULT + '.xlsx\';</script>')
     .replace('<script>__APP__</script>', () => scripts.slice(3).join('\n'));
-  const leftover = ['__CSS__','__ICON__','__XLSX__','__PARSER__','__BLANKCARD__','__APP__'].filter(t => html.indexOf(t) >= 0);
+  const leftover = ['__CSS__','__ICON__','__XLSX__','__PARSER__','__CARDS__','__RULEBOOK__','__RULEBOOK_PDF__','__BLANKCARD__','__APP__'].filter(t => html.indexOf(t) >= 0);
   if (leftover.length){ console.error('仍有未替换占位符：', leftover.join(', ')); process.exit(1); }
   fs.writeFileSync(path.join(ROOT, 'index.html'), html);
   console.log('built [web] index.html', fs.statSync(path.join(ROOT, 'index.html')).size, 'bytes');

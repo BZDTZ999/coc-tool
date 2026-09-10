@@ -43,7 +43,10 @@ function cardEncodeText(str){
   return u8;
 }
 /* 懒加载空白人物卡模板：内联 base64 优先，其次按需 fetch 在线资源。 */
-function ensureBlankCard(cb){
+function ensureBlankCard(cb, cardId){
+  /* 现在有 4 张受支持的卡：能取到对应模板就取那一张（导出用导入时那张卡的模板），
+     取不到（或没给 id）就退回默认的粉卡。旧调用方 ensureBlankCard(cb) 依旧可用。 */
+  if(typeof cocCardBytes==='function'){ cocCardBytes(cardId||COC_CARD_DEFAULT, cb); return; }
   if(window.__cocBlankBytes){ cb(window.__cocBlankBytes); return; }
   if(window.__COC_BLANK_CARD_B64){
     try{ window.__cocBlankBytes=b64ToBytes(window.__COC_BLANK_CARD_B64); }
@@ -256,6 +259,15 @@ function cardSkillTotalFor(a,name){
   return hit?num(hit.total):'';
 }
 /* 生成要写入模板的“单元格 → 值”清单 */
+/* 武器槽行数：这几张卡的武器表都是「B..F 合并」构成一行槽位，从第 53 行起连续排，
+   下面的第 60 行就是「资产」表头。数出实际槽位（粉卡/CY 系列是 6 行），
+   免得武器比卡上留的行多时把资产/背景表头写坏。识别不出就退回 8。 */
+function cardWeaponSlotRows(ws){
+  var merges=(ws && ws['!merges']) || [], has={};
+  merges.forEach(function(m){ if(m.s && m.s.c===1 && m.e && m.e.c>=5) has[m.s.r+1]=true; });
+  var n=0; while(has[53+n]) n++;
+  return (n>=3 && n<=12) ? n : 8;
+}
 function cardWritesFor(a, tplRows){
   var W=[];
   function S(ref,v){ W.push({ref:ref,val:(v==null?'':String(v)),num:false}); }
@@ -414,7 +426,9 @@ function cardWritesFor(a, tplRows){
        · 查不到类型（自制武器）→ 写死卡上的数据，绝不留会算成 #N/A / #### 的公式；
        · 成功率 Q 用“按 M 里的使用技能去本卡技能表查”的公式（查不到就空，不再出现乱码）；
        · 困难/极难用模板的 IF(Q="","",INT(Q/2|5))（53 行模板是裸 INT，我们补上空值保护）。 */
-  var WLR='武器列表!$B$2:$I$105';
+  /* 武器表的引用：4 张卡里叫「武器列表」或「武器列表 战斗」，带空格的名字要加单引号。 */
+  var wlName=(tplRows&&tplRows.__weaponSheet)||'武器列表';
+  var WLR=(/[^\w]/.test(wlName) ? "'"+wlName+"'" : wlName)+'!$B$2:$I$105';
   function tplF(r,c){ return (tplRows&&tplRows.__f&&tplRows.__f[c+r])||''; }
   function st(v){ return v==null?'':String(v).trim(); }
   var wlRows=((tplRows&&tplRows.__weaponList)||[]).slice(1);   // 第 1 行是表头
@@ -441,7 +455,9 @@ function cardWritesFor(a, tplRows){
     W.push(rec);
   }
   var wa=a.weapons||[];
-  for(var wi=0;wi<8;wi++){
+  var wSlots=(tplRows && tplRows.__weaponRows) || 8;   // 卡上实际留了几行武器（见 cardWeaponSlotRows）
+  if(wa.length>wSlots) W.wpnDropped=wa.length-wSlots;  // 多出来的没法写（卡里就这么几行），导出时提醒一声
+  for(var wi=0;wi<wSlots;wi++){
     var r=53+wi, w=wa[wi];
     var wtype=w?String(w.type==null?'':w.type).trim():'';
     var list=w?listOf(wtype):null;
@@ -567,7 +583,11 @@ function cardWritesFor(a, tplRows){
     var span=m.e.r-m.s.r;
     if(!storyRef||span>storyRef.span) storyRef={span:span,ref:XLSX.utils.encode_cell(m.s)};
   });
-  if(storyRef) S(storyRef.ref, a.backstory||'');
+  /* 这 4 张卡里没有「难言之隐」这一行（只有 8 条小节、背景大框从 W77 开始）：
+     那种卡就把难言之隐并进背景故事正文，别让内容凭空消失。 */
+  var storyText=String(a.backstory||'');
+  if(hist.secrets && !labelRow.secrets) storyText=(storyText?storyText+'\n':'')+'【难言之隐】'+hist.secrets;
+  if(storyRef) S(storyRef.ref, storyText);
 
   return W;
 }
@@ -596,11 +616,14 @@ function buildCardXlsx(a, tplBytes){
   var tplWs=tplWb.Sheets['人物卡']||tplWb.Sheets[tplWb.SheetNames[0]];
   var tplRows=XLSX.utils.sheet_to_json(tplWs,{header:1,raw:true,defval:null});
   tplRows.__merges=tplWs['!merges']||[];
+  tplRows.__weaponRows=cardWeaponSlotRows(tplWs);
   if(tplWb.Sheets['职业列表']){
     tplRows.__occList=XLSX.utils.sheet_to_json(tplWb.Sheets['职业列表'],{header:1,raw:true,defval:null});
   }
-  if(tplWb.Sheets['武器列表']){                        // 「选类型自动算」靠这张表（类型→技能/伤害/射程/贯穿/每轮/装弹量/故障值）
-    tplRows.__weaponList=XLSX.utils.sheet_to_json(tplWb.Sheets['武器列表'],{header:1,raw:true,defval:null});
+  var wlHit=(typeof cocWeaponSheet==='function') ? cocWeaponSheet(tplWb) : (tplWb.Sheets['武器列表']?{name:'武器列表',ws:tplWb.Sheets['武器列表']}:null);
+  if(wlHit){                                           // 「选类型自动算」靠这张表（类型→技能/伤害/射程/贯穿/每轮/装弹量/故障值）
+    tplRows.__weaponSheet=wlHit.name;
+    tplRows.__weaponList=XLSX.utils.sheet_to_json(wlHit.ws,{header:1,raw:true,defval:null});
   }
   tplRows.__f={};                                      // 模板原有的公式（决定哪些格子能“保留公式只换显示值”）
   Object.keys(tplWs).forEach(function(k){ var c=tplWs[k]; if(c && c.f) tplRows.__f[k]=String(c.f); });
@@ -612,6 +635,7 @@ function buildCardXlsx(a, tplBytes){
   }
 
   var writes=cardWritesFor(a,tplRows);
+  var wpnDropped=writes.wpnDropped||0;
   var miss=0;
   writes.forEach(function(w){
     var r=cardSetCell(xml,w.ref,w.val,w.num,w.keepF,w.formula);
@@ -664,7 +688,7 @@ function buildCardXlsx(a, tplBytes){
   }catch(e){ /* 删不掉也不影响导出，最多是 Excel 提示一次修复 */ }
 
   var out=XLSX.CFB.write(cfb,{type:'array',fileType:'zip',compression:true});
-  return {bytes:(out instanceof ArrayBuffer)?new Uint8Array(out):out, miss:miss, truncated:truncated, campStart:campStart};
+  return {bytes:(out instanceof ArrayBuffer)?new Uint8Array(out):out, miss:miss, truncated:truncated, campStart:campStart, wpnDropped:wpnDropped};
 }
 function downloadCardBytes(fname,bytes){
   var blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -696,10 +720,11 @@ function exportActorCard(id){
       try{ renderSurveyors(); }catch(e){}
       var tip='已导出「'+camp+'-'+(a.name||'调查员')+'」并把数据变化写进调查员经历';
       if(res.truncated) tip+='（经历超出卡片行数，较早的记录未写入）';
+      if(res.wpnDropped) tip+='（武器比卡上的格子多，最后 '+res.wpnDropped+' 件没写进卡里）';
       toast(tip,5000);
     }catch(e){
       console.error(e);
       toast('导出失败：'+e.message,6000);
     }
-  });
+  }, cocCardOf(a).id);
 }

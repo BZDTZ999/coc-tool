@@ -74,6 +74,25 @@ function renderMapCards(){
   var bar=$('mapCardBar'); if(!bar) return;
   bar.innerHTML=mapCardBarHTML();
 }
+/* 地图页二级菜单栏：四个功能面板（地图 / 角色 / 摆件素材 / 载具时间速度），
+   点开一个会把别的收起；再点同一个就关掉。地图像布占满菜单栏下面的整个宽度。 */
+var MAP_POD=null;
+function toggleMapPod(which){
+  MAP_POD = (MAP_POD===which) ? null : which;
+  applyMapPod();
+}
+function applyMapPod(){
+  ['cards','actors','props','veh'].forEach(function(k){
+    var pod=$('pod-'+k), btn=$('mp-'+k);
+    if(pod) pod.hidden = (MAP_POD!==k);
+    if(btn) btn.classList.toggle('on', MAP_POD===k);
+  });
+  if(MAP_POD==='props'){ try{ renderPropPalette(); }catch(e){} }
+  if(MAP_POD==='actors'){ try{ renderMapActorsBox(); }catch(e){} }
+  if(MAP_POD==='veh'){ try{ renderMapVehicles(); }catch(e){} }
+  try{ if(typeof fsResize==='function') fsResize(); }catch(e){}
+}
+function mapPodsInit(){ applyMapPod(); }
 /* 默认地图下拉：按分类列出内置地图 */
 var DEMO_GRP_SEL='';
 /* 二级选择：把某一级分类下的地图填进 #mapDemoSel（第一项是占位） */

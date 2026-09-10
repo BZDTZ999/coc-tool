@@ -90,15 +90,26 @@ function fillPresetWeapon(sel){
    模板靠 VLOOKUP 用它自动填。工具这边读同一张表，选了类型就照卡把这几项填好；
    导出时卡里也会保留同款公式（见 25-card-export.js 的武器段），所以在 Excel 里改类型同样会重算。 */
 var _cocWeaponTypes=null;
-function cocWeaponTypes(){
-  if(_cocWeaponTypes) return _cocWeaponTypes;
+var _cocWeaponTypesCard='';
+/* 4 张卡的武器表名不一样（武器列表 / 武器列表 战斗），统一在这里取。 */
+function cocWeaponSheet(wb){
+  if(!wb||!wb.Sheets) return null;
+  var names=['武器列表','武器列表 战斗','武器列表战斗'];
+  for(var i=0;i<names.length;i++) if(wb.Sheets[names[i]]) return {name:names[i], ws:wb.Sheets[names[i]]};
+  for(var j=0;j<wb.SheetNames.length;j++) if(/武器列表/.test(wb.SheetNames[j])) return {name:wb.SheetNames[j], ws:wb.Sheets[wb.SheetNames[j]]};
+  return null;
+}
+function cocWeaponTypes(cardId){
+  cardId=cardId||(typeof COC_CARD_DEFAULT!=='undefined'?COC_CARD_DEFAULT:'');
+  if(_cocWeaponTypes && _cocWeaponTypesCard===cardId) return _cocWeaponTypes;
   _cocWeaponTypes=[];
   try{
     if(typeof ensureBlankCard!=='function'||typeof XLSX==='undefined') return _cocWeaponTypes;
     ensureBlankCard(function(bytes){
       try{
         var wb=XLSX.read(bytes,{type:'array'});
-        var ws=wb&&wb.Sheets['武器列表']; if(!ws) return;
+        var hit=cocWeaponSheet(wb); if(!hit) return;
+        var ws=hit.ws;
         var rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
         var out=[];
         rows.forEach(function(row,idx){
@@ -108,10 +119,11 @@ function cocWeaponTypes(){
           out.push({type:String(t).trim(),skill:st(row[2]),damage:st(row[3]),range:st(row[4]),
                     pierce:st(row[5]),attacks:st(row[6]),ammo:st(row[7]),jam:st(row[8])});
         });
-        _cocWeaponTypes=out;
+        _cocWeaponTypes=out; _cocWeaponTypesCard=cardId;
         try{ fillWeaponTypeDatalist(); }catch(e){}
+        window.__cocWeaponSheetName=hit.name;
       }catch(e){}
-    });
+    }, cardId);
   }catch(e){}
   return _cocWeaponTypes;
 }

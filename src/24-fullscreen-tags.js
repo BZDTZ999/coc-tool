@@ -118,10 +118,13 @@ function fsPanelHost(){
 function fsPanelSection(name){
   return $(name==='surveyors'?'tab-surveyors':'tab-npcs');
 }
+/* 页签原本的“家”：现在它们在 main > .splitwrap > .splitLeft 里。
+   全屏浮层会把整页搬来搬去，最后要放回这个容器，否则会破坏左右分栏。 */
+function tabHome(){ return $('splitLeft') || document.querySelector('main'); }
 function buildFsHost(name){
   var h=fsPanelHost();
   /* 先把旧内容里的整页 section 放回 main，避免被 innerHTML 清掉 */
-  var back=$('tab-surveyors'), back2=$('tab-npcs'), main=document.querySelector('main');
+  var back=$('tab-surveyors'), back2=$('tab-npcs'), main=tabHome();
   if(main){ [back,back2].forEach(function(s){ if(s && s.parentElement!==main) main.appendChild(s); }); }
   h.innerHTML='';
   var head=document.createElement('div');
@@ -153,7 +156,7 @@ function fsClosePanel(){
   var name=fsPanelName;
   fsPanelName=null;
   document.body.classList.remove('fsfloat-surveyors','fsfloat-npcs');
-  var main=document.querySelector('main');
+  var main=tabHome();
   if(main){
     ['tab-surveyors','tab-npcs'].forEach(function(id){
       var s=$(id);
@@ -194,7 +197,9 @@ function initFloatResizeDrag(){
 /* 全屏调查员面板里的标签栏：折叠在最上面，点标题展开/收起 */
 function toggleTagSide(){
   var el=document.querySelector('.srvside');
-  if(el) el.classList.toggle('fsopen');
+  var inFloat = el && el.closest && el.closest('#fsFloatHost');
+  if(inFloat){ if(el) el.classList.toggle('fsopen'); return; }
+  if(typeof toggleSrvPanel==='function') toggleSrvPanel('tag');
 }
 
 /* ---------- 调查员便签标签（最多 6 个/卡，可自定义颜色、可跨卡移动） ---------- */

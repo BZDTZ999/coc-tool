@@ -2,7 +2,62 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const { JSDOM } = require('jsdom');
+
+/* ---- 测试用：手搓一个最小 .docx（zip），验证 docx 解析引擎 ---- */
+const CRC_TABLE = (() => {
+  const t = new Int32Array(256);
+  for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c; }
+  return t;
+})();
+function crc32(buf){ let c = -1; for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 255] ^ (c >>> 8); return (c ^ -1) >>> 0; }
+function makeZip(files){
+  const locals = [], centrals = []; let off = 0;
+  for (const f of files){
+    const raw = Buffer.from(f.data), def = zlib.deflateRawSync(raw), crc = crc32(raw), name = Buffer.from(f.name, 'utf8');
+    const method = f.stored ? 0 : 8, body = f.stored ? raw : def;
+    const lh = Buffer.alloc(30);
+    lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0, 6); lh.writeUInt16LE(method, 8);
+    lh.writeUInt16LE(0, 10); lh.writeUInt16LE(0, 12); lh.writeUInt32LE(crc, 14);
+    lh.writeUInt32LE(body.length, 18); lh.writeUInt32LE(raw.length, 22);
+    lh.writeUInt16LE(name.length, 26); lh.writeUInt16LE(0, 28);
+    locals.push(lh, name, body);
+    const ch = Buffer.alloc(46);
+    ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(0, 8); ch.writeUInt16LE(method, 10);
+    ch.writeUInt16LE(0, 12); ch.writeUInt16LE(0, 14); ch.writeUInt32LE(crc, 16);
+    ch.writeUInt32LE(body.length, 20); ch.writeUInt32LE(raw.length, 24);
+    ch.writeUInt16LE(name.length, 28); ch.writeUInt16LE(0, 30); ch.writeUInt16LE(0, 32); ch.writeUInt16LE(0, 34); ch.writeUInt16LE(0, 36);
+    ch.writeUInt32LE(0, 38); ch.writeUInt32LE(off, 42);
+    centrals.push(ch, name);
+    off += 30 + name.length + body.length;
+  }
+  const cd = Buffer.concat(centrals), eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(0, 4); eocd.writeUInt16LE(0, 6);
+  eocd.writeUInt16LE(files.length, 8); eocd.writeUInt16LE(files.length, 10);
+  eocd.writeUInt32LE(cd.length, 12); eocd.writeUInt32LE(off, 16); eocd.writeUInt16LE(0, 20);
+  return Buffer.concat(locals.concat([cd, eocd]));
+}
+function miniDocxBytes(){
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="${W}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>
+<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>第一章 模组标题</w:t></w:r></w:p>
+<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>加粗段落</w:t></w:r><w:r><w:t>普通文字</w:t></w:r></w:p>
+<w:tbl><w:tr><w:tc><w:p><w:r><w:t>姓名</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>职业</w:t></w:r></w:p></w:tc></w:tr>
+<w:tr><w:tc><w:p><w:r><w:t>爱丽丝</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>记者</w:t></w:r></w:p></w:tc></w:tr></w:tbl>
+<w:p><w:r><w:drawing><wp:inline><a:graphic><a:graphicData><pic:pic><pic:blipFill><a:blip r:embed="rId5"/></pic:blipFill></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>
+<w:p><w:r><w:br w:type="page"/></w:r></w:p><w:p><w:r><w:t>第二页</w:t></w:r></w:p>
+</w:body></w:document>`;
+  const rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/></Relationships>';
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
+  return makeZip([
+    { name: '[Content_Types].xml', data: '<Types/>', stored: true },
+    { name: 'word/document.xml', data: doc },
+    { name: 'word/_rels/document.xml.rels', data: rels },
+    { name: 'word/media/image1.png', data: png, stored: true }
+  ]);
+}
 
 const HTML = fs.readFileSync(path.join(__dirname, '..', 'offline.html'), 'utf-8');
 const failures = [];
@@ -45,7 +100,7 @@ const ready = new Promise((res) => {
   const cssText = (() => { let t=''; try{ [...d.styleSheets].forEach(sh => { try{ [...sh.cssRules].forEach(r => { t += r.cssText + '\n'; }); }catch(e){} }); }catch(e){} return t; })();
 
   // 基础
-  ok('导航6个入口(4页+剧本+骰子)且无快速查询', d.querySelectorAll('#nav button').length === 6 && !d.getElementById('nav-quick') && !d.getElementById('nav-settings'), '#nav=' + d.querySelectorAll('#nav button').length);
+  ok('导航8个入口(4页+剧本+骰子+模组+规则书)且无快速查询', d.querySelectorAll('#nav button').length === 8 && !d.getElementById('nav-quick') && !d.getElementById('nav-settings'), '#nav=' + d.querySelectorAll('#nav button').length);
   ok('剧本与骰子悬浮入口存在', !!d.getElementById('nav-script') && !!d.getElementById('nav-dice') && !!d.getElementById('floatPanel'));
   ok('品牌名称为带团妙妙小工具', /带团妙妙小工具/.test(d.querySelector('.brand').textContent));
   ok('初始示例数据存在', S.actors.length >= 1 && S.maps.length >= 1 && S.activeMapId);
@@ -387,7 +442,7 @@ const ready = new Promise((res) => {
   w.toggleSceneFs('map');
   ok('地图全屏：body 标记 + 图标菜单出现', d.body.classList.contains('fs-map') && $('fsNav').hidden === false);
   ok('全屏图标菜单 6 项 + 返回', d.querySelectorAll('#fsNav button').length === 7 && !!d.querySelector('#fsNav .fsback'));
-  ok('全屏不隐藏导航栏本体（仍为6个入口）', d.querySelectorAll('#nav button').length === 6);
+  ok('全屏不隐藏导航栏本体（仍为8个入口）', d.querySelectorAll('#nav button').length === 8);
   // 全屏切换场景：战斗
   w.toggleSceneFs('combat');
   ok('全屏可在 地图/战斗 之间切换', d.body.classList.contains('fs-combat') && !d.body.classList.contains('fs-map'));
@@ -768,7 +823,7 @@ const ready = new Promise((res) => {
       ws['E10'].v===13 && ws['N10'].v===50 && String(ws['AN10'].v)==='2' && ws['AN12'].v==='皮夹克' &&
       ws['F16'].v==='会计' && ws['AB16'].v==='法律' && ws['AB35'].v==='侦查' && ws['AN35'].v===25 &&
       ws['B53'].v==='猎刀' && ws['W53'].v==='1D6' && ws['F79'].v==='手电筒' &&
-      ws['AA61'].v==='眼神锐利' && ws['AA63'].v==='有钱能使鬼推磨' && ws['W79'].v==='从小家境贫困。' &&
+      ws['AA61'].v==='眼神锐利' && ws['AA63'].v==='有钱能使鬼推磨' && ws['W77'].v==='从小家境贫困。' &&
       ws['B98'].v==='旧团' && ws['J98'].v==='SAN-2';
   })());
 
@@ -1027,7 +1082,8 @@ const ready = new Promise((res) => {
     a.skills=[{name:'格斗：斗殴',total:70,base:25}];
     a.weapons=[{name:'佩剑',type:'中型剑（佩剑、重剑）',skill:'斗殴',damage:'1D6+1+DB',range:'接触',pierce:'√',attacks:'1',ammoCap:0,jam:'——'}];
     var ws=w.XLSX.read(w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes,{type:'array'}).Sheets['人物卡'];
-    var v=function(ref,col){ return new RegExp('VLOOKUP\\(\\$G53,武器列表!\\$B\\$2:\\$I\\$105,'+col+',FALSE\\)').test(String((ws[ref]||{}).f||'')); };
+    /* 武器表在这 4 张卡里叫「武器列表 战斗」（带空格要加引号），旧卡叫「武器列表」，两种都算对 */
+    var v=function(ref,col){ return new RegExp("VLOOKUP\\(\\$G53,('?武器列表(?: 战斗)?'?)!\\$B\\$2:\\$I\\$105,"+col+",FALSE\\)").test(String((ws[ref]||{}).f||'')); };
     return ws['B53'].v==='佩剑' && ws['W53'].v==='1D6+1+DB' && ws['AC53'].v==='√' && ws['AG53'].v==='——' &&
       v('W53',3) && v('AA53',4) && v('AC53',5) && v('AE53',6) && v('AG53',7) && v('AJ53',8) &&
       ws['M53'].v==='斗殴' && !ws['M53'].f;          // 玩家自己改过技能（佩剑用斗殴，不是列表里的「剑」）→ 保留玩家的
@@ -1084,6 +1140,39 @@ const ready = new Promise((res) => {
       /IF\(\$Q53="",""/.test(String((ws['S53']||{}).f||'')) && /IF\(\$Q53="",""/.test(String((ws['U53']||{}).f||''));
   })());
 
+  ok('武器表：卡上只有 6 行武器槽时，多出来的武器不会把下面「资产」表头写坏', (function(){
+    var a=expActor(); a.id='expW8';
+    a.skills=[{name:'格斗：斗殴',total:70,base:25}];
+    a.weapons=[];
+    for(var i=0;i<8;i++) a.weapons.push({name:'武器'+(i+1),type:'刀剑',skill:'斗殴',damage:'1D6',range:'接触'});
+    var res=w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64));
+    var ws=w.XLSX.read(res.bytes,{type:'array'}).Sheets['人物卡'];
+    var last=(ws['B58']||{}).v, over=(ws['B59']||{}).v, assets=(ws['B60']||{}).v;
+    return last==='武器6' && over==null && assets==='资产' && res.wpnDropped===2;
+  })());
+
+  ok('4 张受支持的卡：同一份角色数据都能导出成对应模板并原样读回', (function(){
+    var ids=['pink','cy23','cy2lus','cn'];
+    for(var i=0;i<ids.length;i++){
+      var b64=w.__COC_CARDS_B64 && w.__COC_CARDS_B64[ids[i]];
+      if(!b64) return false;
+      var a=expActor(); a.id='expCard'+i;
+      a.skills.push({name:'格斗：斗殴',total:70,base:25});
+      a.weapons=[{name:'佩剑',type:'中型剑（佩剑、重剑）',skill:'斗殴',damage:'1D6+1+DB',range:'接触',pierce:'√',attacks:'1',ammoCap:0}];
+      var res=w.buildCardXlsx(a, w.b64ToBytes(b64));
+      var wb=w.XLSX.read(res.bytes,{type:'array'});
+      if(w.cocCardDetect(wb)!==ids[i]) return false;
+      var p=w.CoCParser.parseWorkbook(wb);
+      if(!p || p.basic.name!=='导出测试' || p.basic.occupation!=='江湖骗子') return false;
+      if(Number(p.attrs.str)!==40 || (p.skills||[]).length<3 || (p.weapons||[]).length!==1) return false;
+      if(p.weapons[0].name!=='佩剑' || (p.items||[]).length<1) return false;
+      var ws=wb.Sheets['人物卡'];
+      if(!/MATCH\(\$M53/.test(String((ws['Q53']||{}).f||''))) return false;  // 成功率：按使用技能自动查
+      if(!/VLOOKUP/.test(String((ws['W53']||{}).f||''))) return false;       // 伤害：按类型自动查
+    }
+    return true;
+  })());
+
   ok('弹窗：原来在「背包格」列的东西还在同一张清单里，保存后不会换列（导出仍写回原来那列）', (function(){
     var a=expActor(); a.id='expInvSame';
     a.inv=a.inv.concat([{name:'厚衣服数身',qty:1,effect:'',amount:'',note:'',slot:'bag'}]);
@@ -1107,6 +1196,178 @@ const ready = new Promise((res) => {
     return ws['B75'].v==='一辆别克' && ws['F75'].v==='乡间别墅' && Number(ws['J75'].v)===3 &&
       ws['R75'].v==='一柜古籍' && String(ws['B76'].v)==='资产总和：2003' &&
       p.assets.table.vehicle==='一辆别克' && p.assets.table.other==='一柜古籍';
+  })());
+
+  /* ---------- 只适配 4 张卡：欢迎说明 / 雷达图 / 右半屏模组与规则书 / 可折叠栏 ---------- */
+  ok('欢迎弹窗：说明只适配 4 张卡，并给出每张空白卡的下载入口', (function(){
+    w.openWelcome();
+    var mask=$('welcomeModal');
+    var links=[...mask.querySelectorAll('a.btn')];
+    var names=links.map(function(a){ return a.getAttribute('download'); });
+    return mask.classList.contains('open') && links.length===4 &&
+      names.indexOf('COC7空白卡23（粉）-坪改.xlsx')>=0 && names.indexOf('中式职业扩展COC7空白卡1.6.xlsx')>=0 &&
+      /只适配下面这 4 张/.test(mask.textContent) && !!mask.querySelector('#welcomeNever');
+  })());
+  ok('欢迎弹窗：勾了“以后不再自动弹出”就记在本机', (function(){
+    w.closeWelcome();
+    return !$('welcomeModal').classList.contains('open') && w.welcomeSeen()===true;
+  })());
+
+  ok('人物详情：有属性雷达图画布，改属性会实时重画', (function(){
+    var a=S.actors.filter(function(x){return x.kind==='pc';})[0];
+    a.skills=[]; a.weapons=[];
+    w.openActorModal(a.id,'pc');
+    var cv=$('am-radar');
+    return !!cv && typeof cv.getContext==='function' &&
+      typeof w.drawAttrRadar==='function' && w.RADAR_ATTRS.length===9;
+  })());
+  ok('调查员页：标签栏 / 导入栏都能展开收起，状态记在本机', (function(){
+    var tag=$('tagSideBody'), imp=$('importBody');
+    if(!tag || !imp) return false;
+    w.toggleSrvPanel('tag'); var tagClosed=tag.hidden;
+    w.toggleSrvPanel('tag'); var tagOpen=!tag.hidden;
+    w.toggleSrvPanel('import'); var impClosed=imp.hidden;
+    w.toggleSrvPanel('import');
+    return tagClosed && tagOpen && impClosed && !imp.hidden;
+  })());
+
+  ok('右半屏：点「模组」把右侧打开，给出上传/拖入入口', (function(){
+    w.toggleSidePane('module');
+    var pane=$('sidePane');
+    return !pane.hidden && !$('splitBar').hidden && /📖 模组/.test(pane.textContent) &&
+      !!$('moduleFileInput') && !!(pane.querySelector('.sp-drop'));
+  })());
+  ok('右半屏：点「规则书」能出目录，翻页会跳到原版 PDF 的那一页', (function(){
+    w.toggleSidePane('rulebook');
+    var pane=$('sidePane');
+    var toc=pane.querySelectorAll('.rb-tocitem');
+    w.rbGoto(Math.min(10, w.rbPageCount()));
+    var f=pane.querySelector('#rbFrame');
+    return /📚 规则书/.test(pane.textContent) && w.rbPageCount()>200 && toc.length>50 &&
+      !!f && /#page=10/.test(f.getAttribute('src')||'') &&
+      /#page=10/.test(w.rbFrameSrc(10)) && String($('rbPageInput').value)==='10';
+  })());
+  ok('右半屏：规则书用的是原版 PDF（保留表格 / 颜色 / 流程图，不是自己重排的 HTML）', (function(){
+    var base=w.rulebookPdf();
+    return /^(blob:|https?:|data:application\/pdf)/.test(base) &&
+      /\.pdf$|^blob:|^data:application\/pdf/.test(base) &&
+      base.length>64 &&
+      w.rbFrameSrc(1).indexOf(base)===0 &&
+      w.document.getElementById('sidePane').querySelector('#rbFrame').tagName==='IFRAME';
+  })());
+  ok('右半屏：规则书全文搜索能列出命中页并可跳转', (function(){
+    var inp=$('rbSearch'); inp.value='理智';
+    w.rbSearch();
+    var hits=$('sidePane').querySelectorAll('.rb-hit');
+    var first=hits.length?parseInt(hits[0].getAttribute('onclick').replace(/\D/g,''),10):0;
+    return hits.length>0 && first>0 && /命中 \d+ 页/.test($('sidePane').textContent) &&
+      !!hits[0].querySelector('b') && !!hits[0].querySelector('span');
+  })());
+  ok('右半屏：离线版把整本规则书 PDF 内联进来（不联网也能翻）', (function(){
+    var b64=w.__COC_RULEBOOK_PDF_B64;
+    if(!b64 || b64.length<1e6) return false;
+    return w.atob(b64.slice(0,8)).slice(0,5)==='%PDF-' && w.rbFrameSrc(10).length>b64.length;
+  })());
+  ok('右半屏：再点一次同一个按钮就收起', (function(){
+    w.toggleSidePane('rulebook');
+    return $('sidePane').hidden && $('splitBar').hidden;
+  })());
+
+
+  /* ---------- 地图页：二级菜单栏（地图 / 角色 / 素材 / 载具·时间速度） ---------- */
+  w.switchTab('maps');
+  ok('地图页：上面多了一条二级菜单栏（地图/角色/摆件素材/载具时间速度），默认都是收起的', (function(){
+    var btns=[].slice.call(d.querySelectorAll('#mapBar button.tb2'));
+    var ids=['mp-cards','mp-actors','mp-props','mp-veh'];
+    var pods=['pod-cards','pod-actors','pod-props','pod-veh'];
+    return btns.length===4 && ids.every(function(id,i){ return btns[i].id===id; }) &&
+      pods.every(function(id){ return !!$(id) && $(id).hidden; });
+  })());
+  ok('地图页：二级菜单点开就用、点别的就切、再点同一个就收起（一次只开一个）', (function(){
+    w.toggleMapPod('actors');
+    var openActors=!$('pod-actors').hidden && $('mp-actors').classList.contains('on');
+    w.toggleMapPod('props');
+    var switched=!$('pod-props').hidden && $('pod-actors').hidden && !$('mp-actors').classList.contains('on');
+    w.toggleMapPod('props');
+    var closed=$('pod-props').hidden && !$('mp-props').classList.contains('on');
+    return openActors && switched && closed;
+  })());
+  ok('地图页：地图本体占满整行，路线时间 / 地点 / 道路仍在它下面', (function(){
+    var main=$('mapMainCard'), stack=$('mapStack');
+    // 4 = Node.DOCUMENT_POSITION_FOLLOWING（节点顺序在 main 之后）
+    var after=function(el){ return (main.compareDocumentPosition(el) & 4) ? true : false; };
+    return !!main && main.contains($('mapCanvas')) && main.contains($('mapTools')) &&
+      (($('mapBar').compareDocumentPosition(main) & 4) ? true : false) &&
+      stack.contains($('routeCard')) && stack.contains($('mapPointsCard')) && stack.contains($('mapLegsCard')) &&
+      after($('routeCard')) && after($('mapPointsCard')) && after($('mapLegsCard')) &&
+      // 四个面板都在地图本体之前（所以不会把地图挤窄）
+      (($('mapPods').compareDocumentPosition(main) & 4) ? true : false);
+  })());
+  /* ---------- 战斗页：二级菜单栏（添加角色 / 战斗桌） ---------- */
+  w.switchTab('combat');
+  ok('战斗页：上面多了一条二级菜单栏（添加角色/战斗桌），默认都是收起的', (function(){
+    var btns=[].slice.call(d.querySelectorAll('#combatBar button.tb2'));
+    return btns.length===2 && btns[0].id==='cp-add' && btns[1].id==='cp-table' &&
+      !!$('pod-add') && !!$('pod-table') && $('pod-add').hidden && $('pod-table').hidden;
+  })());
+  ok('战斗页：二级菜单点开就用、点别的就切、再点同一个就收起', (function(){
+    w.toggleCombatPod('table');
+    var openTable=!$('pod-table').hidden && $('cp-table').classList.contains('on');
+    w.toggleCombatPod('add');
+    var switched=!$('pod-add').hidden && $('pod-table').hidden;
+    w.toggleCombatPod('add');
+    return openTable && switched && $('pod-add').hidden;
+  })());
+  ok('战斗页：战斗场景占满整行，成员表与行动日志依次排在它下面', (function(){
+    var stage=$('combatStageCard');
+    var after=function(el){ return (stage.compareDocumentPosition(el) & 4) ? true : false; };
+    return !!stage && stage.contains($('battleCanvas')) && stage.contains($('battlePropPalette')) &&
+      after($('activePanel')) && after($('combatMemberCard')) && after($('combatLogCard')) &&
+      (($('activePanel').compareDocumentPosition($('combatMemberCard')) & 4) ? true : false) &&
+      (($('combatMemberCard').compareDocumentPosition($('combatLogCard')) & 4) ? true : false) &&
+      (($('combatPods').compareDocumentPosition(stage) & 4) ? true : false);
+  })());
+
+  /* ---------- .docx 模组：表格 / 标题 / 图片 / 分页都读得出来 ---------- */
+  ok('模组：.docx 解析出标题 / 加粗 / 表格 / 图片 / 分页线', (function(){
+    var html;
+    try{ html=w.docxToHTML(miniDocxBytes()); }
+    catch(e){ return false; }
+    var r={
+      h1:/<h1[^>]*>[\s\S]*模组标题/.test(html),
+      bold:/<b>加粗段落<\/b>/.test(html),
+      tbl:html.indexOf('<table class="sp-tbl">')>=0 && html.indexOf('爱丽丝')>=0 && html.indexOf('记者')>=0,
+      img:/<img class="sp-img" src="data:image\/png;base64,/.test(html),
+      pb:html.indexOf('<hr class="sp-pb">')>=0
+    };
+    return r.h1 && r.bold && r.tbl && r.img && r.pb;
+  })());
+  /* 走完整流程：拖进来的 .docx → 右半屏直接排版显示（老版本会报“这个浏览器不支持直接解压 .docx”） */
+  var docxPaneText='';
+  await new Promise(function(done){
+    w.toggleSidePane('module');
+    var f=new w.File([miniDocxBytes()], '万应灵药.docx', {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    w.loadModuleFile(f, done);
+    setTimeout(done, 3000);
+  });
+  ok('模组：把 .docx 拖进右半屏能正常排出来（不再报不支持解压）', (function(){
+    var pane=$('sidePane'), doc=pane.querySelector('#spDoc');
+    return !!doc && pane.textContent.indexOf('万应灵药.docx')>=0 &&
+      !!doc.querySelector('table.sp-tbl') && !!doc.querySelector('img.sp-img') &&
+      !!doc.querySelector('h1') &&
+      pane.textContent.indexOf('不支持')<0 && pane.textContent.indexOf('打不开')<0;
+  })());
+  w.toggleSidePane('module');
+
+  /* ---------- 自定义背景（bgcustom）也要把右半屏与二级菜单栏一起染色 ---------- */
+  ok('主题适配：右半屏（模组/规则书）与二级菜单栏都跟随自定义背景配色', (function(){
+    return /body\.bgcustom \.sidepane\s*\{/.test(cssText) &&
+      /body\.bgcustom \.sp-head/.test(cssText) &&
+      /body\.bgcustom \.rb-side/.test(cssText) &&
+      /body\.bgcustom \.rb-bar/.test(cssText) &&
+      /body\.bgcustom \.tb2\.on/.test(cssText) &&
+      /body\.bgcustom \.sp-tbl/.test(cssText) &&
+      /--uic-b/.test(cssText);
   })());
 
   console.log('\n==== RESULT: ' + passed + ' passed, ' + failures.length + ' failed ====');

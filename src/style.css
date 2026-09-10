@@ -433,6 +433,18 @@ body.bgcustom .npchead input:focus{background:rgba(255,255,255,.05)}
 body.bgcustom .detail-card,body.bgcustom .comb-actor-mini{background:var(--uic-d)}
 body.bgcustom .mapcard{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-color:var(--uic-line)}
 body.bgcustom .mapcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+/* 二级菜单栏（地图 / 战斗）与右半屏（模组 / 规则书）也跟随主题色；PDF 阅读区保持白底 */
+body.bgcustom .tb2.on{background:linear-gradient(180deg,rgba(201,162,94,.24),rgba(201,162,94,.10))}
+body.bgcustom .sidepane{background:var(--uic-b);border-color:var(--uic-line)}
+body.bgcustom .sp-head,body.bgcustom .rb-bar{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-bottom-color:var(--uic-line)}
+body.bgcustom .sp-filebar{background:rgba(255,255,255,.03);border-bottom-color:var(--uic-line)}
+body.bgcustom .sp-drop{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .sp-doc,body.bgcustom .sp-empty{color:var(--ink)}
+body.bgcustom .sp-tbl th{background:var(--uic-d)}
+body.bgcustom .sp-tbl td,body.bgcustom .sp-tbl th{border-color:var(--uic-line)}
+body.bgcustom .rb-side{background:var(--uic-d);border-right-color:var(--uic-line)}
+body.bgcustom .rb-tocitem.on{background:rgba(201,162,94,.16)}
+body.bgcustom .rb-hit{border-bottom-color:var(--uic-line)}
 
 /* ================= 折叠卡片（details） ================= */
 details.ccard>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
@@ -450,24 +462,25 @@ details.ccard[open]>summary{border-bottom:1px dashed var(--line);margin-bottom:8
 .legcard .legbody{padding:2px 9px 9px}
 
 /* ================= 地图页：左素材 / 中间地图 / 右载具 ================= */
-.mapcols{display:grid;grid-template-columns:240px minmax(0,1fr) 290px;gap:14px;align-items:start}
-.mapcols>div{min-width:0}
-@media(max-width:1200px){.mapcols{grid-template-columns:240px minmax(0,1fr);grid-template-areas:'c1 c2' 'c3 c3'}}
-@media(max-width:1200px){.mapcols>div:nth-child(1){grid-area:c1}.mapcols>div:nth-child(2){grid-area:c2}.mapcols>div:nth-child(3){grid-area:c3}}
-@media(max-width:860px){.mapcols{grid-template-columns:1fr;grid-template-areas:'c1' 'c2' 'c3'}}
-.vehwide>summary{padding:8px 4px}
-.vehwide .row{margin:0 4px 8px}
-
-/* ================= 战斗页三栏：左详情/中战斗桌场景/右日志 ================= */
-.combcols{display:grid;grid-template-columns:minmax(260px,300px) minmax(0,1fr) minmax(250px,290px);gap:14px;align-items:start}
-.combcols>div{min-width:0}
-.comb-side .card{position:static;max-height:none;overflow:visible}
-.comb-mid .tblwrap{overflow:visible}
-@media(max-width:1280px){.combcols{grid-template-columns:minmax(240px,290px) minmax(0,1fr);grid-template-areas:'side main' 'log log'}}
-@media(max-width:1280px){.comb-side-left{grid-area:side}.comb-mid{grid-area:main}.comb-side-right{grid-area:log}}
-@media(max-width:980px){.combcols{grid-template-columns:1fr;grid-template-areas:'side' 'main' 'log'}}
-@media(max-width:1100px){.comb-mid .tblwrap{overflow-x:auto}}
-.comb-side .card h3{margin-top:0}
+/* ================= 地图页 / 战斗页：二级菜单栏 + 通栏主体 =================
+   菜单栏里的按钮点开弹出对应面板（一次只开一个），再点一下收起；
+   地图 / 战斗场景占菜单栏下面的整个宽度，其余卡片依次排在下面。 */
+.tabstack{display:block;min-width:0}
+.tabbar2{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.tb2{padding:6px 12px;font-size:13px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
+.tb2:hover{border-color:var(--acc);color:var(--gold)}
+.tb2.on{border-color:var(--acc);color:var(--gold);background:linear-gradient(180deg,#373042,#2a2334)}
+.tb2hint{margin-left:auto;color:var(--muted);font-size:11.5px}
+.podrow{display:block;margin:0 0 10px}
+.podrow:empty{display:none}
+.pod{margin:0;border-color:var(--acc)}
+.pod[hidden]{display:none}
+.pod .panel-head{margin-bottom:6px}
+.stagecard{padding-top:10px}
+#mapMainCard #mapWrap,#combatStageCard .battlecanvas-wrap{margin-top:8px}
+#activePanel .panel-head{margin-bottom:6px}
+#combatLogCard .log{max-height:260px}
+@media(max-width:760px){.tb2{padding:6px 9px;font-size:12px}.tb2hint{display:none}}
 
 /* ================= 悬浮面板（剧本/骰子） ================= */
 .floatpanel{position:fixed;left:50%;transform:translateX(-50%);z-index:80;width:min(1100px,calc(100vw - 16px));
@@ -522,10 +535,6 @@ button#decorToggle.on{border-color:rgba(201,162,94,.6);color:var(--gold)}
   .floatpanel.dice-on{width:calc(100vw - 8px)}
   .floatpanel.dice-on .floatbody{max-height:none;height:calc(100dvh - 66px);height:calc(100vh - 66px)}
 }
-@media(max-width:980px){
-  .comb-side .card{position:static;max-height:none;overflow:visible}
-  .mapcols>div:first-child .card{width:100%}
-}
 
 /* ================= 本轮增补：地图多场景卡片 / 骰子页签 / SAN 检定 / 战斗表防溢出 ================= */
 /* 多地图页签（固定 3 个按钮位：切换 / ✎改名 / 🗑删除，空格为「＋ 新建地图」） */
@@ -560,7 +569,7 @@ button#decorToggle.on{border-color:rgba(201,162,94,.6);color:var(--gold)}
 #combatTable .combnm{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
 #combatTable .combactns{white-space:nowrap}
 #combatTable .combactns button{padding:2px 7px;font-size:11px;white-space:nowrap;margin-left:2px}
-.comb-mid .tblwrap{overflow-x:auto;overflow-y:visible}
+
 @media(max-width:820px){
   #combatTable{min-width:680px}
 }
@@ -679,31 +688,28 @@ body.fs-map main,body.fs-combat main{padding:0;max-width:none}
 body.fs-map section.tab,body.fs-combat section.tab{display:none!important}
 body.fs-map #tab-maps{display:block!important;position:fixed;inset:0;z-index:60;overflow:hidden;
   padding:8px;box-sizing:border-box;background:transparent}
-body.fs-map #tab-maps .mapcols{display:block;height:100%;margin:0}
-body.fs-map #tab-maps .mapcols>div:first-child,
-body.fs-map #tab-maps .mapcols>div:last-child,
+body.fs-map #tab-maps .tabstack{display:block;height:100%;margin:0}
+body.fs-map #tab-maps .tabbar2,
+body.fs-map #tab-maps .podrow,
 body.fs-map #tab-maps #routeCard,
 body.fs-map #tab-maps .grid2,
 body.fs-map #tab-maps #mapHint{display:none!important}
-body.fs-map #tab-maps .mapcols>div:nth-child(2){height:100%}
-body.fs-map #tab-maps .mapcols>div:nth-child(2)>.card{margin:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
+body.fs-map #tab-maps #mapMainCard{margin:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
 body.fs-map #tab-maps #mapWrap{flex:1 1 auto;min-height:0;max-height:none!important;overflow:auto}
 
 /* ---- 战斗全屏：场景铺满，点角色后详情悬浮在屏幕最右 ---- */
 body.fs-combat #tab-combat{display:block!important;position:fixed;inset:0;z-index:60;overflow:hidden;
   padding:8px;box-sizing:border-box;background:transparent}
-body.fs-combat #tab-combat .combcols{display:flex;flex-direction:column;align-items:stretch;height:100%;gap:8px;margin:0}
-body.fs-combat #tab-combat .comb-mid{display:flex;flex-direction:column;height:100%;min-height:0;gap:8px}
-body.fs-combat #tab-combat .comb-mid>.card{margin:0}
-body.fs-combat #tab-combat .comb-mid>.card:first-child{display:none}
-body.fs-combat #tab-combat .comb-mid>.card:nth-child(2){flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
-body.fs-combat #tab-combat .comb-mid>.card:nth-child(2) .battlecanvas-wrap{flex:1 1 auto;min-height:0;overflow:hidden}
-body.fs-combat #tab-combat .comb-mid>.card:nth-child(3){flex:0 0 auto;max-height:38%;overflow:auto}
-body.fs-combat #tab-combat .comb-side-right{display:none}
-body.fs-combat #tab-combat .comb-side-left{display:none}
-body.fs-combat.comb-has-active #tab-combat .comb-side-left{display:flex;flex-direction:column;position:fixed;left:10px;right:auto;top:12px;bottom:88px;
-  width:min(380px,40vw);z-index:66;overflow:hidden}
-body.fs-combat.comb-has-active #tab-combat .comb-side-left .card{margin:0;flex:1 1 auto;min-height:0;max-height:100%;overflow:auto}
+body.fs-combat #tab-combat .tabstack{display:flex;flex-direction:column;height:100%;gap:8px;margin:0}
+body.fs-combat #tab-combat .tabbar2,
+body.fs-combat #tab-combat .podrow,
+body.fs-combat #tab-combat #combatLogCard{display:none!important}
+body.fs-combat #tab-combat #combatStageCard{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin:0;width:100%}
+body.fs-combat #tab-combat #combatStageCard .battlecanvas-wrap{flex:1 1 auto;min-height:0;overflow:hidden}
+body.fs-combat #tab-combat #combatMemberCard{flex:0 0 auto;max-height:38%;overflow:auto;margin:0}
+body.fs-combat #tab-combat #activePanel{display:none!important}
+body.fs-combat.comb-has-active #tab-combat #activePanel{display:block!important;position:fixed;left:10px;right:auto;top:12px;bottom:88px;
+  width:min(380px,40vw);z-index:66;overflow:auto;margin:0}
 
 /* ---- 全屏时「半个屏幕」的悬浮栏目（四项互斥，只能开一个） ---- */
 body.fs-map .floatpanel,body.fs-combat .floatpanel{left:10px;right:auto;transform:none;width:min(760px,50vw)}
@@ -723,7 +729,7 @@ body.bgcustom #fsFloatHost.fsfloat{background:var(--uic-b)}
   body.fs-map .floatpanel,body.fs-combat .floatpanel,
   body.fs-map .floatpanel.script-on,body.fs-combat .floatpanel.script-on,
   #fsFloatHost.fsfloat{width:calc(100vw - 16px);left:8px}
-  body.fs-combat.comb-has-active #tab-combat .comb-side-left{width:auto;left:8px;right:8px;bottom:74px}
+  body.fs-combat.comb-has-active #tab-combat #activePanel{width:auto;left:8px;right:8px;bottom:74px}
   .fsnav{right:8px;bottom:8px;gap:4px;padding:5px 6px}
   .fsnavbtn{width:38px;height:38px;font-size:18px}
 }
@@ -750,13 +756,11 @@ body.bgcustom .floatpanel .fsresize::after{background:rgba(255,255,255,.32)}
 body.bgcustom .floatpanel .fsresize:hover::after{background:var(--gold)}
 
 /* ---- 地图全屏：只留地图本体 + 左下角图标工具条，内容居中 ---- */
-body.fs-map #tab-maps .mapcols>div:nth-child(2)>.card{position:relative}
+body.fs-map #tab-maps #mapMainCard{position:relative}
 body.fs-map #tab-maps .mapctrlrow,
 body.fs-map #tab-maps #mapTools,
 body.fs-map #tab-maps #mapDragHint,
 body.fs-map #tab-maps #mapHint{display:none!important}
-body.fs-map #tab-maps .mapcards{justify-content:center}
-body.fs-map #tab-maps .mapcard.empty{display:none}
 body.fs-map #tab-maps #mapWrap{display:flex;align-items:center;justify-content:center;overflow:auto;background:transparent}
 body.fs-map #tab-maps #mapCanvas{margin:auto;flex:none}
 #fsMapCtl{display:none;position:absolute;left:12px;bottom:12px;z-index:70;flex-direction:column;gap:8px;align-items:flex-start}
@@ -775,9 +779,8 @@ body.bgcustom .fsicon{background:var(--uic-d);border-color:var(--uic-line)}
 body.bgcustom .fsicon.active{border-color:var(--acc);background:rgba(201,162,94,.2)}
 
 /* ---- 战斗全屏：场景居中，点角色后详情在屏幕最左 ---- */
-body.fs-combat #tab-combat .comb-mid{align-items:center}
-body.fs-combat #tab-combat .comb-mid>.card{width:100%}
-body.fs-combat #tab-combat .comb-mid>.card:nth-child(2) .battlecanvas-wrap{
+body.fs-combat #tab-combat #combatStageCard{align-items:center}
+body.fs-combat #tab-combat #combatStageCard .battlecanvas-wrap{
   width:100%;display:flex;align-items:center;justify-content:center;overflow:auto}
 body.fs-combat #tab-combat #battleCanvas{margin:0 auto;flex:none}
 body.fs-combat #tab-combat .fs-hide{display:none!important}
@@ -905,5 +908,107 @@ details.ccard>summary>.muted{white-space:nowrap;overflow:hidden;text-overflow:el
 /* 装饰层 z-index:6（fixed）；把地图画布与战斗场景抬到其上方，任何状态下都不被小图标压住 */
 #mapWrap{position:relative;z-index:7}
 .battlecanvas-wrap{position:relative;z-index:7}
-body.fs-map #tab-maps #mapWrap,body.fs-combat #tab-combat .comb-mid>.card .battlecanvas-wrap{z-index:7}
+body.fs-map #tab-maps #mapWrap,body.fs-combat #tab-combat #combatStageCard .battlecanvas-wrap{z-index:7}
 body.bgcustom #mapWrap,body.bgcustom .battlecanvas-wrap{isolation:isolate}
+
+/* ================= 左右分栏：右半屏（📖 模组 / 📚 规则书） ================= */
+.splitwrap{display:flex;align-items:flex-start;gap:0;min-width:0}
+.splitleft{flex:1 1 auto;min-width:0}
+body.sideopen main{max-width:min(1900px, 98vw)}
+.splitbar{flex:none;width:9px;align-self:stretch;margin:0 4px;border-radius:6px;cursor:col-resize;
+  background:linear-gradient(180deg,transparent,var(--line) 12%,var(--line) 88%,transparent);opacity:.75}
+.splitbar:hover{background:linear-gradient(180deg,transparent,var(--acc) 12%,var(--acc) 88%,transparent);opacity:1}
+body.spdragging{cursor:col-resize;user-select:none}
+.sidepane{flex:0 0 50%;min-width:260px;position:sticky;top:92px;height:calc(100vh - 116px);display:flex;flex-direction:column;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.sidepane[hidden]{display:none}
+.sp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.sp-head b{color:var(--gold)}
+.sp-tools{margin-left:auto;gap:5px;flex-wrap:nowrap}
+.sp-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:auto}
+.sp-empty{padding:14px;line-height:1.9}
+.sp-empty p{margin:6px 0}
+.sp-drop{margin:8px;padding:8px 10px;border:2px dashed var(--line);border-radius:10px;text-align:center;color:var(--muted);font-size:12px}
+.sp-drop.on{border-color:var(--acc);color:var(--gold);background:rgba(227,196,127,.08)}
+.sp-filebar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.sp-fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--gold)}
+.sp-frame{width:100%;height:calc(100vh - 210px);min-height:360px;border:0;background:#fff}
+.sp-doc{flex:1 1 auto;overflow:auto;padding:4px 14px 20px;font-size:14px;line-height:1.85;word-break:break-word}
+.sp-doc h1{font-size:1.35em;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:4px}
+.sp-doc h2{font-size:1.2em;color:var(--gold)}
+.sp-doc h3{font-size:1.08em;color:var(--gold)}
+.sp-p{margin:6px 0}
+.sp-gap{height:6px}
+.sp-tbl{border-collapse:collapse;margin:10px 0;width:100%}
+.sp-tbl td,.sp-tbl th{border:1px solid var(--line);padding:4px 6px;font-size:.95em;vertical-align:top;text-align:left}
+.sp-tbl th{background:rgba(255,255,255,.05);color:var(--gold)}
+.sp-pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;margin:0}
+.sp-h{color:var(--gold);line-height:1.5;margin:.9em 0 .4em}
+.sp-img{max-width:100%;height:auto;display:block;margin:10px auto;border-radius:6px;background:#fff}
+.sp-pb{border:0;border-top:1px dashed var(--line);margin:16px 0}
+.sp-bullet{color:var(--gold);margin-right:6px}
+.sp-td{font-size:.95em}
+.sp-tblwrap{overflow-x:auto}
+
+/* 规则书 */
+.rb-wrap{display:flex;flex-direction:row;overflow:hidden;padding:0}
+.rb-side{width:240px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:rgba(255,255,255,.015)}
+.rb-side.hide{display:none}
+.rb-searchrow{display:flex;gap:4px;padding:6px;border-bottom:1px solid var(--line)}
+.rb-searchrow input{flex:1;min-width:0}
+.rb-toc{flex:1;overflow:auto;padding:4px 0 16px}
+.rb-tocitem{padding:4px 8px;cursor:pointer;font-size:12px;line-height:1.45;color:var(--muted);border-left:2px solid transparent}
+.rb-tocitem:hover{color:var(--gold);background:rgba(255,255,255,.04)}
+.rb-tocitem.on{color:var(--gold);border-left-color:var(--gold);background:rgba(227,196,127,.08)}
+.rb-tocitem.lv1{font-weight:700;color:var(--ink);padding-top:7px}
+.rb-tocitem.lv2{padding-left:16px}
+.rb-tocitem.lv3{padding-left:28px;font-size:11.5px;opacity:.9}
+.rb-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.rb-bar{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:var(--panel2)}
+.rb-pageno{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:12px}
+.rb-pageno input{width:64px;padding:2px 6px}
+.rb-page{flex:1;overflow:auto;padding:10px 14px 24px;font-size:15px;line-height:1.9}
+.rb-pagemtitle,.rb-pagetitle{color:var(--gold);font-size:12px;margin:0 0 6px}
+.rb-frame{flex:1 1 auto;width:100%;min-height:0;border:0;background:#fff;display:block}
+.rb-hits{flex:1;overflow:auto;padding:0}
+.rb-p{margin:5px 0;word-break:break-word}
+.rb-p mark{background:rgba(227,196,127,.32);color:inherit;border-radius:3px}
+.rb-hithead{padding:8px 10px;color:var(--gold);font-size:12px;border-bottom:1px solid var(--line)}
+.rb-hit{display:flex;flex-direction:column;gap:2px;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
+.rb-hit:hover{background:rgba(255,255,255,.04)}
+.rb-hit b{color:var(--gold);font-size:12px}
+.rb-hit span{color:var(--muted);font-size:12px;line-height:1.6}
+
+/* 调查员页：可折叠 */
+.panel-head.card-toggle{cursor:pointer;align-items:center}
+.panel-head.card-toggle:hover h3{color:var(--gold)}
+.collapse-ico{margin-left:auto;color:var(--muted);font-size:12px;padding:0 2px}
+.card.collapsed{padding-bottom:8px}
+.collapse-body[hidden]{display:none}
+
+/* 属性雷达 */
+.attrsplit{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.attrsplit>.attrgrid, .attrsplit>div:first-child{flex:1 1 320px;min-width:0}
+.radarbox{flex:0 1 340px;min-width:250px;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px;padding:6px 6px 2px}
+.radarbox canvas{display:block;margin:0 auto}
+.radarcap{font-size:11px;text-align:center;line-height:1.5;padding:0 4px 4px}
+
+/* 首次打开：支持的人物卡 */
+.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.wcard{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel2);display:flex;flex-direction:column;gap:6px}
+.wcard-t{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.wcard-t b{color:var(--gold)}
+.wcard-d{font-size:12px;color:var(--muted);line-height:1.7;flex:1}
+
+/* 全屏场景里不要右半屏 */
+body.fs-map .sidepane,body.fs-combat .sidepane,body.fs-map .splitbar,body.fs-combat .splitbar{display:none!important}
+body.fs-map .splitwrap,body.fs-combat .splitwrap{display:block}
+
+@media(max-width:900px){
+  .splitwrap{display:block}
+  .splitbar{display:none}
+  .sidepane{position:static;height:auto;max-height:none;margin-top:12px;flex-basis:auto!important;width:auto}
+  .sp-frame{height:70vh}
+  .rb-wrap{flex-direction:column}
+  .rb-side{width:auto;max-height:34vh;border-right:0;border-bottom:1px solid var(--line)}
+}
