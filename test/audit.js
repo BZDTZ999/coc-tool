@@ -47,7 +47,7 @@ function main(){
     console.error('offline.html 未包含当前 src 模块内容 —— 请先 npm run build:all');
     process.exit(1);
   }
-  if (/__CSS__|__XLSX__|__PARSER__|__APP__/.test(offline)){
+  if (/__CSS__|__ICON__|__XLSX__|__PARSER__|__BLANKCARD__|__APP__/.test(offline)){
     console.error('offline.html 仍有占位符未替换');
     process.exit(1);
   }
@@ -55,12 +55,16 @@ function main(){
 
   // 4) 在线多文件版结构
   const web = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
-  if (/__CSS__|__XLSX__|__PARSER__|__APP__/.test(web)){
+  if (/__CSS__|__ICON__|__XLSX__|__PARSER__|__BLANKCARD__|__APP__/.test(web)){
     console.error('index.html(在线版) 仍有占位符未替换');
     process.exit(1);
   }
   if (web.indexOf('<link rel="stylesheet" href="src/style.css">') < 0){
     console.error('index.html(在线版) 缺少样式链接');
+    process.exit(1);
+  }
+  if (web.indexOf('<link rel="icon" type="image/png" href="assets/favicon.png">') < 0){
+    console.error('index.html(在线版) 缺少标签图标链接');
     process.exit(1);
   }
   const order = ['parse-card.js'].concat(appFiles());

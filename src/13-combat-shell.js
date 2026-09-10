@@ -16,10 +16,12 @@ function renderCombatShell(){
   renderCombatRoster();
   placeCombatantsDefault();
   drawBattleScene();
+  if(typeof renderBattlePropPalette==='function') renderBattlePropPalette();
 }
 function combatPreAdd(actorId){
   var a=actorById(actorId); if(!a) return;
-  switchTab('combat');
+  if(typeof fsScene!=='undefined' && fsScene){ if(typeof switchSceneFs==='function') switchSceneFs('combat'); }
+  else { switchTab('combat'); }
   var cnt=a.kind==='npc'?(a.count||1):1;
   for(var i=0;i<cnt;i++){
     var c=spawnCombatant(a,i>0?('#'+(i+1)):'');
@@ -57,7 +59,8 @@ function combatRemove(cid){
 function combatClear(){
   if(!confirmBox('清空战斗场景与所有成员？')) return;
   (state.combat.participants||[]).slice().forEach(function(c){ if(typeof combSyncParticipant==='function') combSyncParticipant(c,{quiet:true}); });
-  state.combat.participants=[]; state.combat.round=0; state.combat.scene={bg:(state.combat.scene&&state.combat.scene.bg)||null,pos:{}};
+  state.combat.participants=[]; state.combat.round=0;
+  state.combat.scene={bg:(state.combat.scene&&state.combat.scene.bg)||null,pos:{},props:[]};
   combActiveId=null; combTargetId=null;
   saveState(); renderCombatShell(); renderActivePanel();
 }
@@ -90,4 +93,3 @@ function renderCombatRoster(){
   }).join('');
 }
 function selectComb(cid){ combActiveId=cid; renderCombatRoster(); renderActivePanel(); drawBattleScene(); }
-

@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#14161c">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/favicon.png">
 <title>带团妙妙小工具 · COC</title>
 <link rel="stylesheet" href="src/style.css">
 </head>
@@ -35,6 +37,7 @@
   <div>预祝大成功！问题联系：QQ460889415</div>
 </footer>
 <div class="floatpanel" id="floatPanel" hidden></div>
+<div class="fsnav" id="fsNav" hidden></div>
 <div class="modal-mask" id="actorModal" onclick="if(event.target===this)closeActorModal()"></div>
 <div class="modal-mask" id="helpModal" onclick="if(event.target===this)this.classList.remove('open')"></div>
 <div class="modal-mask" id="bgModal" onclick="if(event.target===this)this.classList.remove('open')"></div>
@@ -43,6 +46,7 @@
     <!-- 在线多文件版：脚本按序加载 src/*.js（与离线版同一份源码）。 -->
     <!-- 读 .xlsx 人物卡时才从 CDN 懒加载 xlsx 引擎；完全离线请改用 offline.html。 -->
     <script src="src/parse-card.js"></script>
+<script>window.__COC_BLANK_CARD_URL='assets/blank-card.xlsx';</script>
     <script src="src/01-utils.js"></script>
     <script src="src/02-data-store.js"></script>
     <script src="src/03-nav-templates.js"></script>
@@ -66,5 +70,7 @@
     <script src="src/21-theme-bg.js"></script>
     <script src="src/22-scenario-dice.js"></script>
     <script src="src/23-decor.js"></script>
+    <script src="src/24-fullscreen-tags.js"></script>
+    <script src="src/25-card-export.js"></script>
 </body>
 </html>

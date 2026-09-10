@@ -13,7 +13,10 @@ var MAP_COLL={props:false,veh:false,pts:false,legs:false,legOpen:{}};
     if(lid){ if(!MAP_COLL.legOpen) MAP_COLL.legOpen={}; MAP_COLL.legOpen[lid]=d.open; }
   }, true);
 })();
-function applyZoomLabel(){ var el=$('zoomVal'); if(el) el.textContent=Math.round((mapZoom||1)*100)+'%'; }
+function applyZoomLabel(){
+  var txt=Math.round((mapZoom||1)*100)+'%';
+  document.querySelectorAll('.zoomval').forEach(function(el){ el.textContent=txt; });
+}
 function mapZoomTo(z){
   var m=currentMap(); if(!m) return;
   mapZoom=Math.max(0.35,Math.min(3,z));
@@ -24,8 +27,32 @@ function zoomBy(d){ mapZoomTo((mapZoom||1)+d); }
 function zoomReset(){ mapZoomTo(1); }
 function zoomFit(){
   var wr=$('mapWrap'), m=currentMap(); if(!wr||!m) return;
-  var z=Math.max(0.35,Math.min(2.2,(wr.clientWidth-6)/MAP_W));
+  var L=mapLogicalSize(m);
+  var z=Math.max(0.35,Math.min(2.2,(wr.clientWidth-6)/L.w));
   mapZoomTo(z);
+}
+/* 旋转 90°，两种模式：
+   mode='all'     整体旋转 —— 底图、地点、摆件与文字一起转；
+   mode='upright' 地图旋转 —— 只有地图转，文字保持水平（反向旋转抵消）。 */
+function rotateMap(deg, mode){
+  var m=currentMap(); if(!m){ toast('先新建/选择一张地图'); return; }
+  if(!mode) mode=m.rotUpright?'upright':'all';
+  if(mode==='upright') m.rotUpright=true;
+  else if(mode==='all') m.rotUpright=false;
+  m.rot=(mapRotOf(m)+((deg||90)%360)+360)%360;
+  saveStateQuiet();
+  if(typeof fsResize==='function'){ try{ fsResize(); }catch(e){} }
+  drawMapCanvas();
+  toast('地图已旋转 '+m.rot+'°（'+(m.rotUpright?'只有地图转，文字保持水平':'整体旋转，文字一起转')+'）');
+}
+/* 全屏时用图标切换地图：循环到下一张 */
+function cycleMap(){
+  var list=state.maps||[];
+  if(list.length<2){ toast('只有一张地图（最多 3 张，可在非全屏时新建）'); return; }
+  var i=list.findIndex(function(x){return x.id===state.activeMapId;});
+  var next=list[(i+1+list.length)%list.length];
+  setActiveMap(next.id);
+  toast('已切换到地图「'+next.name+'」');
 }
 /* 多地图卡片：最多 3 张，卡片切换/改名/删除，隐藏的 #mapSel 仅作兼容 */
 function mapCardBarHTML(){
@@ -46,6 +73,35 @@ function mapCardBarHTML(){
 function renderMapCards(){
   var bar=$('mapCardBar'); if(!bar) return;
   bar.innerHTML=mapCardBarHTML();
+}
+/* 默认地图下拉：按分类列出内置地图 */
+var DEMO_GRP_SEL='';
+/* 二级选择：把某一级分类下的地图填进 #mapDemoSel（第一项是占位） */
+function fillDemoMapItems(gi){
+  var sel=$('mapDemoSel'); if(!sel) return;
+  var g=String(gi==null?'':gi);
+  DEMO_GRP_SEL=g;
+  sel.innerHTML=demoMapItemsHTML(Number(gi));
+  sel.value='';
+  sel.setAttribute('data-grp', g);
+}
+function onDemoGroupChange(v){
+  fillDemoMapItems(v);
+  var g=DEMO_MAP_GROUPS[Number(v)];
+  toast(g?('选择「'+g.g+'」下的地图即可载入'):'请选择地图分类');
+}
+function renderDemoMapSelect(){
+  var grp=$('mapDemoGrp'), sel=$('mapDemoSel'); if(!sel) return;
+  if(grp && !grp.options.length) grp.innerHTML=demoMapGroupOptionsHTML();
+  var m=currentMap();
+  var key=(m&&m._demoKey)||'';
+  var gi=demoGroupOfKey(key);
+  var showGrp=gi>=0?gi:(DEMO_GRP_SEL!==''?Number(DEMO_GRP_SEL):0);
+  if(!isFinite(showGrp)||showGrp<0) showGrp=0;
+  DEMO_GRP_SEL=String(showGrp);
+  if(grp && grp.value!==String(showGrp)) grp.value=String(showGrp);
+  if(sel.getAttribute('data-grp')!==String(showGrp)) fillDemoMapItems(showGrp);
+  sel.value=key; if(!key) sel.value='';
 }
 function setActiveMap(id){
   if((state.maps||[]).filter(function(x){return x.id===id;}).length===0) return;
@@ -91,12 +147,15 @@ function newMap(){
 function renderMapsShell(){
 
   renderMapCards();
+  renderDemoMapSelect();
   var sel=$('mapSel'); if(!sel) return;
   sel.innerHTML=state.maps.map(function(m){return '<option value="'+m.id+'"'+(m.id===state.activeMapId?' selected':'')+'>'+esc(m.name)+'</option>';}).join('')||'<option value="">(无场景)</option>';
   if(sel.value!==(state.activeMapId||'')) sel.value=state.activeMapId||'';
   if(!state.maps.length){ var mh=$('mapHint'); if(mh) mh.textContent='请先“新建场景”。'; return; }
   var m=currentMap(); if(!m) return;
-  var sc=$('mapScale'); if(sc) sc.value=m.kmPerPx||0.01;
+  var sc=$('mapScale'); if(sc) sc.value=Math.round(((m.kmPerPx||0.02)*MAP_GRID_PX)*10000)/10000;
+  /* 室内地图不显示比例尺 */
+  var scBox=$('mapScaleBox'); if(scBox) scBox.style.display=m.noDist?'none':'';
   var isTouch=isCoarseTouch()||(window.innerWidth||0)<=900;
   var wr0=$('mapWrap');
   if(m.zoom==null || (isTouch && wr0 && wr0.clientWidth>50 && MAP_W*(m.zoom||1)>wr0.clientWidth+8)){
@@ -112,29 +171,34 @@ function renderMapsShell(){
   drawMapCanvas();
   renderMapLists();
   renderRoutePanel();
-  var cvc=$('mapCanvas'); if(cvc) cvc.style.cursor=(mapTool==='add')?'crosshair':'grab';
+  var cvc=$('mapCanvas'); if(cvc) cvc.style.cursor=(mapTool==='add')?'crosshair':(mapTool==='move'?'move':'grab');
 }
 function drawMapCanvas(){
   var cv=$('mapCanvas'); if(!cv) return;
   var m=currentMap(); if(!m) return;
   var z=(m&&m.zoom)||mapZoom||1;
   mapZoom=z;
-  var W=Math.round(MAP_W*z), H=Math.round(MAP_H*z);
-  if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
-  var g=cv.getContext('2d');
-  g.setTransform(z,0,0,z,0,0);
-  g.clearRect(0,0,MAP_W,MAP_H);
-  if(m.background){
-    var img=new Image();
-    img.onload=function(){
-      var g2=cv.getContext('2d');
-      g2.setTransform(z,0,0,z,0,0);
-      try{ g2.drawImage(img,0,0,MAP_W,MAP_H); }catch(e){}
-      overlayMap(g2,m);
-    };
-    img.src=m.background;
-  } else { g.fillStyle=themeCanvasColor(); g.fillRect(0,0,MAP_W,MAP_H); overlayMap(g,m); }
+  /* 高清：CSS 尺寸 = 旋转后的逻辑尺寸×缩放，后备缓冲再乘设备像素比，避免 Retina 上发虚 */
+  var rot=mapRotOf(m), L=mapLogicalSize(m);
+  var g=hidpiCanvas(cv, L.w, L.h, L.w*z, L.h*z);
+  if(!g) return;
+  g.clearRect(0,0,L.w,L.h);
+  g.fillStyle=(typeof themeCanvasColor==='function')?themeCanvasColor():'#151922';
+  g.fillRect(0,0,L.w,L.h);
+  function paint(){
+    g.save();
+    if(rot){ g.translate(L.w/2,L.h/2); g.rotate(rot*Math.PI/180); g.translate(-MAP_W/2,-MAP_H/2); }
+    if(m.background){
+      var img=(_mapBgCache[m.background]=_mapBgCache[m.background]||null);
+      if(!img){ img=new Image(); img.onload=function(){ drawMapCanvas(); }; img.src=m.background; _mapBgCache[m.background]=img; }
+      if(img.complete){ try{ g.drawImage(img,0,0,MAP_W,MAP_H); }catch(e){} }
+    }
+    overlayMap(g,m);
+    g.restore();
+  }
+  paint();
 }
+var _mapBgCache={};
 var MAP_TOOLS_PALETTE=[
   ['🏠','房'],['🏢','楼'],['🏰','堡'],['🏭','厂'],['⛪','教堂'],['🏦','银行'],['🏥','医院'],['🎪','马戏'],
   ['🌳','树'],['🌲','松'],['🌴','椰'],['🌵','仙人掌'],['🌾','田'],['🪻','花'],

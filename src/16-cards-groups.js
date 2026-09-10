@@ -1,8 +1,23 @@
 /* ---------- C. 调查员卡：紧凑信息+右上头像+HP/SAN/MP/法术+DB/武器+剧情道具 ---------- */
 /* 调查员经历 → “跑过几个团” → 小卡外框等级：
    0 = 默认；1~5 = 每团叠一条 2px 金属边（铁/铜/银/金/白金）；
-   6 = 4px 发光翡翠；7 = 发光钻石；8+ = 发光火焰；9+ = 火焰 + 顶部星星。 */
+   6 = 4px 发光翡翠；7 = 发光钻石；8+ = 发光火焰（外圈呼吸不变）；
+   8 团起每多跑一个团，右下角多一颗会呼吸的星星；
+   8 团起左下角别一枚做旧牛皮纸小标签「传奇调查员」。 */
 function runCount(a){ return Array.isArray(a&&a.campaigns)?a.campaigns.length:0; }
+/* 便签条：斜插在小卡右上角，最多 6 个；可拖到别的卡移动、点 ✕ 移除 */
+function pcTagChipsHTML(a){
+  var tags=(a&&a.tags)||[];
+  if(!tags.length) return '';
+  return '<div class="pctagbox">'+tags.slice(0,6).map(function(t){
+    var moving=(typeof tagMoving!=='undefined'&&tagMoving&&tagMoving.aid===a.id&&tagMoving.tagId===t.id)?' moving':'';
+    return '<span class="pctag'+moving+'" draggable="true" data-aid="'+esc(a.id)+'" data-tagid="'+esc(t.id)+'"'
+      +' ondragstart="tagCardDragStart(event,\''+a.id+'\',\''+t.id+'\')"'
+      +' title="拖动到另一张卡可移动；点击可选中后点另一张卡移动；点 ✕ 移除"'
+      +' style="--tagc:'+esc(t.color||'#e3c47f')+';color:'+esc((typeof tagFg==='function')?tagFg(t.color||'#e3c47f'):'#26210f')+'">'
+      +'<span class="t">'+esc(t.name)+'</span><button class="pctagx" title="移除标签">✕</button></span>';
+  }).join('')+'</div>';
+}
 function pcRunClass(a){
   var n=runCount(a);
   if(n<=0) return '';
@@ -11,9 +26,17 @@ function pcRunClass(a){
   if(n===7) return 'runs7';
   return 'runs8';
 }
+/* 透明文件框自身被点中时，绝不能让它冒泡到 .pcav 的 onclick：
+   否则那里的 preventDefault() 会取消 <input type=file> 打开选图框的默认行为，导致“点头像没反应”。 */
+function pcAvatarFileStop(ev){
+  if(ev && ev.stopPropagation) ev.stopPropagation();
+}
 function pcAvatarClick(ev, aid){
-  ev.preventDefault(); ev.stopPropagation();
-  var inp=document.querySelector('#pcList .actorcard[data-id="'+aid+'"] .pcav input[type=file]');
+  if(ev && ev.target && ev.target.classList && ev.target.classList.contains('pcavfile')) return; /* 交给原生文件框 */
+  if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+  var host=(ev&&ev.currentTarget&&ev.currentTarget.querySelector)?ev.currentTarget:null;
+  var inp=host?host.querySelector('input[type=file]')
+    :document.querySelector('#pcList .pccard[data-id="'+aid+'"] .pcav input[type=file]');
   if(inp) inp.click();
 }
 function onPcAvatarFile(ev, aid){
@@ -34,7 +57,15 @@ function onPcAvatarFile(ev, aid){
 function pcCardHTML(a){
   var at=a.attrs||{};
   var runCls=pcRunClass(a);
-  var runStar=runCount(a)>=9?'<span class="runstar" aria-hidden="true">⭐</span>':'';
+  var runN=runCount(a);
+  /* 8 团起步：每多跑一个团，右下角多一颗星星（最多铺 8 颗，再多用 +N 表示） */
+  var starN=runN>=8?(runN-7):0;
+  var starExtra=0;
+  if(starN>8){ starExtra=starN-8; starN=8; }
+  var stars='';
+  for(var si=0; si<starN; si++) stars+='<i>⭐</i>';
+  var runStars=starN?('<span class="runstars" aria-hidden="true">'+stars+(starExtra?'<b>+'+starExtra+'</b>':'')+'</span>'):'';
+  var legendTag=runN>=8?'<span class="pclegend" aria-hidden="true">传奇调查员</span>':'';
   var line1=[a.occupation&&('职业 '+a.occupation),a.sex,a.age&&(a.age+'岁')]
     .filter(Boolean).join(' · ');
   var line2=[a.player&&('玩家 '+a.player),a.residence&&('住地 '+a.residence),a.hometown&&('故乡 '+a.hometown)]
@@ -44,9 +75,12 @@ function pcCardHTML(a){
   var attrOrder=['str','dex','pow','con','app','edu','siz','int','luck'];
   var attrCells=attrOrder.map(function(k){
     var lb=ATTR_LABELS.filter(function(x){return x[0]===k;})[0];
-    return '<span class="pctile" title="'+(lb?esc(lb[2]):'')+'"><b>'+(lb?esc(lb[1]):k)+'</b><em>'+(at[k]||0)+'</em></span>';
+    var en=lb?String(lb[1]).split(' ')[0]:String(k).toUpperCase();
+    var cn=(lb&&lb[2])?String(lb[2]).split(' ')[0]:'';
+    return '<span class="pctile" title="'+(lb?esc(lb[2]):'')+'"><b>'+esc(en)+'</b><i>'+esc(cn)+'</i><em>'+(at[k]||0)+'</em></span>';
   }).join('');
-  return `<div class="actorcard pccard${runCls?' '+runCls:''}" data-id="${a.id}">${runStar}
+  return `<div class="actorcard pccard${runCls?' '+runCls:''}" data-id="${a.id}" ondragover="event.preventDefault()" ondrop="tagCardDrop(event,'${a.id}')">${runStars}${legendTag}
+    ${pcTagChipsHTML(a)}
     <div class="pchead">
       <div class="pcinfo">
         <div class="pcnameline"><span class="badge blue">调查员</span><b class="nm">${esc(a.name||'未命名')}</b></div>
@@ -54,9 +88,9 @@ function pcCardHTML(a){
         ${line2?'<div class="pcmeta muted">'+esc(line2)+'</div>':''}
         <div class="pcatts9">${attrCells}</div>
       </div>
-      <div class="pcav" onclick="pcAvatarClick(event,'${a.id}')">
+      <div class="pcav" onclick="pcAvatarClick(event,'${a.id}')" title="">
         ${(a.avatar&&a.avatar.custom)?'<img src="'+esc(a.avatar.custom)+'" alt="">':'<span class="emoji">'+esc((a.avatar&&a.avatar.preset)||AVATAR_DEFAULT_PC)+'</span>'}
-        <input type="file" accept="image/*" style="display:none" onchange="onPcAvatarFile(event,'${a.id}')">
+        <input class="pcavfile" type="file" accept="image/*" title="" aria-label="上传头像" onclick="pcAvatarFileStop(event)" onchange="onPcAvatarFile(event,'${a.id}')">
       </div>
     </div>
     ${barsHTML(a)}
@@ -65,7 +99,7 @@ function pcCardHTML(a){
     <div class="plotmini" title="剧情道具">🎬 ${plot.length?esc(plot.map(function(p){return p.name+(p.qty>1?('×'+p.qty):'');}).join('、')):'（无剧情道具）'}</div>
     <div class="pcbtns">
       <button class="small" title="编辑" onclick="openActorModal('${a.id}','pc')">✏️ 编辑</button>
-      <button class="small ghost" title="导出角色" onclick="exportActorJson('${a.id}')">⬇ 导出</button>
+      <button class="small ghost" title="导出到《空白人物卡》模板（.xlsx）" onclick="exportActorCard('${a.id}')">⬇ 导出卡</button>
       <button class="small danger" title="删除" onclick="deleteActor('${a.id}')">🗑 删除</button>
     </div>
   </div>`;
@@ -91,7 +125,7 @@ function npcMiniHTML(a){
           <b class="nm" style="font-size:12.5px">${esc(a.name)}</b>
           <span class="sidebadge side-${esc(s)}">${esc(s)}</span>
         </div>
-        <div class="sub" style="font-size:11px">${esc((a.note||a.notes||'').slice(0,46))}</div>
+        <div class="sub npc-note" style="font-size:11px">${esc((a.note||a.notes||'').slice(0,46))}</div>
       </div>
     </div>
     <div class="row" style="gap:4px;margin-top:5px;align-items:center">

@@ -2,19 +2,35 @@
 function scaffoldSections(){
   // 调查员
   $('tab-surveyors').innerHTML = `
-  <div class="card">
-    <h3>📥 从《空白人物卡》系列 .xlsx 导入调查员</h3>
-    <div id="dropZone" class="notice" style="cursor:pointer;border:2px dashed var(--acc)">
-      🖱 直接把人物卡 .xlsx 拖到这里，即可解析（也支持点击选择文件）
+  <div class="srvcols">
+    <div class="srvside">
+      <div class="card">
+        <div class="panel-head srvside-head" onclick="toggleTagSide()" title="点这里展开/收起标签栏"><b>🏷 标签栏</b><span class="hint" style="font-size:11px">点选→点小卡</span></div>
+        <div class="row" style="gap:5px;flex-wrap:nowrap;align-items:center">
+          <input type="text" id="tagNameInput" placeholder="标签名（可 emoji）" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')addTagLib()">
+          <input type="color" id="tagColorInput" value="#e3c47f" title="标签颜色">
+          <button class="small primary" title="新建标签" onclick="addTagLib()">＋</button>
+        </div>
+        <div id="tagLib" class="taglib"></div>
+        <div class="hint" style="margin-top:8px;line-height:1.7">点选一个标签再点调查员小卡即可贴上；也可直接把标签拖到小卡上。小卡右上角的便签条可以拖到另一张卡，或点 ✕ 移除。每张小卡最多 6 个标签。</div>
+      </div>
     </div>
-    <input type="file" id="fileImport" accept=".xlsx,.xls" style="display:none" onchange="onPickCardFile(event)">
-    <div id="importPreview"></div>
-  </div>
-  <div class="row" style="justify-content:space-between;margin:4px 2px 8px">
-    <b id="pcCountTitle">调查员库</b>
-    <button onclick="openActorModal(null,'pc')" class="small primary">＋ 手动新建调查员</button>
-  </div>
-  <div class="grid" id="pcList" style="grid-template-columns:repeat(auto-fill,minmax(330px,1fr))"></div>`;
+    <div class="srvmain">
+      <div class="card">
+        <h3>📥 从《空白人物卡》系列 .xlsx 导入调查员</h3>
+        <div id="dropZone" class="notice" style="cursor:pointer;border:2px dashed var(--acc)">
+          🖱 直接把人物卡 .xlsx 拖到这里，即可解析（也支持点击选择文件）
+        </div>
+        <input type="file" id="fileImport" accept=".xlsx,.xls" style="display:none" onchange="onPickCardFile(event)">
+        <div id="importPreview"></div>
+      </div>
+      <div class="row" style="justify-content:space-between;margin:4px 2px 8px">
+        <b id="pcCountTitle">调查员库</b>
+        <button onclick="openActorModal(null,'pc')" class="small primary">＋ 手动新建调查员</button>
+      </div>
+      <div class="grid" id="pcList" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
+    </div>
+  </div>`;
   // NPC
   $('tab-npcs').innerHTML = `
   <div class="card">
@@ -47,12 +63,13 @@ function scaffoldSections(){
     <div>
       <div class="card">
         <div class="mapcards" id="mapCardBar" style="margin-bottom:8px"></div>
-        <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="row mapctrlrow" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div style="flex:1;min-width:280px">
             <select id="mapSel" style="display:none" onchange="onMapSelect()"></select>
           </div>
           <div class="row" style="gap:6px;flex-wrap:wrap">
-            <button class="small ghost" onclick="loadDemoMap()">示例地图</button>
+            <select id="mapDemoGrp" class="small" title="先选地图分类（城市街区 / 室内建筑 / 野外自然 / 特殊地下）" style="max-width:150px" onchange="onDemoGroupChange(this.value)"></select>
+            <select id="mapDemoSel" class="small" title="再选这个分类里的具体地图载入（会替换当前场景）" style="max-width:180px" onchange="loadDemoMap(this.value)"></select>
             <span class="zoomrow">
               <button class="small ghost" title="缩小" onclick="zoomBy(-0.2)">－</button>
               <span id="zoomVal" class="zoomval">100%</span>
@@ -60,18 +77,41 @@ function scaffoldSections(){
               <button class="small ghost" onclick="zoomFit()">适宽</button>
               <button class="small ghost" onclick="zoomReset()">重置</button>
             </span>
-            <label class="muted" style="flex-direction:row;align-items:center;gap:4px">1px=<input id="mapScale" type="number" step="0.001" style="width:62px" value="0.02">km<button class="small ghost" onclick="onScaleChange()">设</button></label>
+            <label class="muted" id="mapScaleBox" style="flex-direction:row;align-items:center;gap:4px">比例尺：1格=<input id="mapScale" type="number" step="any" inputmode="decimal" min="0" style="width:190px" value="1">km<button class="small ghost" onclick="onScaleChange()">设</button></label>
             <label class="muted" style="flex-direction:row;align-items:center;gap:4px">底图<input type="file" id="mapBg" accept="image/*" style="display:none" onchange="onBgPick(event)"><button class="small ghost" onclick="document.getElementById('mapBg').click()">上传</button></label>
           </div>
         </div>
         <div class="row tabs-mini" id="mapTools" style="margin-top:8px">
-          <button id="mt-select" class="active" onclick="setMapTool('select')">🖱 选择/拖动</button>
+          <button id="mt-select" class="active" onclick="setMapTool('select')" title="只拖动地点；相连道路的 km 会实时重算">🖱 拖动地点</button>
+          <button id="mt-move" onclick="setMapTool('move')" title="只拖动地图角色与摆件，不动地点和道路">🧍 移动角色/摆件</button>
           <button id="mt-add" onclick="setMapTool('add')">📍 添加地点</button>
           <button class="ghost small" onclick="deleteSelectedObj()">🗑 删除选中</button>
-          <span class="drag-hint" style="margin-left:auto">拖：地点 / 地图角色 / 摆件 · 角色可单击左栏再拖到位置</span>
+          <button class="ghost small" onclick="rotateMap(90,'all')" title="整体旋转 90°：底图、地点、摆件和文字一起转">🔄 整体旋转</button>
+          <button class="ghost small" onclick="rotateMap(90,'upright')" title="地图旋转 90°：只有地图转，文字保持水平">↻ 地图旋转</button>
+          <button class="ghost small" id="mapFsBtn" onclick="toggleSceneFs('map')" title="全屏查看地图（右下角 ↩ 返回退出）">⛶ 全屏</button>
+          <span class="drag-hint" id="mapDragHint" style="margin-left:auto">🖱 拖动地点（相连道路 km 实时重算）· 🧍 移动角色/摆件 · 角色也可单击左栏再拖到位置</span>
         </div>
         <div id="mapWrap"><canvas id="mapCanvas" width="1000" height="620"></canvas></div>
-        <div id="mapHint" class="hint" style="margin-top:4px">“添加地点”后在图上落点；角色/摆件都可以拖到任意位置。</div>
+        <div id="fsMapCtl">
+          <div class="fsmapctl-left">
+            <button class="fsicon" data-tool="select" onclick="setMapTool('select')" title="拖动地点（相连道路 km 实时重算）">🖱</button>
+            <button class="fsicon" data-tool="move" onclick="setMapTool('move')" title="只移动角色 / 摆件">🧍</button>
+            <button class="fsicon" data-tool="add" onclick="setMapTool('add')" title="添加地点">📍</button>
+            <button class="fsicon" onclick="deleteSelectedObj()" title="删除选中">🗑</button>
+            <span class="fssep"></span>
+            <button class="fsicon" onclick="cycleMap()" title="切换地图">🗺️</button>
+            <button class="fsicon" onclick="rotateMap(90,'all')" title="整体旋转 90°（底图与文字一起转）">🔄</button>
+            <button class="fsicon" onclick="rotateMap(90,'upright')" title="地图旋转 90°（只有地图转，文字保持水平）">↻</button>
+          </div>
+          <div class="fsmapctl-zoom">
+            <button class="fsicon" onclick="zoomBy(0.2)" title="放大">➕</button>
+            <span class="zoomval">100%</span>
+            <button class="fsicon" onclick="zoomBy(-0.2)" title="缩小">➖</button>
+            <button class="fsicon" onclick="zoomFit()" title="适宽">⤢</button>
+            <button class="fsicon" onclick="zoomReset()" title="重置缩放">↺</button>
+          </div>
+        </div>
+        <div id="mapHint" class="hint" style="margin-top:4px">“📍 添加地点”后在图上落点；“🖱 拖动地点”只动地点并实时重算相连道路的 km；“🧍 移动角色/摆件”只挪角色和素材，不会碰到地点与道路。载入预设地图时里程已按当前比例尺算好。</div>
       </div>
       <div id="routeCard"></div>
       <div class="grid2">
@@ -117,7 +157,8 @@ function scaffoldSections(){
           <div class="row">
             <label class="muted" style="flex-direction:row;gap:4px">上传底图<input type="file" id="battleBg" accept="image/*" style="display:none" onchange="onBattleBg(event)"></label>
             <button class="small ghost" onclick="clearBattleBg()">清除底图</button>
-            <span class="hint">头像可拖动；点选可操作</span>
+            <button class="small ghost" id="combatFsBtn" onclick="toggleSceneFs('combat')" title="全屏查看战斗场景（右下角 ↩ 返回退出）">⛶ 全屏</button>
+            <span class="hint fs-hide">头像可拖动；点选可操作</span>
           </div>
         </div>
         <div class="battlecanvas-wrap"><canvas id="battleCanvas" width="940" height="500"></canvas></div>
@@ -126,6 +167,16 @@ function scaffoldSections(){
           <span class="hint">通过下方成员栏加入/移出，头像上显示 HP/SAN/MP</span>
           <span class="scene-side side-敌人">→ 敌人阵营 右</span>
         </div>
+        <details class="ccard" data-coll="bprops" id="battlePropsCard">
+          <summary><b>🎨 场景道具</b><span class="muted" style="font-weight:400">（点击展开/收回；油桶·爆炸·椅子·餐桌·雕像等 60+）</span></summary>
+          <div class="hint" style="margin-bottom:6px">点图标即放进战斗场景，之后可直接拖动到任意位置；选中后点「删除选中道具」可移除；也支持上传自己的图片当道具。</div>
+          <div class="proplist" id="battlePropPalette"></div>
+          <input type="file" id="battlePropFile" accept="image/*" multiple style="display:none" onchange="onBattlePropFile(event)">
+          <div class="row" style="margin-top:6px;gap:6px">
+            <button class="small ghost" onclick="document.getElementById('battlePropFile').click()">＋ 上传自定义道具</button>
+            <button class="small danger" onclick="deleteSelectedBattleProp()">🗑 删除选中道具</button>
+          </div>
+        </details>
       </div>
       <div class="card">
         <div class="row" style="justify-content:space-between"><b id="combatTitle"></b><span id="combatRoundBadge" class="muted"></span></div>
@@ -140,16 +191,21 @@ function scaffoldSections(){
       <div class="card"><h3>📜 行动日志</h3><div id="diceLog" class="log"></div></div>
     </div>
   </div>`;
-  $('helpModal').innerHTML = `<div class="modal" style="max-width:720px"><div class="modal-head"><b>使用说明</b><button class="ghost" onclick="document.getElementById('helpModal').classList.remove('open')">✕</button></div>
+  $('helpModal').innerHTML = `<div class="modal" style="max-width:760px"><div class="modal-head"><b>使用说明</b><button class="ghost" onclick="document.getElementById('helpModal').classList.remove('open')">✕</button></div>
   <div class="modal-body" style="font-size:13px">
-    <h4>📥 导入卡</h4><p>可直接把《空白人物卡》系列的 .xlsx 拖进“调查员”页的虚线框（或点击选择），解析后直接进入调查员库。思想与信念等 9 类背景会拆成独立条目，人物卡底部的小段文字作为“背景故事正文”录入。</p>
-    <h4>👤 角色与头像</h4><p>调查员小卡：左上信息+右上头像，下方 HP/SAN/MP/法术、DB/武器，底部显示剧情道具，编辑/导出/删除在右下。详情卡可设置阵营、从默认头像里选或上传自定义头像，并在背包下方维护“剧情道具”。NPC 第一列为“盟友”，四列带分隔线、每行两张小卡，可拖拽排序。</p>
-    <h4>🗺️ 地图与路线</h4><p>地图可缩放；放大后直接按住空白拖动平移。地点/道路/角色名均为黑底白字名牌；加路时可给道路命名并显示在地图上（列表里也能改名）。左栏角色点击上地图并拖动；中栏加摆件（含自定义上传素材）；右栏管理载具并可分配给角色。路线：选起终点与载具→自动最短时间路径，逐段可换乘，附到达时刻。</p>
-    <h4>⚔️ 战斗</h4><p>成员自动左右排布：调查员/盟友在左、其余靠右（可拖动）；头像下 HP/SAN/MP 三行彩条显示。选中成员后可直接调整 HP/SAN/MP/护甲（各占一行），并能实时增删武器/道具/法术——改动会自动同步回该角色档案与小卡。神话生物模板已按规则书预填默认法术。攻击自动判定、伤害与弹匣/道具自动扣减。</p>
-    <h4>💾 数据</h4><p>数据仅存本机浏览器。请在右上角“⬇ 备份数据”导出 JSON 定期存档；这里不提供任何网络上传。</p>
+    <h4>📥 导入调查员卡</h4><p>把《空白人物卡》系列的 .xlsx 拖进「调查员」页的虚线框（或点击选择），解析后直接入库。姓名 / 玩家 / 职业 / 属性 / 全部技能 / 武器表 / 随身物品（卡右侧「背包格」那一列也并进同一张清单）/ 法术 / 现金与资产表 / 背景 9 条 + 正文 / 调查员经历都会读进来。</p>
+    <h4>✏️ 编辑调查员</h4><p>点小卡右下角 ✏️：属性、护甲（可挑参考防具预置）、HP/SAN/MP、技能（高于基础值的算「已加点」排上面，其余收进折叠区）、武器、背包 / 随身用品、剧情道具、法术、资产、背景、经历都在这里改。武器「类型」可从卡里「武器列表」下拉选，选完技能 / 伤害 / 射程 / 弹匣会自动填好。</p>
+    <h4>⬇ 导出人物卡</h4><p>小卡右下角 ⬇ 导出卡：先按“最初导入那张卡”算出这次团的变化，写进卡里的「调查员经历」（模组名用顶部「🎪 本次团名」，技能变化写进「成长」列），再把整张卡填进《空白人物卡》模板下载，文件名是 团名-角色名.xlsx。卡里原本的公式都会保留：武器“选类型自动算”、成功率按使用技能取值、本职★ 查表。</p>
+    <h4>🏷 便签标签</h4><p>调查员页最左侧可自定义标签（emoji、任意长度、可改色、可删）。点选标签再点小卡即可贴上，也能直接把标签拖到小卡上；便签可挪到别的卡，点 ✕ 移除，每张小卡最多 6 个。</p>
+    <h4>👤 NPC 与敌人</h4><p>选模板（神话生物已按规则书预填标志性法术）→ 设数量 → 生成，之后还能改阵营与数值。四列小卡（盟友 / 中立 / 敌人 / 其他）可拖拽排序，列名点标题就能改。</p>
+    <h4>🗺️ 地图与路线</h4><p>最多 3 张地图，可缩放、放大后按住空白处平移。三个工具：🖱 拖动地点（相连道路的 km 实时重算）· 🧍 移动角色/摆件（只挪角色和素材，不动地点与道路）· 📍 添加地点。比例尺「1格 = __ km」→ 设；切换预设地图时里程已按当前比例尺算好。右栏管载具与路线时间。</p>
+    <h4>⚔️ 战斗</h4><p>左＝成员详情、中＝战斗桌、右＝行动日志。成员自动左右排布（可拖动）；改 HP/SAN/MP/护甲或实时增删武器 / 道具 / 法术都会同步回角色档案与小卡，也可点「↻ 同步档案」。状态徽标与 🎨 场景道具素材库都在这一页。</p>
+    <h4>🎲 骰子与 SAN 检定</h4><p>顶部「📜 剧本/笔记」「🎲 骰子」是悬浮栏目，不切页面、一次只开一个。骰子可指定角色与技能（技能按数值从高到低排，已加点带 ☆），1D100 自动给出普通 / 困难 / 极难 / 大成功 / 大失败；SAN 页可做理智检定、损失掷骰、INT 判定与疯狂症状，损失会自动写回角色。</p>
+    <h4>⛶ 场景全屏</h4><p>地图 / 战斗场景都有「⛶ 全屏」（Esc 或右下角 ↩ 返回退出）。全屏后右下角只剩图标菜单，其中 📋调查员 / 👤NPC与敌人 / 📜剧本笔记 / 🎲骰子 是压在场景上的半屏浮层，一次只开一个。战斗全屏时点角色，详情在屏幕最左侧；地图全屏时工具栏缩到左下角。</p>
+    <h4>💾 数据</h4><p>数据只存本机浏览器。请常用右上角「⬇ 备份数据」导出 JSON 定期存档；本工具不上传任何数据。</p>
     <div class="vdiv"></div>
     <button class="danger" onclick="wipeData()">⚠️ 清空全部本地数据</button>
-  </div></div>`;
+  </div></div>`
   loadState();
   ensureV2Data();
 }

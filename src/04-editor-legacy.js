@@ -43,11 +43,6 @@ function duplicateActor(id){
   var b=JSON.parse(JSON.stringify(a)); b.id=uid('npc'); b.name=a.name+' (副本)';
   state.actors.push(b); saveState(); renderNpcs(); toast('已复制');
 }
-function exportActorJson(id){
-  var a=state.actors.filter(function(x){return x.id===id;})[0]; if(!a) return;
-  download('调查员-'+a.name+'.json', JSON.stringify(a,null,2));
-  toast('已导出角色 JSON');
-}
 
 /* ================= 场景地图 / 路线 ================= */
 var mapTool='select';
@@ -55,8 +50,20 @@ var mapSel={type:null,idx:-1};
 var mapDrag=null;
 var routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
 var MAP_W=1000, MAP_H=620;
+/* 地图辅助网格的格子边长（像素）。比例尺按“1 格 = 多少 km”填写，内部仍换算成 km/px 存储。 */
+var MAP_GRID_PX=50;
 
 function currentMap(){ return state.maps.filter(function(m){return m.id===state.activeMapId;})[0]||null; }
+/* 地图旋转（0/90/180/270）与旋转后的逻辑尺寸：底图、摆件、文字会一起转 */
+function mapRotOf(m){
+  var r=Math.round((((m&&m.rot)||0)/90))*90;
+  r=((r%360)+360)%360;
+  return r;
+}
+function mapLogicalSize(m){
+  var r=mapRotOf(m);
+  return (r%180===0)?{w:MAP_W,h:MAP_H}:{w:MAP_H,h:MAP_W};
+}
 
 function onMapSelect(){
   var sel=$('mapSel'); state.activeMapId=sel.value; routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
@@ -76,19 +83,39 @@ function deleteMap(){
   routeSel={start:-1,end:-1,vehicle:null,overrides:{}};
   saveState(); renderMapsShell();
 }
-function loadDemoMap(){
-  if(!confirmBox('载入示例地图会替换当前场景，继续？')) return;
-  var d=makeDemoMap(); d.id=currentMap()?currentMap().id:uid('map');
+/* 载入默认地图：key 取自 DEMO_MAP_GROUPS（不传则用二级下拉框当前值；占位项 ''=不载入） */
+function loadDemoMap(key){
+  var sel=$('mapDemoSel');
+  if(key===undefined||key===null) key=(sel&&sel.value)||'';
+  key=String(key);
+  if(!key) return;
+  var spec=demoMapSpec(key);
+  if(!spec){ toast('没有这张默认地图'); return; }
+  var cur=currentMap();
+  var hasContent=cur && ((cur.points||[]).length || (cur.legs||[]).length || (cur.props||[]).length || cur.background);
+  if(hasContent && !confirmBox('载入「'+spec.n+'」会替换当前场景，继续？')){ if(sel) sel.value=(cur&&cur._demoKey)||''; return; }
+  var d=buildDemoMap(spec);
+  d._demoKey=spec.k;
+  d.id=cur?cur.id:uid('map');
+  d.zoom=(cur&&cur.zoom)||1;
   if(state.maps.length&&state.activeMapId){
     var i=state.maps.findIndex(function(x){return x.id===state.activeMapId;});
     state.maps[i]=d;
   } else { state.maps.push(d); state.activeMapId=d.id; }
   saveState(); renderMapsShell();
+  toast('已载入默认地图「'+spec.n+'」');
 }
 
 function mapCanvasPos(ev){
   var cv=$('mapCanvas'); var r=cv.getBoundingClientRect();
-  return { x: Math.round((ev.clientX-r.left)/r.width*MAP_W), y: Math.round((ev.clientY-r.top)/r.height*MAP_H) };
+  var m=currentMap();
+  var rot=mapRotOf(m), L=mapLogicalSize(m);
+  var lx=(ev.clientX-r.left)/r.width*L.w, ly=(ev.clientY-r.top)/r.height*L.h;
+  if(!rot) return { x: Math.round(lx), y: Math.round(ly) };
+  var a=rot*Math.PI/180;
+  var u=lx-L.w/2, v=ly-L.h/2;
+  var rx=u*Math.cos(a)+v*Math.sin(a), ry=-u*Math.sin(a)+v*Math.cos(a);
+  return { x: Math.round(rx+MAP_W/2), y: Math.round(ry+MAP_H/2) };
 }
 
 
@@ -173,15 +200,12 @@ function addLeg(){
   var m=currentMap(); if(!m)return;
   var a=num($('legNewA').value), b=num($('legNewB').value);
   if(a===b){ toast('起点和终点不能相同'); return; }
-  var d=distBetween(m,a,b);
-  var ask=prompt('两点直线距离约 '+d.toFixed(2)+' km（可按实际路况修改）：\n道路距离（km）', d.toFixed(2));
-  if(ask===null) return;
-  var dd=Math.max(0.01,num(ask)||d);
-  var nm=prompt('道路名称（会显示在地图上，可留空）：','');
-  if(nm===null) nm='';
-  m.legs.push({id:uid('e'),a:a,b:b,dist:dd,name:nm.trim()||'',note:'',modes:null});
+  /* 不弹窗：直接用比例尺算出的里程建路，名字与里程都能在右侧「道路/路径」里改 */
+  var dd=Math.max(0.01,distBetween(m,a,b));
+  dd=Math.round(dd*100)/100;
+  m.legs.push({id:uid('e'),a:a,b:b,dist:dd,name:'',note:'',modes:null,auto:true});
   saveState(); renderMapsShell();
-  toast('已加路');
+  toast('已加路：按比例尺自动算出 '+dd.toFixed(2)+' km（可在右侧改名/改里程）');
 }
 function delLeg(i){ var m=currentMap(); if(!m)return; if(!confirmBox('删除这条道路？'))return;
   m.legs.splice(i,1); routeSel.overrides={};
@@ -192,7 +216,7 @@ function onLegInput(e){
   var leg=m.legs[num(e.dataset.l)]; if(!leg)return;
   var k=e.dataset.k;
   if(k==='a'||k==='b'){ var v=num(e.value); if(m.points[v]) leg[k]=v; }
-  else if(k==='dist') leg.dist=Math.max(0,num(e.value)||0);
+  else if(k==='dist'){ leg.dist=Math.max(0,num(e.value)||0); leg.auto=false; }
   else leg[k]=e.value;
   saveStateQuiet(); drawMapCanvas();
 }

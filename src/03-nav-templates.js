@@ -61,39 +61,3 @@ function randBetween(min,max){ return Math.round(min + Math.random()*(max-min));
 
 
 
-/* ---------- 角色卡列表 ---------- */
-function actorCardHTML(a){
-  var kind=a.kind==='npc'?'NPC/敌人':'调查员';
-  var hp=Math.min(a.hp.cur,a.hp.max||1), hpm=Math.max(a.hp.max||1,1);
-  var hpPct=Math.max(0,Math.round(hp/hpm*100));
-  var san=a.san?Math.max(0,Math.min(a.san.cur,a.san.max||99)):0;
-  var db=a.db||dbTextOf(a.attrs);
-  var at=a.attrs||{};
-  return `<div class="actorcard">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div><span class="badge ${a.kind==='pc'?'blue':'warn'}">${kind}</span>
-        <div class="nm">${esc(a.name)}${a.kind==='npc'&&a.count>1?` <span class="badge">×${a.count}</span>`:''}</div>
-        <div class="sub">${esc(a.kind==='pc'?(a.occupation||'职业未填')+(a.player?' · 玩家 '+esc(a.player):''):(a.template||'NPC')+' · '+esc(a.note||''))}</div></div>
-      <div class="row" style="gap:4px">
-        <button class="small" onclick="openActorModal('${a.id}','${a.kind}')">✏️</button>
-        <button class="small danger" onclick="deleteActor('${a.id}')">🗑</button>
-      </div>
-    </div>
-    <div class="attrmini">
-      <span>STR ${at.str||0}</span><span>CON ${at.con||0}</span><span>POW ${at.pow||0}</span><span>DEX ${at.dex||0}</span>
-      <span>APP ${at.app||0}</span><span>SIZ ${at.siz||0}</span><span>INT ${at.int||0}</span><span>EDU ${at.edu||0}</span><span>LUK ${at.luck||0}</span>
-    </div>
-    <div class="row" style="font-size:12px;gap:12px">
-      <span class="num">HP <b>${hp}</b>/${hpm}</span><div class="bar hp" style="width:90px"><i style="width:${hpPct}%"></i></div>
-      <span class="num">SAN ${san}/${a.san?a.san.max:0}</span>
-      <span class="num">MP ${a.mp?a.mp.cur:0}/${a.mp?a.mp.max:0}</span>
-      <span class="num">MOV ${a.mov||8} DB ${esc(db)}</span>
-    </div>
-    <div class="row" style="margin-top:6px;justify-content:flex-end">
-      ${a.kind==='npc'?'<button class="small primary" onclick="combatPreAdd(\''+a.id+'\')">⚔️ 加入战斗</button>':''}
-      <button class="small ghost" onclick="openActorModal('${a.id}','${a.kind}')">详情/编辑</button>
-      ${a.kind==='pc'?'<button class="small ghost" onclick="exportActorJson(\''+a.id+'\')">导出</button>':''}
-    </div></div>`;
-}
-
-

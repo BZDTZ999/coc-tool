@@ -62,7 +62,9 @@ function weaponPresetRowHTML(w){
       <input type="text" class="w-skill" value="${esc(w.skill||'')}" placeholder="使用技能" style="width:90px">
       <input type="text" class="w-dmg" value="${esc(w.damage||'')}" placeholder="伤害 如 1D8+DB" style="width:120px">
       <input type="text" class="w-range" value="${esc(w.range||'')}" placeholder="射程" style="width:80px">
-      <input type="text" class="w-type" value="${esc(w.type||'')}" placeholder="类型" style="width:70px" hidden>
+      <input type="text" class="w-type" list="cocWeaponTypes" value="${esc(w.type||'')}" placeholder="类型（可下拉）" style="width:118px"
+             title="选卡里「武器列表」的类型：技能/伤害/射程/弹匣会照卡自动填好；导出后卡里也保留同款公式，改类型会自己重算"
+             onchange="onWeaponTypePick(this)">
       <label style="flex-direction:row;align-items:center">弹匣<input type="number" class="w-cap" value="${cap||0}" style="width:58px"></label>
     </div></div>`;
 }
@@ -75,14 +77,90 @@ function fillPresetWeapon(sel){
   row.querySelector('.w-dmg').value=preset[3];
   row.querySelector('.w-range').value=preset[4];
   var cap=row.querySelector('.w-cap'); if(cap) cap.value=preset[5]||0;
-  var tp=row.querySelector('.w-type'); if(tp) tp.value=preset[0];
+  /* 类型要写卡里「武器列表」的真名字（预设第一列只是分组名）——
+     对上就用真类型，导出后 Excel 里选类型才会自动算伤害/射程/贯穿/次数/装弹量/故障值。 */
+  var tp=row.querySelector('.w-type');
+  if(tp){ var info=cocWeaponTypeInfo(preset[1]); tp.value=(info?info.type:preset[0]); }
 }
 
 
 
+/* ---------- 武器「类型」下拉 ----------
+   《空白人物卡》里「武器列表」工作表就是“类型 → 技能/伤害/射程/贯穿/每轮/装弹量/故障值”，
+   模板靠 VLOOKUP 用它自动填。工具这边读同一张表，选了类型就照卡把这几项填好；
+   导出时卡里也会保留同款公式（见 25-card-export.js 的武器段），所以在 Excel 里改类型同样会重算。 */
+var _cocWeaponTypes=null;
+function cocWeaponTypes(){
+  if(_cocWeaponTypes) return _cocWeaponTypes;
+  _cocWeaponTypes=[];
+  try{
+    if(typeof ensureBlankCard!=='function'||typeof XLSX==='undefined') return _cocWeaponTypes;
+    ensureBlankCard(function(bytes){
+      try{
+        var wb=XLSX.read(bytes,{type:'array'});
+        var ws=wb&&wb.Sheets['武器列表']; if(!ws) return;
+        var rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+        var out=[];
+        rows.forEach(function(row,idx){
+          if(idx<1||!row) return;
+          var t=row[1]; if(t==null||String(t).trim()==='') return;
+          function st(v){ return v==null?'':String(v).trim(); }
+          out.push({type:String(t).trim(),skill:st(row[2]),damage:st(row[3]),range:st(row[4]),
+                    pierce:st(row[5]),attacks:st(row[6]),ammo:st(row[7]),jam:st(row[8])});
+        });
+        _cocWeaponTypes=out;
+        try{ fillWeaponTypeDatalist(); }catch(e){}
+      }catch(e){}
+    });
+  }catch(e){}
+  return _cocWeaponTypes;
+}
+function cocWeaponTypeInfo(t){
+  var list=cocWeaponTypes(), cands=weaponTypeCandidates(t);
+  for(var i=0;i<cands.length;i++){
+    var hit=weaponTypeFind(list, cands[i], function(x){ return x.type; });
+    if(hit) return hit;
+  }
+  return null;
+}
+function fillWeaponTypeDatalist(){
+  var dl=document.getElementById('cocWeaponTypes'); if(!dl) return;
+  var list=cocWeaponTypes(); if(!list.length) return;
+  dl.innerHTML=list.map(function(x){ return '<option value="'+esc(x.type)+'"></option>'; }).join('');
+}
+/* 选了类型：照「武器列表」把技能/伤害/射程/弹匣填好（跟卡里 VLOOKUP 的结果一致） */
+function onWeaponTypePick(inp){
+  var info=cocWeaponTypeInfo(inp&&inp.value); if(!info) return;
+  var row=inp.closest('.wrow'); if(!row) return;
+  [['.w-skill',info.skill],['.w-dmg',info.damage],['.w-range',info.range]].forEach(function(t){
+    var el=row.querySelector(t[0]); if(el) el.value=t[1];
+  });
+  var cap=row.querySelector('.w-cap');
+  if(cap && num(info.ammo)>0) cap.value=num(info.ammo);
+}
+
+/* 原卡右侧「背包格」那一列的东西，跟左边「物品名称」列一样都算「背包 / 随身用品」，
+   全部并进 a.inv 一条清单里编辑（不再单开一个框、也不再让玩家选列）。
+   slot='bag' 只作为“导入时它原来在哪一列”的记号，导出时自动写回同一列；
+   玩家新加的物品 slot 为空 → 写进左边的「物品名称」列，左边满了自动溢到背包格列。 */
+function migrateBagToInv(a){
+  if(!a) return a;
+  if(!a.inv) a.inv=[];
+  if(a.bag && a.bag.length){
+    a.bag.forEach(function(line){
+      var nm=String(line==null?'':line).replace(/\s+/g,' ').trim();
+      if(!nm) return;
+      for(var i=0;i<a.inv.length;i++){ var it=a.inv[i]; if(it && it.slot==='bag' && String(it.name||'').trim()===nm) return; }
+      a.inv.push({name:nm,qty:1,effect:'',amount:'',note:'',slot:'bag'});
+    });
+  }
+  a.bag=[];
+  return a;
+}
 function invRowHTML(it){
   var eff=it.effect||'';
-  return `<div class="listitem" style="margin-bottom:6px"><div class="row" style="gap:6px;flex-wrap:wrap">
+  var wasBag=(it.slot==='bag')?' data-slot="bag"':'';
+  return `<div class="listitem"${wasBag} style="margin-bottom:6px"><div class="row" style="gap:6px;flex-wrap:wrap">
     <input type="text" class="inv-name" value="${esc(it.name)}" placeholder="物品名称" style="flex:1;min-width:130px">
     <input type="number" class="inv-qty" value="${num(it.qty)||0}" style="width:64px" min="0" title="数量">
     <select class="inv-effect" style="width:130px">
@@ -93,7 +171,7 @@ function invRowHTML(it){
     <button class="small danger" onclick="this.closest('.listitem').remove()">✕</button>
   </div></div>`;
 }
-function addInvRow(){ var box=$('am-inv'); if(!box)return; var d=document.createElement('div'); d.innerHTML=invRowHTML({name:'',qty:1,effect:'',amount:'',note:''}); box.appendChild(d.firstChild); }
+function addInvRow(){ var box=$('am-inv'); if(!box)return; var d=document.createElement('div'); d.innerHTML=invRowHTML({name:'',qty:1,effect:'',amount:'',note:'',slot:''}); box.appendChild(d.firstChild); }
 function bindSkillTable(){}
 function bindWeaponTable(){}
 function bindInvTable(){}
@@ -146,8 +224,19 @@ function genIsoFloor(){
 }
 function onScaleChange(){
   var m=currentMap(); if(!m||!$('mapScale')) return;
-  m.kmPerPx=Math.max(0.0001,num($('mapScale').value))||0.02;
-  saveState(); toast('比例尺：1px='+m.kmPerPx+'km（影响自动距离预填）');
+  /* 输入框填的是“1 格 = 多少 km”，格子边长 MAP_GRID_PX 像素，换算成 km/px 存储 */
+  var perGrid=Math.max(0,num($('mapScale').value));
+  m.kmPerPx=perGrid>0?Math.max(0.000001,perGrid/MAP_GRID_PX):0.02;
+  /* 自动里程的道路跟着新比例尺重算；手动改过里程的（auto=false）保持不动 */
+  var n=0;
+  (m.legs||[]).forEach(function(leg){
+    if(leg.auto===false) return;
+    if(!m.points[leg.a]||!m.points[leg.b]) return;
+    var d=Math.sqrt(Math.pow(m.points[leg.a].x-m.points[leg.b].x,2)+Math.pow(m.points[leg.a].y-m.points[leg.b].y,2))*m.kmPerPx;
+    leg.dist=Math.round(d*100)/100; n++;
+  });
+  saveState(); renderMapsShell();
+  toast('比例尺：1格='+(Math.round(m.kmPerPx*MAP_GRID_PX*1000)/1000)+'km'+(n?('，已按新比例尺重算 '+n+' 条道路'):''));
 }
 function vehAssignName(id){
   var a=state.actors.filter(function(x){return x.id===id;})[0];

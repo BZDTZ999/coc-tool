@@ -26,19 +26,34 @@ function drawOver(ctx,sc){
     var p=(sc.pos||{})[c.id]; if(!p) return;
     var active = combActiveId===c.id;
     drawAvatarOnCanvas(ctx,p.x,p.y,24,c);
-    ctx.font='bold 16px "PingFang SC",sans-serif';
-    var nm=String(c.name||'').slice(0,8);
-    var armStr=c.armor>0?('🛡'+c.armor):'';
-    var nw=ctx.measureText(nm).width;
-    var aw=armStr?ctx.measureText(armStr).width:0;
-    var groupW=nw+aw+(armStr?12:0);
-    var x0=p.x-groupW/2;
-    var nameCy=p.y+46;
-    if(nm) plateText(ctx,nm,x0+nw/2,nameCy,'bold 16px "PingFang SC",sans-serif');
-    if(armStr) plateText(ctx,armStr,x0+nw+8+aw/2,nameCy,'bold 13px "PingFang SC",sans-serif');
-    miniBar(p.x,p.y+60, (c.hp&&c.hp.cur)||0,(c.hp&&c.hp.max)||0,'#6fbf73','H');
-    miniBar(p.x,p.y+74, (c.san&&c.san.cur)||0,(c.san&&c.san.max)||0,'#a78fd1','S');
-    miniBar(p.x,p.y+88, (c.mp&&c.mp.cur)||0,(c.mp&&c.mp.max)||0,'#6fa7d6','M');
+    /* 名字：不截断，先缩字号再自动换行，多长都能显示完整 */
+    var nm=String(c.name||'').trim();
+    var cursor=p.y+36;
+    if(nm){
+      var fit=fitCanvasName(ctx,nm,190,[15,14,13,12,11,10,9,8]);
+      var hgt=plateTextBlock(ctx,fit.lines,p.x,cursor,'bold '+fit.size+'px "PingFang SC",sans-serif',false);
+      cursor+=hgt+2;
+    }
+    if(c.armor>0){
+      plateText(ctx,'🛡'+c.armor, p.x, cursor+9, 'bold 13px "PingFang SC",sans-serif');
+      cursor+=20;
+    }
+    var barsTop=cursor+3;
+    miniBar(p.x,barsTop+6, (c.hp&&c.hp.cur)||0,(c.hp&&c.hp.max)||0,'#6fbf73','H');
+    miniBar(p.x,barsTop+20, (c.san&&c.san.cur)||0,(c.san&&c.san.max)||0,'#a78fd1','S');
+    miniBar(p.x,barsTop+34, (c.mp&&c.mp.cur)||0,(c.mp&&c.mp.max)||0,'#6fa7d6','M');
+    /* 状态图标：眩晕/濒死/死亡/异常（昏迷另给一档），贴在头像右侧 */
+    var st=combStateIcon(c.state);
+    if(st){
+      var bx=p.x+30, by=p.y-2;
+      ctx.beginPath(); ctx.arc(bx,by,14,0,Math.PI*2);
+      ctx.fillStyle=st.c; ctx.fill();
+      ctx.lineWidth=2.5; ctx.strokeStyle='rgba(0,0,0,.65)'; ctx.stroke();
+      ctx.font='16px "Apple Color Emoji","Segoe UI Emoji",serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(st.g,bx,by+1);
+      ctx.textBaseline='alphabetic'; ctx.textAlign='left';
+    }
     if(active){ ctx.strokeStyle='#e3c47f'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(p.x,p.y,32,0,Math.PI*2); ctx.stroke(); }
   });
   ctx.textAlign='left';
@@ -88,6 +103,7 @@ function combatCastSpell(idx){
 }
 function renderActivePanel(){
   var c=activeComb(); var el=$('activePanel'); if(!el) return;
+  if(document.body) document.body.classList.toggle('comb-has-active', !!c);
   if(!c){ el.innerHTML='<div class="hint">点场景里的头像或成员行，这里出现 HP/SAN/MP/属性/法术/背包面板。</div>'; return; }
   var invOpts=(c.inv||[]).filter(function(it){return it.qty>0;}).map(function(it,i){return '<option value="'+i+'">'+esc(it.name)+' ×'+it.qty+(it.effect==='other'&&it.note?'（'+esc(it.note)+'）':'')+'</option>';}).join('');
   var spellBtns=(c.spells||[]).map(function(sp,i){
@@ -116,15 +132,23 @@ function renderActivePanel(){
   var effOpts=[['','无特殊效果'],['heal','治疗 HP'],['san','回复 SAN'],['mp','回复 MP'],['ammo','弹药(装填用)'],['other','其他(自定)']]
     .map(function(o){return '<option value="'+o[0]+'">'+o[1]+'</option>';}).join('');
   el.innerHTML=`
-  <div class="panel-head">
-    <span class="row" style="gap:8px">${avatarView(c,'md')}<b>${esc(c.name)}</b> <span class="badge ${'side-'+esc(sideOf(c))}">${esc(sideOf(c))}</span></span>
-    <span class="row">
-      <span class="num" style="font-size:12px">DEX ${c.dex||0} · DB ${esc(c.db||'0')}</span>
-      <button class="small" onclick="toggleState('昏迷')">昏迷</button>
-      <button class="small" onclick="toggleState('死亡')">死亡</button>
-      <button class="small ghost" onclick="toggleState('正常')">复原</button>
-      ${c.actorId?'<button class="small ghost" title="把当前装备/法术改动同步写回调查员或NPC档案（小卡同步显示）" onclick="combSyncToActor()">↻ 同步档案</button>':''}
-    </span>
+  <div class="combphead">
+    <div class="cphleft">
+      <div class="cphline">${avatarView(c,'md')}<b class="nm">${esc(c.name)}</b><span class="badge ${'side-'+esc(sideOf(c))}">${esc(sideOf(c))}</span></div>
+      <div class="cphmeta">
+        <span class="num cphdex">DEX ${c.dex||0} · DB ${esc(c.db||'0')}</span>
+        ${c.actorId?'<button class="small ghost" title="把当前装备/法术改动同步写回调查员或NPC档案（小卡同步显示）" onclick="combSyncToActor()">↻ 同步档案</button>':''}
+        <button class="small ghost fs-only" title="收起角色详情（也可直接点场景空白处）" onclick="selectComb(null)">收起 ✕</button>
+      </div>
+    </div>
+    <div class="combstates">
+      <button class="small" title="头像右侧出现 💫" onclick="toggleState('眩晕')">💫 眩晕</button>
+      <button class="small" title="头像右侧出现 🩸" onclick="toggleState('濒死')">🩸 濒死</button>
+      <button class="small" title="头像右侧出现 💤" onclick="toggleState('昏迷')">💤 昏迷</button>
+      <button class="small" title="头像右侧出现 💀" onclick="toggleState('死亡')">💀 死亡</button>
+      <button class="small" title="头像右侧出现 ⚠️" onclick="toggleState('异常')">⚠️ 异常</button>
+      <button class="small ghost" onclick="toggleState('正常')">✅ 复原</button>
+    </div>
   </div>
   <div class="adjrows">
     ${statRow('HP','hp',c.hp,'ap-dmg','hp')}
@@ -323,12 +347,15 @@ function ensureV2Data(){
     if(!a.skills) a.skills=[];
     if(!a.plot) a.plot=[];
     if(!a.campaigns) a.campaigns=[];
+    if(!Array.isArray(a.tags)) a.tags=[];
   });
   if(!state.maps) state.maps=[];
   state.maps.forEach(function(m){ m.iso=false; if(m.zoom==null) m.zoom=1; });
   if(!state.vehicles) state.vehicles=defaultVehicles();
   if(!state.combat) state.combat={round:0,participants:[]};
   if(!state.combat.scene) state.combat.scene={bg:null,pos:{}};
+  if(!Array.isArray(state.combat.scene.props)) state.combat.scene.props=[];
+  if(!Array.isArray(state.combat.customProps)) state.combat.customProps=[];
   (state.combat.participants||[]).forEach(function(c){
     if(!c.attrs){
       var src=c.actorId?state.actors.filter(function(x){return x.id===c.actorId;})[0]:null;
@@ -364,6 +391,7 @@ function ensureV2Data(){
     return {name:(t&&t.name)||('笔记 '+(i+1)), html:(t&&t.html)||''};
   });
   if(!state.customProps) state.customProps=[];
+  if(!Array.isArray(state.ui.pcTags)) state.ui.pcTags=defaultPcTags();   // 首次使用给一组默认便签
   /* 骰子台：大成功/大失败阈值 + 掷骰日志（关闭面板与刷新页面都不丢） */
   if(!state.ui.dice) state.ui.dice={bs:1,bf:96,hist:[]};
   diceThrSmall=Math.max(1,Math.min(100,Math.round(num(state.ui.dice.bs)||1)));

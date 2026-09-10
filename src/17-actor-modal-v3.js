@@ -20,7 +20,7 @@ function openActorModal(id, kind){
        residence:'',hometown:'',avatar:{preset:AVATAR_DEFAULT_PC,custom:null},
        attrs:{str:0,con:0,pow:0,dex:0,app:0,siz:0,int:0,edu:0,luck:0},
        hp:{cur:0,max:0},mp:{cur:0,max:0},san:{cur:0,max:99},mov:8,db:'-2',build:'0',
-       armor:{value:0,type:''},skills:[],weapons:[],inv:[],spells:[],cash:0,currency:'美元',
+       armor:{value:0,type:''},skills:[],weapons:[],inv:[],bag:[],spells:[],cash:0,currency:'美元',
        history:{appearance:'',beliefs:'',people:'',places:'',belongings:'',traits:'',secrets:'',scars:'',phobias:''},
        backstory:'',campaigns:[],notes:'',template:'',note:'',player:''};
   }
@@ -28,6 +28,7 @@ function openActorModal(id, kind){
   if(!a.history) a.history={};
   if(!a.spells) a.spells=[];
   if(!a.plot) a.plot=[];
+  if(typeof migrateBagToInv==='function') migrateBagToInv(a);
   if(a.kind==='npc' && a.side==='调查员') a.side='盟友';
   currentActorModal=a; editingActorId=a.id;
   var mask=$('actorModal');
@@ -123,12 +124,14 @@ function openActorModal(id, kind){
       </details>
       <h4 class="sectiontitle">🗡 武器（可参考预置表自动填技能/伤害/射程，仍可修改）</h4>
       <div id="am-weapons">${weaponRows}</div>
+      <datalist id="cocWeaponTypes"></datalist>
       <div style="margin-top:6px"><button class="small" onclick="addWeaponRow()">＋ 加一件武器</button>
         <span class="hint">装弹量：0=不消耗；战斗里每发-1，空枪用背包“弹药”装填。</span></div>
       <h4 class="sectiontitle">🎒 背包 / 随身用品</h4>
       <div id="am-inv">${invRows}</div>
       <div style="margin-top:6px"><button class="small" onclick="addInvRow()">＋ 加一件物品</button>
         <span class="hint">效果：治疗/回SAN/回MP/弹药(装填用)/其他/无。</span></div>
+      <div class="hint">原卡右侧「背包格」那一列的东西也在这张清单里，都算随身物品；导出时自动写回卡里原来的位置，不用你管。</div>
       <h4 class="sectiontitle">🎬 剧情道具（项目与效果同随身用品，展示在小卡底部）</h4>
       <div id="am-plot">${plotRows||''}</div>
       <div style="margin-top:6px"><button class="small" onclick="addPlotRow()">＋ 加一件剧情道具</button>
@@ -141,7 +144,18 @@ function openActorModal(id, kind){
       <div class="row">
         <label>现金<input type="number" id="am-cash" value="${a.cash||0}" style="width:120px"></label>
         <label>货币<input type="text" id="am-currency" value="${esc(a.currency||'美元')}" style="width:120px"></label>
+        <label>信用评级<input type="text" id="am-credit" value="${esc(a.credit||'')}" placeholder="如 5%/2%/1%" style="width:150px" title="导出时写进人物卡的「信用评级」格"></label>
+        <label>其他资产<input type="text" id="am-other-assets" value="${esc(a.otherAssets||'')}" placeholder="如 50" style="width:110px"></label>
       </div>
+      <div class="row" style="margin-top:6px">
+        <span class="hint" style="align-self:center">其他资产表：</span>
+        <label>交通工具<input type="text" id="am-asset-vehicle" value="${esc(a.assetsTable&&a.assetsTable.vehicle)}" placeholder="数字或文字都行" style="width:120px"></label>
+        <label>住所<input type="text" id="am-asset-home" value="${esc(a.assetsTable&&a.assetsTable.residence)}" placeholder="如 乡间别墅" style="width:120px"></label>
+        <label>奢侈品<input type="text" id="am-asset-luxury" value="${esc(a.assetsTable&&a.assetsTable.luxury)}" placeholder="如 名表一只" style="width:120px"></label>
+        <label>股票/证券<input type="text" id="am-asset-stocks" value="${esc(a.assetsTable&&a.assetsTable.stocks)}" placeholder="如 2000" style="width:120px"></label>
+        <label>其他<input type="text" id="am-asset-other" value="${esc(a.assetsTable&&a.assetsTable.other)}" placeholder="如 一柜古籍" style="width:120px"></label>
+      </div>
+      <label style="margin-top:6px">资产详述<textarea rows="2" id="am-assets-detail">${esc(a.assetsDetail||'')}</textarea></label>
       ${a.kind==='pc'?'<h4 class="sectiontitle">📜 背景故事（拆条 + 正文小段）</h4>':''}
       ${a.kind==='pc'?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">'+histHTML+'</div>':'<div class="vdiv"></div><label>背景备注<textarea id="am-hist-appearance" rows="2" style="display:none"></textarea><textarea rows="2" id="am-npc-back">'+esc(a.notes||a.note||'')+'</textarea></label>'}
       ${a.kind==='pc'?'<label style="margin-top:8px">背景故事正文（小段文字）<textarea rows="4" id="am-backstory">'+esc(a.backstory||'')+'</textarea></label>':''}
@@ -155,6 +169,8 @@ function openActorModal(id, kind){
       </div>
     </div></div>`;
   mask.classList.add('open');
+  /* 武器「类型」下拉：预热一次卡里的「武器列表」（离线版直接读内联模板，在线版按需 fetch） */
+  try{ if(typeof cocWeaponTypes==='function'){ cocWeaponTypes(); fillWeaponTypeDatalist(); } }catch(e){}
 }
 function campaignRowHTML(c){
   c=c||{};
@@ -197,6 +213,8 @@ function collectFromModal(){
   a.san.max=Math.max(1,num($('am-sanmax').value)||99);
   a.mp.cur=Math.max(0,num($('am-mpcur').value));
   a.mp.max=Math.max(0,num($('am-mpmax').value))||Math.floor(a.attrs.pow/5);
+  var oldSkillOf={};
+  (a.skills||[]).forEach(function(s){ var k=String((s&&s.name)||'').trim(); if(k && !oldSkillOf[k]) oldSkillOf[k]=s; });
   a.skills=[];
   m.querySelectorAll('#am-skills .skillchip, #am-default-skills .skillchip').forEach(function(li){
     var nm=li.querySelector('.sk-name').value.trim(); var tot=num(li.querySelector('.sk-total').value);
@@ -204,6 +222,16 @@ function collectFromModal(){
     var db=(li.dataset && li.dataset.base!=='' && li.dataset.base!=null)?num(li.dataset.base):skillBaseOf(nm);
     var o={name:nm,total:Math.max(0,Math.round(tot))};
     if(db!=null) o.base=db;
+    /* 从原卡读来的信息（在卡里的格子、职业点、兴趣点）要跟着走，不然导出会串行 */
+    var old=oldSkillOf[nm];
+    if(old){
+      if(old.slot) o.slot=old.slot;
+      if(old.occPts!=null) o.occPts=old.occPts;
+      if(old.intPts!=null) o.intPts=old.intPts;
+      if(old.mark!=null) o.mark=old.mark;
+      if(old.occ!=null) o.occ=old.occ;
+      if(o.base==null && old.base!=null) o.base=old.base;
+    }
     a.skills.push(o);
   });
   a.weapons=[];
@@ -217,7 +245,8 @@ function collectFromModal(){
   a.inv=[];
   m.querySelectorAll('#am-inv .listitem').forEach(function(li){
     var it={name:li.querySelector('.inv-name').value.trim(),qty:Math.max(0,Math.round(num(li.querySelector('.inv-qty').value))),
-      effect:li.querySelector('.inv-effect').value,amount:li.querySelector('.inv-amount').value.trim(),note:li.querySelector('.inv-note').value.trim()};
+      effect:li.querySelector('.inv-effect').value,amount:li.querySelector('.inv-amount').value.trim(),note:li.querySelector('.inv-note').value.trim(),
+      slot:(li.getAttribute('data-slot')==='bag')?'bag':''};   // 原来在「背包格」列的，导出还写回那一列
     if(it.name) a.inv.push(it);
   });
   a.plot=[];
@@ -230,6 +259,14 @@ function collectFromModal(){
   if(a.kind==='npc' && a.side==='调查员') a.side='盟友';
   a.cash=num($('am-cash').value);
   a.currency=$('am-currency').value.trim()||'美元';
+  if($('am-credit')) a.credit=$('am-credit').value.trim();
+  if($('am-other-assets')) a.otherAssets=$('am-other-assets').value.trim();
+  if($('am-assets-detail')) a.assetsDetail=$('am-assets-detail').value.trim();
+  /* 其他资产表：任意字符原样收（数字/文字都行） */
+  if($('am-asset-vehicle')){
+    a.assetsTable={ vehicle:$('am-asset-vehicle').value.trim(), residence:$('am-asset-home').value.trim(),
+      luxury:$('am-asset-luxury').value.trim(), stocks:$('am-asset-stocks').value.trim(), other:$('am-asset-other').value.trim() };
+  }
   a.history=a.history||{};
   HIST_LABELS.forEach(function(h){ var e=$('am-hist-'+h[0]); if(e) a.history[h[0]]=e.value; });
   if($('am-backstory')) a.backstory=$('am-backstory').value;
@@ -245,6 +282,8 @@ function collectFromModal(){
 }
 function saveActorModal(){
   var a=collectFromModal(); if(!a) return;
+  /* 手动新建的角色没有“导入时”快照，就用第一次保存的状态当基线 */
+  if(!a.importSnapshot && typeof importSnapshotOf==='function'){ try{ a.importSnapshot=importSnapshotOf(a); }catch(e){} }
   if(!editingActorId){ a.id=uid(a.kind==='pc'?'pc':'npc'); state.actors.push(a); }
   else { var idx=state.actors.findIndex(function(x){return x.id===editingActorId;}); if(idx>=0) state.actors[idx]=a; else state.actors.push(a); }
   saveState(); closeActorModal();
@@ -293,15 +332,26 @@ function doImport(){
     san:{cur:p.derived.sanCur!=null?Math.min(p.derived.sanCur,99):Math.min(a.pow||0,99),max:Math.max(1,p.derived.sanMax||99)},
     mov:p.derived.mov||8, db:p.derived.db||'0', build:p.derived.build||'0',
     armor:{value:num(p.derived.armorValue)||0,type:p.derived.armorType||''},
-    skills:p.skills.map(function(s){return {name:s.name,total:s.total};}),
-    weapons:p.weapons.map(function(w){ var cap=num(w.ammo); return {name:w.name,type:w.type,skill:w.skill||'斗殴',damage:w.damage,range:w.range,pierce:w.pierce,attacks:w.attacks||'1',ammoCap:cap,ammoCur:cap,note:''}; }),
-    inv:p.items.map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:''};}),
-    spells:[],
+    occId:p.basic.occId||'',
+    skills:p.skills.map(function(s){return {name:s.name,total:s.total,base:s.base,
+      occPts:s.occPts,intPts:s.intPts,mark:s.mark,occ:s.occ,slot:s.slot};}),
+    weapons:p.weapons.map(function(w){ var cap=num(w.ammoCap); return {name:w.name,type:w.type||'',skill:w.skill||'',
+      damage:w.damage||'',range:w.range||'',pierce:w.pierce||'',attacks:w.attacks||'',ammo:(w.ammo==null?'':String(w.ammo)),
+      ammoCap:cap,ammoCur:cap,jam:w.jam||'',note:''}; }),
+    inv:p.items.map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:'',slot:''};})
+        .concat((p.bagItems||[]).map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:'',slot:'bag'};})),
+    spells:(p.spells||[]).map(function(sp){ return {name:sp.name, mp:sp.mp||'', san:sp.san||'', time:sp.time||'', effect:sp.effect||'', cost:sp.cost||''}; }),
     cash:p.assets.cash||0, currency:p.assets.currency||'美元',
+    credit:p.assets.credit||'', otherAssets:p.assets.otherAssets||'',
+    assetsDetail:(p.assets&&p.assets.detail)||'',
+    assetsTable:{ vehicle:(p.assets&&p.assets.table&&p.assets.table.vehicle)||'', residence:(p.assets&&p.assets.table&&p.assets.table.residence)||'',
+      luxury:(p.assets&&p.assets.table&&p.assets.table.luxury)||'', stocks:(p.assets&&p.assets.table&&p.assets.table.stocks)||'',
+      other:(p.assets&&p.assets.table&&p.assets.table.other)||'' },
     history:history, backstory:p.backstory.text||'',
     campaigns:(p.campaigns||[]).map(function(c){ return {module:(c&&c.module)||'',note:(c&&c.note)||''}; }),
     notes:'', count:1, template:'', note:''
   };
+  if(typeof importSnapshotOf==='function') actor.importSnapshot=importSnapshotOf(actor);   // 记下“导入时”的样子，导出时用来算数据变化
   state.actors.push(actor);
   saveState(); renderSurveyors();
   toast('✅ 已录入调查员库：'+actor.name);

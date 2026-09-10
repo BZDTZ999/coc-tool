@@ -21,7 +21,20 @@
     if (v === null || v === undefined) return '';
     var s = String(v).replace(/\s+/g, ' ').trim();
     if (!s) return '';
+    /* Excel 的错误值（#N/A / #VALUE! …）要当空处理：源卡里公式算错时，
+       这些字会一路被抄进导出的卡，Excel 打开后满屏 #N/A。 */
+    if (/^#(N\/A|VALUE!?|REF!?|DIV\/0!?|NAME\?|NUM!?|NULL!?|GETTING_DATA)/i.test(s)) return '';
     var SKIP = skipSet || ['0','0：00','——','×','刘小红','公元','无','请和kp商议','请看【防具表】','☐'];
+    return SKIP.indexOf(s) >= 0 ? '' : s;
+  }
+  /* 和 clean 一样过滤 Excel 错误值/提示语，但**保留**「×」「——」「0」这类有含义的符号 ——
+     武器表的贯穿/射程/装弹量/故障值用的就是这些（clean 会洗掉，导致读卡丢信息）。 */
+  function raw(v, skipSet) {
+    if (v === null || v === undefined) return '';
+    var s = String(v).replace(/\s+/g, ' ').trim();
+    if (!s) return '';
+    if (/^#(N\/A|VALUE!?|REF!?|DIV\/0!?|NAME\?|NUM!?|NULL!?|GETTING_DATA)/i.test(s)) return '';
+    var SKIP = skipSet || ['刘小红','公元','请和kp商议','请看【防具表】','←请选择类型','→请选择类型'];
     return SKIP.indexOf(s) >= 0 ? '' : s;
   }
   function num(v) {
@@ -39,6 +52,19 @@
       if (tl === target) return m;
     }
     return null;
+  }
+  /* 「法术一览」里的一行 → 内部法术对象（使用代价尽量拆成 MP / SAN / 用时，拆不出就原样留 cost） */
+  function spellFromCard(name, cost, effect) {
+    var c = String(cost == null ? '' : cost);
+    var o = { name: name, cost: c, effect: String(effect == null ? '' : effect), mp: '', san: '', time: '' };
+    var mp = c.match(/(-?\d+(?:[dD]\d+|[+-]\d+)?)\s*(?:点|个)?\s*(?:MP|mp|魔法值)/);
+    if (mp) o.mp = mp[1];
+    var san = c.match(/(-?\d+[dD]\d+|-?\d+)\s*(?:点|个)?\s*(?:SAN|san|理智值|理智)/);
+    if (san) o.san = san[1];
+    var tm = c.match(/(\d+(?:[dD]\d+)?\s*(?:分钟|小时|轮|天|min|mins|hour|hours|h|rounds?|day|days)|即时)/i);
+    if (tm) o.time = tm[1].replace(/\s+/g, '');
+    if (!o.mp && !o.san && !o.time) o.mp = '';   // 拆不出来时导出会回退用 cost 原文
+    return o;
   }
   function probeOk(ws, r, colLetter, expect) {
     var v = cellV(ws, r, colLetter);
@@ -69,7 +95,7 @@
   function parseWorkbook(wb) {
     var result = {
       ok:false, sheet:null, basic:{}, attrs:{}, derived:{}, skills:[], weapons:[],
-      items:[], assets:{}, backstory:{ sections:{}, text:'' }, story:[], campaigns:[], warnings:[]
+      items:[], bagItems:[], assets:{}, spells:[], backstory:{ sections:{}, text:'' }, story:[], campaigns:[], warnings:[]
     };
     if (!wb || !wb.Sheets || !wb.SheetNames || !wb.SheetNames.length) {
       result.warnings.push('无法读取该文件，请确认是有效的 .xlsx。');
@@ -142,11 +168,21 @@
     if (rowsMain) {
       for (var r = 15; r <= 49; r++) {
         var row = rowsMain[r] || [];
-        [['F','R','J'],['AB','AN','AF']].forEach(function (g) {
-          var nm = clean(row[colIdx(g[0])]);
-          if (!nm) return;
+        /* 左半 F/R/J/N/P = 名称/成功率/初始/职业/兴趣；右半 AB/AN/AF/AJ/AL 同义。
+           同时记下它所在的格子（slot），导出时按原格子写回，技能顺序就不会乱。 */
+        /* 顺序：名称 / 成功率 / 初始 / 职业 / 兴趣 / 成功标 / 本职（★） / 名称后半格
+           左半技能的「技能名称」是两格合并的（F:G 是「格斗：」「射击：」「技艺①」这类大类，
+           H:I 才是「斗殴」「手枪」「符篆」），只读 F 会得到「格斗：」这种半截名字。 */
+        [['F','R','J','N','P','B','D','H'],['AB','AN','AF','AJ','AL','X','Z',null]].forEach(function (g) {
+          var nm1 = clean(row[colIdx(g[0])]);
+          if (!nm1) return;
+          var nm2 = g[7] ? clean(row[colIdx(g[7])]) : '';
+          var nm = nm2 ? (/[：:·・\s]$/.test(nm1) ? nm1 + nm2 : nm1 + ' ' + nm2) : nm1;
           var tot = num(row[colIdx(g[1])]);
-          skills.push({ name: nm, base: num(row[colIdx(g[2])]), total: tot });
+          skills.push({ name: nm, name1: nm1, name2: nm2, base: num(row[colIdx(g[2])]), total: tot,
+            occPts: num(row[colIdx(g[3])]), intPts: num(row[colIdx(g[4])]),
+            mark: clean(row[colIdx(g[5])]), occ: clean(row[colIdx(g[6])]),
+            slot: { r: r + 1, c: g[0] } });
           if (/克苏鲁神话/.test(nm)) mythos = Math.max(mythos, tot);
         });
       }
@@ -182,28 +218,36 @@
       armorType: clean(cellV(ws, 12, 'AN')) || ''
     };
 
-    // —— 武器 ——
+    /* —— 武器（行 53..60，0 基 52..59）——
+       以前第一行名字是「无」（模板默认那行）就 break，于是**大部分卡一把武器都读不到**。
+       现在：空行/占位名往后 continue，只有撞到下一个区块（资产/信用评级…）才收工。
+       伤害/射程/贯穿/次数/装弹量/故障值原样保留（「×」「——」这些符号有意义，别被 clean 洗掉）。 */
     var weapons = [];
     if (rowsMain) {
       for (var w = 52; w <= 59; w++) {
         var row = rowsMain[w] || [];
-        var nm = clean(row[colIdx('B')]);
-        if (!nm || /^(资产|信用评级|随身|背景)/.test(nm)) break;
+        var rawName = row[colIdx('B')];
+        var rawText = (rawName === null || rawName === undefined) ? '' : String(rawName).replace(/\s+/g, ' ').trim();
+        if (/^(资产|信用评级|随身|装备|背景)/.test(rawText)) break;   // 武器表结束
+        var nm = clean(rawName);
+        if (!nm) continue;                                            // 空行 / 「无」占位行
+        var ammoTxt = raw(row[colIdx('AG')]);
         weapons.push({
-          name: nm, type: clean(row[colIdx('G')]) || '格斗',
-          skill: clean(row[colIdx('M')]) || '斗殴',
+          name: nm, type: raw(row[colIdx('G')]),
+          skill: raw(row[colIdx('M')]),
           success: num(row[colIdx('Q')]),
-          damage: clean(row[colIdx('W')]) || '1D3',
-          range: clean(row[colIdx('AA')]) || '—',
-          pierce: clean(row[colIdx('AC')]) || '—',
-          attacks: clean(row[colIdx('AE')]) || '1',
-          ammo: clean(row[colIdx('AG')]) || '—',
-          jam: clean(row[colIdx('AJ')]) || '—'
+          damage: raw(row[colIdx('W')]),
+          range: raw(row[colIdx('AA')]),
+          pierce: raw(row[colIdx('AC')]),
+          attacks: raw(row[colIdx('AE')]),
+          ammo: ammoTxt, ammoCap: num(ammoTxt),
+          jam: raw(row[colIdx('AJ')])
         });
       }
     }
+    result.weapons = weapons;
 
-    // —— 随身物品 ——
+    // —— 随身物品（「物品名称」列，表头 78 行，数据 79..95） ——
     var items = [];
     if (rowsMain) {
       for (var it = 78; it <= 94; it++) {
@@ -212,6 +256,43 @@
       }
     }
     result.items = items;
+
+    /* —— 「背包格」列（表头 78 行里的“背包格↓/背包格1…”，列位置各卡不同，常见是 N 列）。
+       这列是自由文本：换行、符号、带括号的说明都有，原版只读「物品名称」列，整列会丢。
+       每个非空格子算一件，顺序按列从左到右、再从上到下。 */
+    var bagItems = [];
+    if (rowsMain) {
+      var bagCols = [];
+      [77, 76, 78].forEach(function (hr) {           // 表头行：78 行为主，兼容上下挪一格
+        if (bagCols.length) return;
+        var hrow = rowsMain[hr] || [];
+        for (var hc = 0; hc < hrow.length; hc++) {
+          var hv = hrow[hc];
+          if (hv !== null && hv !== undefined && String(hv).indexOf('背包格') >= 0) bagCols.push(hc);
+        }
+      });
+      bagCols.forEach(function (c) {
+        for (var br = 78; br <= 94; br++) {
+          var bv = clean(rowsMain[br] && rowsMain[br][c]);
+          if (bv) bagItems.push({ name: bv, qty: 1 });
+        }
+      });
+    }
+    result.bagItems = bagItems;
+
+    // —— 法术一览（行 113 表头：编号 / 法术名称 / 使用代价 / 作用；数据行 114..118） ——
+    var spells = [];
+    if (rowsMain) {
+      for (var spr = 113; spr <= 117; spr++) {
+        var srow = rowsMain[spr] || [];
+        var sid = srow[colIdx('W')];
+        var snm = clean(srow[colIdx('Y')]);
+        if (sid !== null && sid !== undefined && /例/.test(String(sid))) continue;   // 跳过模板示例行
+        if (!snm) continue;
+        spells.push(spellFromCard(snm, clean(srow[colIdx('AC')]), clean(srow[colIdx('AH')])));
+      }
+    }
+    result.spells = spells;
 
     // —— 调查员经历（每 1 行 = 多跑过 1 个团；位于例子的下方/上方区域 97..111 行） ——
     var campaigns = [];
@@ -235,7 +316,13 @@
       cash: num(cellV(ws, 62, 'O')),
       currency: clean(cellV(ws, 62, 'S')) || '美元',
       otherAssets: clean(cellV(ws, 62, 'L')),
-      detail: clean(cellV(ws, 63, 'L'))
+      detail: clean(cellV(ws, 63, 'L')),
+      /* 其他资产表：行 69 表头，内容在行 75（交通工具/住所/奢侈品/股票证券/其他）。
+         这五格允许写任意字符（“一辆别克”“1200元”都行），所以原文读出来，不硬转数字。 */
+      table: {
+        vehicle: raw(cellV(ws, 75, 'B')), residence: raw(cellV(ws, 75, 'F')), luxury: raw(cellV(ws, 75, 'J')),
+        stocks: raw(cellV(ws, 75, 'N')), other: raw(cellV(ws, 75, 'R'))
+      }
     };
 
     // —— 背景故事：各小节 + 正文 ——

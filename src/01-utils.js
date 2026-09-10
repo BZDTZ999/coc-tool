@@ -146,3 +146,63 @@ function applyDbToDamageExpr(expr, db){
   return s.replace(/DB/g, full);
 }
 function movOf(a){ return a.mov || a.speed || 8; }
+
+/* 武器「类型 / 名称」归一化：全角括号、顿号、间隔号、空格都抹平再比。
+   卡上写「中型剑（佩剑、重剑）」，预设里可能写成「中型剑(佩剑、重剑)」——同一个东西，得能对上。 */
+function weaponTypeKey(s){
+  return String(s==null?'':s)
+    .replace(/[\s　]+/g,'')
+    .replace(/（/g,'(').replace(/）/g,')')
+    .replace(/[，、]/g,',')
+    .replace(/[·・･]/g,'')
+    .replace(/[—–－ー]/g,'-')
+    .toLowerCase();
+}
+/* 在一张「类型 → 资料」清单里找类型：先逐字相等 → 再归一化相等 → 最后才靠互相包含兜底
+   （包含式匹配只在唯一命中时才算，免得「小型刀具」撞上「大型刀具」）。 */
+function weaponTypeFind(list, given, nameOf){
+  list=list||[]; nameOf=nameOf||function(x){ return x; };
+  var key=String(given==null?'':given).trim(); if(!key) return null;
+  var i, name;
+  for(i=0;i<list.length;i++){ if(String(nameOf(list[i])==null?'':nameOf(list[i])).trim()===key) return list[i]; }
+  var kk=weaponTypeKey(key);
+  for(i=0;i<list.length;i++){ if(weaponTypeKey(nameOf(list[i]))===kk) return list[i]; }
+  var loose=null, hits=0;
+  for(i=0;i<list.length;i++){
+    name=weaponTypeKey(nameOf(list[i]));
+    if(!name) continue;
+    if(name.indexOf(kk)>=0 || kk.indexOf(name)>=0){ hits++; if(!loose || name.length>weaponTypeKey(nameOf(loose)).length) loose=list[i]; }
+  }
+  return hits===1?loose:null;
+}
+/* 找类型时按顺序尝试的写法：原样 → 预置别名表里的正式名。 */
+function weaponTypeCandidates(given){
+  var out=[given];
+  try{
+    if(typeof PRESET_WEAPON_TYPE_ALIAS!=='undefined' && PRESET_WEAPON_TYPE_ALIAS){
+      var hit=PRESET_WEAPON_TYPE_ALIAS[String(given==null?'':given).trim()];
+      if(hit) out.push(hit);
+    }
+  }catch(e){ /* 别名表没加载也不影响 */ }
+  return out;
+}
+
+/* ---------- 高清画布（Retina / 高缩放屏） ----------
+   画布按“CSS 尺寸 × 设备像素比”设置后备缓冲，逻辑坐标保持不变，
+   这样地图/战斗场景里的图标与文字在 Retina 屏上不再被拉伸模糊。 */
+function dprOf(){ return Math.max(1, Math.min(3, (typeof window !== 'undefined' && window.devicePixelRatio) || 1)); }
+function hidpiCanvas(cv, logicalW, logicalH, cssW, cssH){
+  if(!cv) return null;
+  var dpr = dprOf();
+  cssW = Math.max(1, Math.round(cssW || logicalW));
+  cssH = Math.max(1, Math.round(cssH || logicalH));
+  var cw = cssW + 'px', ch = cssH + 'px';
+  if(cv.style.width !== cw) cv.style.width = cw;
+  if(cv.style.height !== ch) cv.style.height = ch;
+  var bw = Math.round(cssW * dpr), bh = Math.round(cssH * dpr);
+  if(cv.width !== bw) cv.width = bw;
+  if(cv.height !== bh) cv.height = bh;
+  var g = cv.getContext('2d');
+  g.setTransform(bw / logicalW, 0, 0, bh / logicalH, 0, 0);
+  return g;
+}

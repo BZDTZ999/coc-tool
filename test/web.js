@@ -65,6 +65,17 @@ const interceptor = requestInterceptor(async (request) => {
   ok('真实卡直接入库', w.state.actors.length === before + 1);
   const last = w.state.actors[w.state.actors.length - 1];
   ok('姓名为符苏', last && last.name === '符苏');
+  ok('真实卡导入：背包读入', !!last && (last.inv || []).length >= 1, JSON.stringify(last && last.inv));
+  ok('真实卡导入：技能表读入', !!last && (last.skills || []).length > 50);
+  ok('真实卡导入：背景故事拆条进 history', !!last && last.history && last.history.beliefs === '有钱能使鬼推磨');
+  ok('真实卡导入：信用评级 / 其他资产读入', !!last && last.credit === '5%/2%/1%' && last.otherAssets === '50',
+    JSON.stringify({credit:last&&last.credit, other:last&&last.otherAssets}));
+  ok('真实卡导入：其他资产表（5 格）读入', !!last && !!last.assetsTable && 'vehicle' in last.assetsTable && 'other' in last.assetsTable);
+  ok('真实卡导入：导入即建立对比快照', !!last && !!last.importSnapshot && !!last.importSnapshot.skills);
+  ok('在线版：模板走按需 URL 且未内联', w.__COC_BLANK_CARD_URL === 'assets/blank-card.xlsx' && typeof w.__COC_BLANK_CARD_B64 === 'undefined');
+  const blankPath = path.join(ROOT, 'assets', 'blank-card.xlsx');
+  ok('在线版：空白人物卡模板随包提供', fs.existsSync(blankPath) && fs.statSync(blankPath).size > 100000);
+  ok('在线版：能生成导出用的卡片字节', typeof w.buildCardXlsx === 'function' && !!w.importSnapshotOf && !!w.exportActorCard);
   w.close();
 
   if (fails.length){ console.error('WEB FAILS: ' + fails.join(', ')); process.exit(1); }

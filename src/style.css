@@ -29,6 +29,15 @@ nav{display:flex;gap:4px;padding:8px 16px 0;flex-wrap:wrap;background:rgba(18,20
 nav button{border:none;background:transparent;color:var(--muted);padding:8px 14px;border-radius:10px 10px 0 0;border-bottom:2px solid transparent}
 nav button.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(255,255,255,.03)}
 nav{margin-top:2px}
+nav .navcamp{display:flex;align-items:center;gap:6px;flex:0 1 340px;min-width:190px;max-width:380px;
+  margin:0 4px 0 8px;padding:3px 10px;border:1px solid var(--line);border-radius:10px 10px 0 0;background:rgba(255,255,255,.025)}
+nav .navcamp-lab{color:var(--gold);font-size:12px;font-weight:700;white-space:nowrap;flex:none}
+nav .navcamp input{flex:1;min-width:0;background:#14161c;border:1px solid var(--line);color:var(--ink);
+  border-radius:7px;padding:3px 8px;font-size:13px;height:26px}
+nav .navcamp input::placeholder{color:#8b93a7}
+body.bgcustom nav .navcamp{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom nav .navcamp input{background:var(--uic-a);border-color:var(--uic-line);color:var(--ink)}
+
 main{padding:18px;max-width:1280px;margin:0 auto}
 section.tab{display:none}
 section.tab.active{display:block}
@@ -306,6 +315,7 @@ body{min-height:100vh}
   .hbtn .small{padding:5px 9px;font-size:11.5px}
   nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 6px 0;margin-top:0}
   nav::-webkit-scrollbar{display:none}
+  nav .navcamp{flex:0 0 auto;min-width:150px;max-width:250px;margin:0 4px}
   nav button{flex:none;white-space:nowrap;padding:9px 11px;font-size:13.5px;min-height:42px}
   .card{padding:11px 10px}
   .card h3{font-size:13.5px}
@@ -580,9 +590,14 @@ body.bgcustom .mapcard .mcdel:hover{background:#a04343;color:#fff}
 
 /* ================= 本轮增补：调查员经历小卡外框 / 头像点击上传 / 骰子技能芯片 ================= */
 #pcList .pccard .pchead .pcav{cursor:pointer}
-.pccard .runstar{position:absolute;top:2px;left:50%;transform:translateX(-50%);z-index:4;font-size:15px;line-height:1;
-  pointer-events:none;filter:drop-shadow(0 0 6px rgba(255,200,90,.95));animation:runstar-pulse 2.4s ease-in-out infinite}
-@keyframes runstar-pulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.18)}}
+.pccard .runstars{position:absolute;right:7px;bottom:7px;z-index:5;display:flex;align-items:center;gap:1px;
+  pointer-events:none;line-height:1}
+.pccard .runstars i{font-style:normal;font-size:13px;line-height:1;filter:drop-shadow(0 0 6px rgba(255,200,90,.95));
+  animation:runstar-pulse 2.4s ease-in-out infinite}
+.pccard .runstars i:nth-child(2n){animation-delay:.35s}
+.pccard .runstars i:nth-child(3n){animation-delay:.7s}
+.pccard .runstars b{font-size:10px;color:#ffd98a;font-weight:800;margin-left:1px;text-shadow:0 0 6px rgba(255,170,50,.9)}
+@keyframes runstar-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 /* 1~5 团：逐团叠一条 2px 金属边（由内到外铁→铜→银→金→白金） */
 .pccard.runs1{box-shadow:inset 0 0 0 2px #8b8d94}
 .pccard.runs2{box-shadow:inset 0 0 0 2px #8b8d94,inset 0 0 0 4px #b87333}
@@ -603,3 +618,292 @@ body.bgcustom .mapcard .mcdel:hover{background:#a04343;color:#fff}
 body.bgcustom .skchip{background:var(--uic-d);border-color:var(--uic-line)}
 body.bgcustom .skchip.added{background:rgba(201,162,94,.14);border-color:rgba(201,162,94,.6);color:#ffe3a0}
 body.bgcustom .skchip.on{background:rgba(111,191,115,.18);border-color:#6fbf73;color:#d5f2d8}
+
+/* ================= 本轮增补：调查员便签标签 + 地图/战斗场景全屏 ================= */
+/* ---- 调查员页：最左标签栏 + 右侧小卡区（小卡略小、间距更大便于贴便签） ---- */
+.srvcols{display:grid;grid-template-columns:236px minmax(0,1fr);gap:14px;align-items:start}
+.srvcols>div{min-width:0}
+@media(max-width:980px){.srvcols{grid-template-columns:1fr}}
+.srvside .card{position:sticky;top:64px}
+@media(max-width:980px){.srvside .card{position:static}}
+#pcList{column-gap:18px;row-gap:26px}
+#pcList .pccard{padding:11px;gap:6px;overflow:visible}
+#tagColorInput{width:34px;height:30px;padding:1px;flex:none;cursor:pointer}
+.taglib{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:52vh;overflow:auto}
+.tagpill{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:16px;padding:3px 6px;
+  background:rgba(255,255,255,.03);cursor:grab;font-size:12.5px;user-select:none}
+.tagpill.on{border-color:var(--acc);background:rgba(201,162,94,.16);box-shadow:0 0 0 1px rgba(201,162,94,.45)}
+.tagpill .tagdot{width:12px;height:12px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.35)}
+.tagpill .tagname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tagpill .tagcnt{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.tagpill .tagcolor{width:22px;height:22px;padding:0;border:none;background:transparent;flex:none;cursor:pointer}
+.tagpill .tagx{border:none;background:transparent;color:#e0a3a3;padding:0 3px;cursor:pointer}
+.tagpill .tagx:hover{color:#ff9c9c}
+#pcList.tagmode .pccard{cursor:copy;outline:1px dashed rgba(201,162,94,.55);outline-offset:3px}
+/* 便签条：斜插在小卡右上角，最多 6 个 */
+.pccard .pctagbox{position:absolute;top:-11px;right:8px;z-index:6;display:flex;flex-wrap:wrap-reverse;
+  justify-content:flex-end;gap:3px;max-width:80%;pointer-events:none}
+.pccard .pctag{pointer-events:auto;position:relative;display:inline-flex;align-items:center;gap:3px;
+  background:var(--tagc,#e3c47f);color:#26210f;font-size:11px;font-weight:800;letter-spacing:.3px;
+  padding:2px 5px 2px 7px;border-radius:3px;cursor:grab;white-space:nowrap;max-width:132px;
+  box-shadow:0 3px 7px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.4)}
+.pccard .pctag .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:104px}
+.pccard .pctag:nth-child(2n){transform:rotate(5deg) translateY(3px)}
+.pccard .pctag:nth-child(3n){transform:rotate(-8deg) translateY(-1px)}
+.pccard .pctag:nth-child(4n){transform:rotate(3deg) translateY(2px)}
+.pccard .pctag.moving{outline:2px dashed #fff;outline-offset:1px;filter:brightness(1.15)}
+.pccard .pctag .pctagx{border:none;background:transparent;color:inherit;font-size:10px;padding:0 1px;opacity:.7;cursor:pointer;line-height:1}
+.pccard .pctag .pctagx:hover{opacity:1}
+body.bgcustom .tagpill{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .tagpill.on{background:rgba(201,162,94,.16);border-color:var(--acc)}
+
+/* ---- 全屏右下角：只留图标的菜单 + 返回 ---- */
+.fsnav{position:fixed;right:12px;bottom:12px;z-index:220;display:flex;gap:6px;align-items:center;
+  background:rgba(18,20,26,.95);border:1px solid var(--line);border-radius:16px;padding:6px 8px;
+  box-shadow:0 12px 34px rgba(0,0,0,.5);backdrop-filter:blur(8px)}
+.fsnav[hidden]{display:none}
+.fsnavbtn{width:44px;height:44px;border-radius:12px;padding:0;font-size:20px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center}
+.fsnavbtn.on{border-color:var(--acc);color:var(--gold);background:rgba(201,162,94,.16)}
+.fsnav .fsback{background:linear-gradient(180deg,#caa35f,#9a7638);color:#241d10;border-color:#caa35f;font-weight:800;font-size:22px}
+.fsnav .fsback:hover{color:#241d10;filter:brightness(1.08)}
+body.bgcustom .fsnav{background:var(--uic-nav)}
+body.bgcustom .fsnavbtn{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .fsnav .fsback{background:linear-gradient(180deg,var(--acc),var(--acc2));border-color:rgba(201,162,94,.65);color:#241d10}
+
+/* ---- 地图全屏：只留地图 + 顶部控件 ---- */
+body.fs-map,body.fs-combat{overflow:hidden}
+body.fs-map .topbar,body.fs-combat .topbar{display:none!important}
+body.fs-map footer,body.fs-combat footer{display:none!important}
+body.fs-map main,body.fs-combat main{padding:0;max-width:none}
+body.fs-map section.tab,body.fs-combat section.tab{display:none!important}
+body.fs-map #tab-maps{display:block!important;position:fixed;inset:0;z-index:60;overflow:hidden;
+  padding:8px;box-sizing:border-box;background:transparent}
+body.fs-map #tab-maps .mapcols{display:block;height:100%;margin:0}
+body.fs-map #tab-maps .mapcols>div:first-child,
+body.fs-map #tab-maps .mapcols>div:last-child,
+body.fs-map #tab-maps #routeCard,
+body.fs-map #tab-maps .grid2,
+body.fs-map #tab-maps #mapHint{display:none!important}
+body.fs-map #tab-maps .mapcols>div:nth-child(2){height:100%}
+body.fs-map #tab-maps .mapcols>div:nth-child(2)>.card{margin:0;height:100%;display:flex;flex-direction:column;overflow:hidden}
+body.fs-map #tab-maps #mapWrap{flex:1 1 auto;min-height:0;max-height:none!important;overflow:auto}
+
+/* ---- 战斗全屏：场景铺满，点角色后详情悬浮在屏幕最右 ---- */
+body.fs-combat #tab-combat{display:block!important;position:fixed;inset:0;z-index:60;overflow:hidden;
+  padding:8px;box-sizing:border-box;background:transparent}
+body.fs-combat #tab-combat .combcols{display:flex;flex-direction:column;align-items:stretch;height:100%;gap:8px;margin:0}
+body.fs-combat #tab-combat .comb-mid{display:flex;flex-direction:column;height:100%;min-height:0;gap:8px}
+body.fs-combat #tab-combat .comb-mid>.card{margin:0}
+body.fs-combat #tab-combat .comb-mid>.card:first-child{display:none}
+body.fs-combat #tab-combat .comb-mid>.card:nth-child(2){flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+body.fs-combat #tab-combat .comb-mid>.card:nth-child(2) .battlecanvas-wrap{flex:1 1 auto;min-height:0;overflow:hidden}
+body.fs-combat #tab-combat .comb-mid>.card:nth-child(3){flex:0 0 auto;max-height:38%;overflow:auto}
+body.fs-combat #tab-combat .comb-side-right{display:none}
+body.fs-combat #tab-combat .comb-side-left{display:none}
+body.fs-combat.comb-has-active #tab-combat .comb-side-left{display:flex;flex-direction:column;position:fixed;left:10px;right:auto;top:12px;bottom:88px;
+  width:min(380px,40vw);z-index:66;overflow:hidden}
+body.fs-combat.comb-has-active #tab-combat .comb-side-left .card{margin:0;flex:1 1 auto;min-height:0;max-height:100%;overflow:auto}
+
+/* ---- 全屏时「半个屏幕」的悬浮栏目（四项互斥，只能开一个） ---- */
+body.fs-map .floatpanel,body.fs-combat .floatpanel{left:10px;right:auto;transform:none;width:min(760px,50vw)}
+body.fs-map .floatpanel.script-on,body.fs-combat .floatpanel.script-on{width:min(880px,52vw);height:min(80vh,860px)}
+body.fs-map .floatpanel.script-on .floatbody,body.fs-combat .floatpanel.script-on .floatbody{height:calc(min(80vh,860px) - 50px)}
+body.fs-map .floatpanel.dice-on,body.fs-combat .floatpanel.dice-on{width:min(760px,50vw)}
+body.fs-map .floatpanel.dice-on .floatbody,body.fs-combat .floatpanel.dice-on .floatbody{max-height:calc(100vh - 150px)}
+/* 全屏浮层（调查员 / NPC）：整页 section 被搬进带统一头部的浮层，外观与剧本笔记/骰子一致 */
+#fsFloatHost.fsfloat{position:fixed;left:10px;top:56px;bottom:14px;z-index:67;width:min(720px,52vw);
+  max-width:calc(100vw - 20px);display:flex;flex-direction:column;overflow:hidden}
+#fsFloatHost.fsfloat[hidden]{display:none}
+#fsFloatHost.fsfloat .floatbody{flex:1 1 auto;min-height:0;overflow:auto;max-height:none;padding:12px 14px}
+#fsFloatHost #tab-surveyors,#fsFloatHost #tab-npcs{display:block!important;position:static;background:transparent;
+  border:none;box-shadow:none;padding:0;width:auto}
+body.bgcustom #fsFloatHost.fsfloat{background:var(--uic-b)}
+@media(max-width:900px){
+  body.fs-map .floatpanel,body.fs-combat .floatpanel,
+  body.fs-map .floatpanel.script-on,body.fs-combat .floatpanel.script-on,
+  #fsFloatHost.fsfloat{width:calc(100vw - 16px);left:8px}
+  body.fs-combat.comb-has-active #tab-combat .comb-side-left{width:auto;left:8px;right:8px;bottom:74px}
+  .fsnav{right:8px;bottom:8px;gap:4px;padding:5px 6px}
+  .fsnavbtn{width:38px;height:38px;font-size:18px}
+}
+
+/* ================= 本轮增补 2：真正的地图/战斗全屏 + 便签可读性 + 全屏小卡 ================= */
+/* ---- 便签标签：任意底色都保证文字清晰（颜色由内联 tagFg 决定，这里放宽长度） ---- */
+.pccard .pctag{max-width:200px}
+.pccard .pctag .t{max-width:176px}
+
+/* ---- 调查员小卡：9 项属性三行（英文缩写 / 中文 / 数值），字号缩小但都看得见 ---- */
+#pcList .pccard .pctile{padding:3px 2px 4px}
+.pccard .pctile b{font-size:8.5px;line-height:1.3}
+.pccard .pctile i{display:block;font-style:normal;font-size:8.5px;line-height:1.3;color:#aab2c6;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pccard .pctile em{font-size:15px;line-height:1.25}
+body.bgcustom #pcList .pccard .pctile b{color:var(--gold)}
+
+/* ---- 悬浮面板都能拖右边框改宽度 ---- */
+.floatpanel .fsresize{position:absolute;top:0;right:0;bottom:0;width:11px;cursor:ew-resize;z-index:9}
+.floatpanel .fsresize::after{content:'';position:absolute;top:50%;right:4px;transform:translateY(-50%);
+  width:3px;height:40px;border-radius:2px;background:rgba(201,162,94,.5)}
+.floatpanel .fsresize:hover::after{background:var(--gold)}
+body.bgcustom .floatpanel .fsresize::after{background:rgba(255,255,255,.32)}
+body.bgcustom .floatpanel .fsresize:hover::after{background:var(--gold)}
+
+/* ---- 地图全屏：只留地图本体 + 左下角图标工具条，内容居中 ---- */
+body.fs-map #tab-maps .mapcols>div:nth-child(2)>.card{position:relative}
+body.fs-map #tab-maps .mapctrlrow,
+body.fs-map #tab-maps #mapTools,
+body.fs-map #tab-maps #mapDragHint,
+body.fs-map #tab-maps #mapHint{display:none!important}
+body.fs-map #tab-maps .mapcards{justify-content:center}
+body.fs-map #tab-maps .mapcard.empty{display:none}
+body.fs-map #tab-maps #mapWrap{display:flex;align-items:center;justify-content:center;overflow:auto;background:transparent}
+body.fs-map #tab-maps #mapCanvas{margin:auto;flex:none}
+#fsMapCtl{display:none;position:absolute;left:12px;bottom:12px;z-index:70;flex-direction:column;gap:8px;align-items:flex-start}
+body.fs-map #fsMapCtl{display:flex}
+#fsMapCtl .fsmapctl-left,#fsMapCtl .fsmapctl-zoom{display:flex;flex-direction:column;gap:6px;
+  background:rgba(18,20,26,.92);border:1px solid var(--line);border-radius:14px;padding:6px;
+  box-shadow:0 10px 28px rgba(0,0,0,.5)}
+#fsMapCtl .fsmapctl-zoom{align-items:center}
+#fsMapCtl .fsmapctl-zoom .zoomval{font-size:11px;color:var(--muted);font-family:var(--mono);padding:1px 0}
+#fsMapCtl .fssep{display:none}
+.fsicon{width:42px;height:42px;border-radius:11px;padding:0;font-size:19px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center}
+.fsicon.active{border-color:var(--acc);color:var(--gold);background:rgba(201,162,94,.18)}
+body.bgcustom #fsMapCtl .fsmapctl-left,body.bgcustom #fsMapCtl .fsmapctl-zoom{background:var(--uic-nav)}
+body.bgcustom .fsicon{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .fsicon.active{border-color:var(--acc);background:rgba(201,162,94,.2)}
+
+/* ---- 战斗全屏：场景居中，点角色后详情在屏幕最左 ---- */
+body.fs-combat #tab-combat .comb-mid{align-items:center}
+body.fs-combat #tab-combat .comb-mid>.card{width:100%}
+body.fs-combat #tab-combat .comb-mid>.card:nth-child(2) .battlecanvas-wrap{
+  width:100%;display:flex;align-items:center;justify-content:center;overflow:auto}
+body.fs-combat #tab-combat #battleCanvas{margin:0 auto;flex:none}
+body.fs-combat #tab-combat .fs-hide{display:none!important}
+body.fs-combat #combatFsBtn{display:none!important}
+
+/* ---- 全屏调查员浮层：标签栏折叠在最上、点开悬浮；小卡更小、头像变圆圈；隐藏导入卡 ---- */
+body.fsfloat-surveyors #fsFloatHost .srvcols{display:block}
+body.fsfloat-surveyors #fsFloatHost .srvmain>.card{display:none!important}
+body.fsfloat-surveyors #fsFloatHost .srvside .card{position:static}
+body.fsfloat-surveyors #fsFloatHost .srvside .row,
+body.fsfloat-surveyors #fsFloatHost .srvside .taglib,
+body.fsfloat-surveyors #fsFloatHost .srvside>.card>.hint{display:none!important}
+body.fsfloat-surveyors #fsFloatHost .srvside.fsopen{position:absolute;z-index:8;left:10px;top:52px;width:280px;max-width:86%}
+body.fsfloat-surveyors #fsFloatHost .srvside.fsopen .row{display:flex!important}
+body.fsfloat-surveyors #fsFloatHost .srvside.fsopen .taglib{display:flex!important}
+body.fsfloat-surveyors #fsFloatHost .srvside.fsopen>.card>.hint{display:block!important}
+body.fsfloat-surveyors #fsFloatHost .srvside>.card{box-shadow:0 14px 40px rgba(0,0,0,.5)}
+body.fsfloat-surveyors #fsFloatHost #pcList{grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+body.fsfloat-surveyors #fsFloatHost #pcList .pccard{padding:9px;gap:5px}
+body.fsfloat-surveyors #fsFloatHost #pcList .pchead{grid-template-columns:minmax(0,1fr) 60px;gap:8px}
+body.fsfloat-surveyors #fsFloatHost #pcList .pccard .pcav{width:60px;height:60px;min-height:0;border-radius:50%;
+  align-self:start;justify-self:end}
+body.fsfloat-surveyors #fsFloatHost #pcList .pccard .pcav .emoji{font-size:32px}
+body.fsfloat-surveyors #fsFloatHost #pcList .pcnameline .nm{font-size:15px}
+body.fsfloat-surveyors #fsFloatHost #pcList .pcmeta{font-size:11px}
+body.fsfloat-surveyors #fsFloatHost #pcList .pcatts9{gap:4px;margin-top:7px}
+body.fsfloat-surveyors #fsFloatHost #pcList .pctile em{font-size:14px}
+
+/* ---- 全屏 NPC 浮层：卡片不显示备注 ---- */
+body.fsfloat-npcs #fsFloatHost .npcmini .npc-note{display:none!important}
+body.fsfloat-npcs #fsFloatHost .npccols{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* ================= 本轮增补 3：战斗详情头 + 小卡经历外框（含真火焰） ================= */
+/* ---- 战斗详情头：头像 + 名字一行；DEX / DB 在头像下边；状态 3 个一行共两行 ---- */
+.combphead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;margin-bottom:8px}
+.combphead .cphleft{display:flex;flex-direction:column;gap:6px;min-width:0}
+.combphead .cphline{display:flex;align-items:center;gap:8px;min-width:0}
+.combphead .cphline .nm{font-size:15px;min-width:0;overflow-wrap:anywhere;color:var(--gold)}
+.combphead .cphmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.combphead .cphdex{font-family:var(--mono);font-size:12px;color:var(--ink)}
+.combstates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.combstates button{padding:3px 6px;font-size:11.5px;white-space:nowrap}
+.fs-only{display:none!important}
+body.fs-combat .fs-only{display:inline-flex!important;align-items:center}
+@media(max-width:560px){.combphead{grid-template-columns:1fr}}
+body.bgcustom .combphead .cphdex{color:var(--ink)}
+
+/* ---- 调查员小卡外框：跑过几个团的升级（1~5 金属叠边，6 翡翠，7 钻石，8+ 真·火焰） ---- */
+#pcList .pccard::before{content:'';position:absolute;pointer-events:none;border-radius:14px}
+.pccard.runs1{box-shadow:inset 0 0 0 2px #9aa0ad,0 0 8px rgba(154,160,173,.35)}
+.pccard.runs2{box-shadow:inset 0 0 0 2px #9aa0ad,inset 0 0 0 4px #c07b3a,0 0 9px rgba(192,123,58,.4)}
+.pccard.runs3{box-shadow:inset 0 0 0 2px #9aa0ad,inset 0 0 0 4px #c07b3a,inset 0 0 0 6px #dfe6f0,0 0 10px rgba(223,230,240,.4)}
+.pccard.runs4{box-shadow:inset 0 0 0 2px #9aa0ad,inset 0 0 0 4px #c07b3a,inset 0 0 0 6px #dfe6f0,inset 0 0 0 8px #e8c44f,0 0 12px rgba(232,196,79,.45)}
+.pccard.runs5{box-shadow:inset 0 0 0 2px #9aa0ad,inset 0 0 0 4px #c07b3a,inset 0 0 0 6px #dfe6f0,inset 0 0 0 8px #e8c44f,inset 0 0 0 10px #f2f7ff,0 0 15px rgba(242,247,255,.5)}
+
+@keyframes cocEmerald{0%,100%{box-shadow:inset 0 0 0 3px #34d399,inset 0 0 16px rgba(52,211,153,.3)}
+  50%{box-shadow:inset 0 0 0 3px #7df3c2,inset 0 0 28px rgba(52,211,153,.65)}}
+@keyframes cocDiamond{0%,100%{box-shadow:inset 0 0 0 3px #9fe8ff,inset 0 0 18px rgba(159,232,255,.35)}
+  50%{box-shadow:inset 0 0 0 3px #ffefff,inset 0 0 30px rgba(190,238,255,.7)}}
+@keyframes cocGlow{0%,100%{box-shadow:inset 0 0 0 3px #ffb347,inset 0 0 18px rgba(255,140,30,.45),0 0 16px 3px rgba(255,140,30,.5)}
+  50%{box-shadow:inset 0 0 0 3px #ffe09a,inset 0 0 30px rgba(255,170,50,.75),0 0 30px 9px rgba(255,150,40,.85)}}
+@keyframes cocPulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes cocHue{0%{filter:blur(7px) hue-rotate(0deg) saturate(1.4)}100%{filter:blur(7px) hue-rotate(360deg) saturate(1.4)}}
+@keyframes cocFlame{
+  0%{opacity:.72;transform:translateY(1px) scale(1,1)}
+  25%{opacity:1;transform:translateY(-2px) scale(1.01,1.07)}
+  50%{opacity:.8;transform:translateY(0) scale(.99,1.02)}
+  75%{opacity:1;transform:translateY(-3px) scale(1.02,1.09)}
+  100%{opacity:.72;transform:translateY(1px) scale(1,1)}}
+
+.pccard.runs6{animation:cocEmerald 2.4s ease-in-out infinite}
+.pccard.runs6::before{inset:-5px;z-index:-1;border-radius:16px;
+  background:radial-gradient(120% 120% at 50% 50%, rgba(52,211,153,0) 52%, rgba(52,211,153,.85) 76%, rgba(16,185,129,.95));
+  filter:blur(7px);animation:cocPulse 2.4s ease-in-out infinite}
+.pccard.runs7{animation:cocDiamond 2.2s ease-in-out infinite}
+.pccard.runs7::before{inset:-5px;z-index:-1;border-radius:16px;
+  background:conic-gradient(from 0deg,#ff6bd6,#6bd6ff,#8affc1,#ffe36b,#ff6bd6);
+  filter:blur(7px) saturate(1.4);animation:cocHue 6s linear infinite}
+.pccard.runs8{animation:cocGlow 1.15s ease-in-out infinite}
+.pccard.runs8::before{
+  inset:-9px -7px -13px -7px;z-index:-1;border-radius:18px;
+  background:
+    radial-gradient(38% 46% at 8% 100%, rgba(255,214,102,.98), rgba(255,120,20,0) 72%),
+    radial-gradient(34% 54% at 27% 100%, rgba(255,150,40,.98), rgba(255,90,10,0) 72%),
+    radial-gradient(40% 48% at 50% 100%, rgba(255,238,160,.98), rgba(255,140,20,0) 72%),
+    radial-gradient(34% 54% at 73% 100%, rgba(255,150,40,.98), rgba(255,90,10,0) 72%),
+    radial-gradient(38% 46% at 92% 100%, rgba(255,214,102,.98), rgba(255,120,20,0) 72%),
+    radial-gradient(26% 40% at 16% 2%, rgba(255,196,80,.9), rgba(255,120,20,0) 76%),
+    radial-gradient(30% 46% at 50% 0%, rgba(255,228,130,.95), rgba(255,120,20,0) 76%),
+    radial-gradient(26% 38% at 85% 2%, rgba(255,196,80,.9), rgba(255,120,20,0) 76%),
+    linear-gradient(0deg, rgba(255,120,25,.85), rgba(255,90,10,.28) 55%, rgba(255,90,10,0));
+  filter:blur(7px) saturate(1.5);
+  animation:cocFlame 1.15s ease-in-out infinite}
+.pccard.runs8 .runstars i{filter:drop-shadow(0 0 6px rgba(255,170,50,.95))}
+@media(prefers-reduced-motion:reduce){
+  .pccard.runs6,.pccard.runs7,.pccard.runs8,
+  .pccard.runs6::before,.pccard.runs7::before,.pccard.runs8::before{animation:none!important}
+}
+
+/* ---- 8 团以上：左下角别一枚做旧牛皮纸标签「传奇调查员」（外圈火光呼吸保留） ---- */
+
+/* ================= 本轮增补 2：小卡「调查员」不换行 / 传奇调查员标签 / 头像直接点击上传 / 折叠栏标题不换行 ================= */
+/* 1) 小卡左上角的「调查员」三字必须在一行 */
+.pccard .pcnameline .badge{white-space:nowrap;flex:none;padding:1px 7px}
+/* 2) 8 团以上：左下角做旧牛皮纸小标签（外圈火光呼吸动画不变） */
+.pccard .pclegend{position:absolute;left:8px;bottom:7px;z-index:5;pointer-events:none;
+  font-size:10.5px;font-weight:800;letter-spacing:.6px;line-height:1.25;padding:2px 7px;border-radius:2px;
+  color:#4a3a22;background:linear-gradient(180deg,#f0e4c8 0%,#e2d3ab 55%,#d3c091 100%);
+  border:1px dashed rgba(74,58,34,.5);border-left:3px solid rgba(122,96,52,.75);
+  box-shadow:0 2px 6px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.6),inset 0 -6px 10px rgba(150,120,70,.18);
+  transform:rotate(-3deg);text-shadow:0 1px 0 rgba(255,255,255,.5)}
+body.bgcustom .pccard .pclegend{color:#3f3119;background:linear-gradient(180deg,#efe2c2 0%,#dccb9f 60%,#cbb684 100%)}
+/* 3) 小卡的默认头像可以直接点击上传自定义头像（透明文件框铺满头像，不做文字说明） */
+.pccard .pchead .pcav .pcavfile{position:absolute;left:0;top:0;width:100%;height:100%;display:block;
+  opacity:0;cursor:pointer;z-index:2;padding:0;border:none}
+.pccard .pchead .pcav:hover{border-color:var(--acc)}
+#pcList.tagmode .pccard .pchead .pcav .pcavfile,
+#pcList.tagmoving .pccard .pchead .pcav .pcavfile{display:none}
+/* 4) 折叠卡片标题不换行（“摆件素材”“载具 / 时间速度”这些字样要在一行） */
+details.ccard>summary{flex-wrap:nowrap}
+details.ccard>summary>b{white-space:nowrap}
+details.ccard>summary>.muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* ================= 本轮增补 3：装饰永不遮挡地图/战斗场景 + 室内地图隐藏比例尺 ================= */
+/* 装饰层 z-index:6（fixed）；把地图画布与战斗场景抬到其上方，任何状态下都不被小图标压住 */
+#mapWrap{position:relative;z-index:7}
+.battlecanvas-wrap{position:relative;z-index:7}
+body.fs-map #tab-maps #mapWrap,body.fs-combat #tab-combat .comb-mid>.card .battlecanvas-wrap{z-index:7}
+body.bgcustom #mapWrap,body.bgcustom .battlecanvas-wrap{isolation:isolate}

@@ -17,6 +17,7 @@ function renderNav(){
     b.onclick=function(){ switchTab(t[0]); };
     nav.appendChild(b);
   });
+  nav.appendChild(campaignNameField());
   [['nav-script','📜 剧本/笔记','script'],['nav-dice','🎲 骰子','dice']].forEach(function(x){
     var b=document.createElement('button');
     b.id=x[0]; b.textContent=x[1];
@@ -26,21 +27,47 @@ function renderNav(){
     nav.appendChild(b);
   });
 }
+/* 本次团名：放在导航栏正中间，可随时改名；导出人物卡 / 写入调查员经历都会用到它。 */
+function campaignName(){
+  var v=state.ui&&state.ui.campaignName;
+  return (v==null?'':String(v)).trim();
+}
+function campaignNameField(){
+  var wrap=document.createElement('div');
+  wrap.className='navcamp';
+  wrap.title='给这次团起个名字：导出人物卡文件名、写入「调查员经历」的模组名都会用它。留空则用「未命名团」。';
+  var lab=document.createElement('span'); lab.className='navcamp-lab'; lab.textContent='🎪 本次团名';
+  var inp=document.createElement('input');
+  inp.id='campaignName'; inp.type='text'; inp.maxLength=60;
+  inp.placeholder='点击填写这次团的名字…（导出/经历会用到）';
+  inp.value=campaignName();
+  inp.addEventListener('input',function(){
+    if(!state.ui) state.ui={};
+    state.ui.campaignName=inp.value;
+    saveStateQuiet();
+  });
+  wrap.appendChild(lab); wrap.appendChild(inp);
+  return wrap;
+}
 function toggleFloat(kind){
   if(openFloatPanel===kind){ closeFloatPanel(); return; }
+  if(typeof fsClosePanel==='function') fsClosePanel();   // 全屏时与调查员/NPC 悬浮互斥
   openFloatPanel=kind;
   renderNav();
   buildFloatPanel();
   positionFloatPanel();
+  if(typeof renderFsNav==='function') renderFsNav();
 }
 function closeFloatPanel(){
   if(openFloatPanel==='script') saveNoteFromEditor();
   openFloatPanel=null;
   renderNav();
   var p=$('floatPanel'); if(p) p.hidden=true;
+  if(typeof renderFsNav==='function') renderFsNav();
 }
 function positionFloatPanel(){
   var p=$('floatPanel'); if(!p) return;
+  if(typeof attachFloatResize==='function') attachFloatResize(p);
   var vw=window.innerWidth||document.documentElement.clientWidth||1200;
   var vh=window.innerHeight||document.documentElement.clientHeight||800;
   var mobile=vw<=760;

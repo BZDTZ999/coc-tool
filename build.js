@@ -23,6 +23,14 @@ if (APP_FILES.length < 20){
 }
 function read(f){ return fs.readFileSync(path.join(SRC, f), 'utf8'); }
 
+/* 网页标签图标：assets/favicon.png（由 icon 原图缩小而来）。
+   离线单文件版内联成 base64（依旧自包含），在线版引用文件路径。 */
+function iconDataUri(){
+  const p = path.join(ROOT, 'assets', 'favicon.png');
+  if (!fs.existsSync(p)){ console.error('缺少标签图标：assets/favicon.png'); process.exit(1); }
+  return 'data:image/png;base64,' + fs.readFileSync(p).toString('base64');
+}
+
 function buildOffline(libName, outFile){
   const libPath = path.join(ROOT, 'node_modules', 'xlsx', 'dist', libName);
   if (!fs.existsSync(libPath)){
@@ -31,14 +39,21 @@ function buildOffline(libName, outFile){
   }
   let html = read('skeleton.html');
   html = html.replace('__CSS__', () => read('style.css'));
+  // 离线单文件版：同一张图内联一次就够，删掉 apple-touch 那行免得 base64 占两份体积
+  html = html.replace(/\s*<link rel="apple-touch-icon" href="__ICON__">/, '');
+  html = html.split('__ICON__').join(iconDataUri());
   const parser = read('parse-card.js');
   const app = APP_FILES.map(read).join('\n');
   const lib = fs.readFileSync(libPath, 'utf8');
+  // 空白人物卡模板（导出调查员卡用）内联为 base64，离线版依旧自包含
+  const blankPath = path.join(ROOT, 'assets', 'blank-card.xlsx');
+  const blank = fs.existsSync(blankPath) ? fs.readFileSync(blankPath).toString('base64') : '';
   html = html
     .replace('<script>__XLSX__</script>', () => '<script>' + lib + '</script>')
     .replace('<script>__PARSER__</script>', () => '<script>' + parser + '</script>')
+    .replace('<script>__BLANKCARD__</script>', () => '<script>window.__COC_BLANK_CARD_B64="' + blank + '";</script>')
     .replace('<script>__APP__</script>', () => '<script>' + app + '</script>');
-  const leftover = ['__CSS__','__XLSX__','__PARSER__','__APP__'].filter(t => html.indexOf(t) >= 0);
+  const leftover = ['__CSS__','__ICON__','__XLSX__','__PARSER__','__BLANKCARD__','__APP__'].filter(t => html.indexOf(t) >= 0);
   if (leftover.length){ console.error('仍有未替换占位符：', leftover.join(', ')); process.exit(1); }
   fs.writeFileSync(path.join(ROOT, outFile), html);
   console.log('built [offline:' + (libName.indexOf('mini') >= 0 ? 'slim' : 'full') + ']', outFile, fs.statSync(path.join(ROOT, outFile)).size, 'bytes');
@@ -47,6 +62,7 @@ function buildOffline(libName, outFile){
 function buildWeb(){
   let html = read('skeleton.html');
   html = html.replace('<style>__CSS__</style>', () => '<link rel="stylesheet" href="src/style.css">');
+  html = html.split('__ICON__').join('assets/favicon.png');
   const scripts = [
     '    <!-- 在线多文件版：脚本按序加载 src/*.js（与离线版同一份源码）。 -->',
     '    <!-- 读 .xlsx 人物卡时才从 CDN 懒加载 xlsx 引擎；完全离线请改用 offline.html。 -->',
@@ -56,8 +72,10 @@ function buildWeb(){
   html = html
     .replace('<script>__XLSX__</script>', () => '')
     .replace('<script>__PARSER__</script>', () => scripts.slice(0, 2).join('\n') + '\n' + scripts[2])
+    // 在线版不内联模板，首次导出时按需 fetch assets/blank-card.xlsx，保持首屏轻量
+    .replace('<script>__BLANKCARD__</script>', () => '<script>window.__COC_BLANK_CARD_URL=\'assets/blank-card.xlsx\';</script>')
     .replace('<script>__APP__</script>', () => scripts.slice(3).join('\n'));
-  const leftover = ['__CSS__','__XLSX__','__PARSER__','__APP__'].filter(t => html.indexOf(t) >= 0);
+  const leftover = ['__CSS__','__ICON__','__XLSX__','__PARSER__','__BLANKCARD__','__APP__'].filter(t => html.indexOf(t) >= 0);
   if (leftover.length){ console.error('仍有未替换占位符：', leftover.join(', ')); process.exit(1); }
   fs.writeFileSync(path.join(ROOT, 'index.html'), html);
   console.log('built [web] index.html', fs.statSync(path.join(ROOT, 'index.html')).size, 'bytes');

@@ -98,7 +98,11 @@ function quickSetNpcCount(id){
 function renderSurveyors(){
   var list=state.actors.filter(function(x){return x.kind==='pc';});
   $('pcCountTitle').textContent='调查员库（'+list.length+'）';
-  $('pcList').innerHTML=list.length?list.map(pcCardHTML).join(''):'<div class="hint">还没有调查员。把《空白人物卡》.xlsx 拖到上方导入，或手动新建。</div>';
+  var box=$('pcList');
+  box.innerHTML=list.length?list.map(pcCardHTML).join(''):'<div class="hint">还没有调查员。把《空白人物卡》.xlsx 拖到上方导入，或手动新建。</div>';
+  if(typeof tagLibSel!=='undefined') box.classList.toggle('tagmode', !!tagLibSel);
+  /* 便签“待移动/选中待贴”状态下，暂时关掉头像上传热区，避免点小卡时误开选图框 */
+  if(typeof tagMoving!=='undefined') box.classList.toggle('tagmoving', !!tagMoving);
+  if(typeof renderTagLib==='function' && $('tagLib')) renderTagLib();
   if(pendingParse) renderImportPreview();
 }
-
