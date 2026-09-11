@@ -25,7 +25,8 @@ function defaultState(){
     maps: [],            // 场景地图
     activeMapId: null,
     vehicles: defaultVehicles(),
-    combat: { round:0, phase:'行动', participants:[], log:[] }
+    combat: { round:0, phase:'行动', participants:[], log:[] },
+    ui: { decor:true }   // 背景漂浮小图标默认就是开的
   };
 }
 var state = null;

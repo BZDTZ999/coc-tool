@@ -15,10 +15,18 @@ function decorTierRoll(){
   for(var i=0;i<DECOR_TIERS.length;i++){ acc+=DECOR_TIERS[i].p; if(r<acc) return DECOR_TIERS[i].k; }
   return 'normal';
 }
+/* 默认开：只有用户自己点「装饰：关」才关（存档里显式 false）。
+   老存档没有这一项时顺手补上 true，保证「装饰默认打开」。 */
 function decorOn(){ return !!(state&&state.ui&&state.ui.decor!==false); }
+function decorEnsureDefault(){
+  if(!state) return;
+  if(!state.ui) state.ui={};
+  if(state.ui.decor==null){ state.ui.decor=true; try{ saveStateQuiet(); }catch(e){} }
+}
 function decorCountFor(vw){ return vw<420?8:(vw<860?11:(vw<1400?15:20)); }
 function applyDecorState(){
   var body=document.body; if(!body) return;
+  decorEnsureDefault();
   body.classList.toggle('decoroff', !decorOn());
   var btn=$('decorToggle');
   if(btn){
@@ -142,7 +150,8 @@ function stopDecorBits(){
 }
 (function bootDecor(){
   function start(){ applyDecorState(); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', start);
+  /* 同样要挂在 window 上：挂 document 会赶在 state 加载之前跑（那时只会上成「装饰：关」） */
+  if(document.readyState==='loading') window.addEventListener('DOMContentLoaded', start);
   else start();
   /* 兜底：无论 DOMContentLoaded 与数据兜底谁先跑，都要按最终 state.ui.decor 同步一次 */
   setTimeout(start, 0);

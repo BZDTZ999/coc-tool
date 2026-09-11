@@ -369,6 +369,8 @@ function wipeData(){
   /* 上传的模组存在 IndexedDB 里（不是 localStorage），要单独清掉，否则「清空」后右半屏还留着旧模组。 */
   try{ if(typeof moduleClear==='function') moduleClear(); }catch(e){}
   try{ if(typeof idbDel==='function') idbDel('module'); }catch(e){}
+  /* 背景图片也存在 IndexedDB 里，一起清掉 */
+  try{ if(typeof bgImageClear==='function') bgImageClear(); }catch(e){}
   try{ if(typeof closeSidePane==='function') closeSidePane(); }catch(e){}
   state=defaultState();
   saveStateQuiet();

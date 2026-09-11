@@ -45,6 +45,10 @@ function initApp(){
   if(typeof mapPodsInit==='function') mapPodsInit();
   if(typeof combatPodsInit==='function') combatPodsInit();
   switchTab('surveyors');
+  /* 背景色 / 装饰都依赖 state，统一在这里跟着初始化走一遍（挂在 document 上的启动钩子会早于这里） */
+  if(typeof applyUiBg==='function'){ try{ applyUiBg(); }catch(e){} }
+  if(typeof decorEnsureDefault==='function'){ try{ decorEnsureDefault(); }catch(e){} }
+  if(typeof applyDecorState==='function'){ try{ applyDecorState(); }catch(e){} }
   maybeShowWelcome();
   window.setTimeout(function(){ logRoll('🔧 已就绪。首次使用已预置示例 NPC 与示例地图（可删）。','info'); },60);
 }

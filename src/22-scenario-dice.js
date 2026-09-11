@@ -17,7 +17,7 @@ function renderNav(){
     b.onclick=function(){ switchTab(t[0]); };
     nav.appendChild(b);
   });
-  nav.appendChild(campaignNameField());
+  ensureCampaignField();
   [['nav-script','📜 剧本/笔记','script'],['nav-dice','🎲 骰子','dice']].forEach(function(x){
     var b=document.createElement('button');
     b.id=x[0]; b.textContent=x[1];
@@ -38,7 +38,19 @@ function renderNav(){
     nav.appendChild(b);
   });
 }
-/* 本次团名：放在导航栏正中间，可随时改名；导出人物卡 / 写入调查员经历都会用到它。 */
+/* 本次团名：挂在顶栏「带团妙妙小工具」那一行（窄屏不再把菜单栏挤到换行）。
+   只建一次，之后每次 renderNav 只同步值，免得输入时被重画打断。 */
+function ensureCampaignField(){
+  var slot=$('hcampSlot'); if(!slot) return;
+  if(!$('campaignName')){
+    slot.innerHTML='';
+    slot.appendChild(campaignNameField());
+    return;
+  }
+  var inp=$('campaignName');
+  if(inp && document.activeElement!==inp && inp.value!==campaignName()) inp.value=campaignName();
+}
+/* 本次团名：可随时改名；导出人物卡 / 写入调查员经历都会用到它。 */
 function campaignName(){
   var v=state.ui&&state.ui.campaignName;
   return (v==null?'':String(v)).trim();

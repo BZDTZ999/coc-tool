@@ -1974,6 +1974,110 @@ const ready = new Promise((res) => {
     var on=d.querySelector('#xpTabs .xp-tab.on');
     return !!on && on.getAttribute('data-v')==='random' && !!d.getElementById('rtNames');
   })());
+  /* ---------- 本轮：手机/平板适配 + 默认配色 + 顶栏团名 + 模组在手机上上传 ---------- */
+  ok('顶栏：本次团名挪到「带团妙妙小工具」那一行（不再挤菜单栏）', (function(){
+    var slot=d.getElementById('hcampSlot'), hdr=d.querySelector('header'), inp=$('campaignName');
+    return !!slot && !!hdr && !!inp && hdr.contains(inp) && slot.contains(inp) &&
+      !d.getElementById('nav').contains(inp) && /本次团名/.test(d.querySelector('.navcamp').textContent);
+  })());
+  ok('菜单栏仍然只有 9 个入口（团名不再占菜单栏一格）',
+     d.querySelectorAll('#nav button').length === 9 && d.querySelectorAll('#nav .navcamp').length === 0,
+     '' + d.querySelectorAll('#nav button').length);
+  ok('顶栏布局：团名那一栏会跟着窗口变窄而收缩（flex 里带 min-width:0）', (function(){
+    var flat=cssText.replace(/\s+/g,'');
+    return flat.indexOf('.hcamp{display:flex;align-items:center;min-width:0')>=0;
+  })());
+
+  ok('默认配色：金色 / 橄榄绿两种，第一次打开随机抽一个并写进存档', (function(){
+    var ks=(w.BG_DEFAULT_THEMES||[]).map(function(t){ return t.k; });
+    var bg=(w.state.ui&&w.state.ui.bg)||{};
+    return ks.length===2 && ks.indexOf('gold')>=0 && ks.indexOf('olive')>=0 &&
+      ks.indexOf(bg.def)>=0 && !!bg.color && w.uiBgColor()===bg.color;
+  })());
+  ok('默认配色：启动时就自己套上了（不用手动点「背景」）', (function(){
+    return d.body.classList.contains('bgcustom') &&
+      /^rgb\(/.test(d.documentElement.style.getPropertyValue('--uic-nav')||'');
+  })());
+  ok('启动顺序：背景/装饰的钩子挂在 window 上（挂 document 会赶在 state 加载前跑，自定义背景会丢）', (function(){
+    ['21-theme-bg.js','23-decor.js'].forEach(function(f){
+      var src=fs.readFileSync(path.join(__dirname,'..','src',f),'utf8');
+      if (src.indexOf("document.addEventListener('DOMContentLoaded'")>=0) throw new Error(f+' still binds document');
+    });
+    return true;
+  })());
+  ok('刷新恢复：重走一遍启动流程，存档里的自定义背景色会被重新套上', (function(){
+    w.setBgColor('#3b2f13');
+    d.body.classList.remove('bgcustom');
+    d.documentElement.style.removeProperty('--uic-nav');
+    try{ w.initApp(); }catch(e){ return false; }
+    return d.body.classList.contains('bgcustom') && w.uiBgColor()==='#3b2f13' &&
+      /^rgb\(/.test(d.documentElement.style.getPropertyValue('--uic-nav')||'');
+  })());
+  ok('默认配色：连着读两次不会换色（刷新后还是同一个）', (function(){
+    var a=w.uiBgColor(), b=w.uiBgColor();
+    return a===b && (w.state.ui.bg||{}).color===a;
+  })());
+  ok('自定义背景色：写进存档、body 挂上 bgcustom（刷新靠这两样恢复）', (function(){
+    w.setBgColor('#123456');
+    var saved={};
+    try{ saved=JSON.parse(w.localStorage.getItem('coc-tool-v1')||'{}'); }catch(e){}
+    var keep=!!(saved.ui && saved.ui.bg && saved.ui.bg.color==='#123456');
+    var cls=d.body.classList.contains('bgcustom');
+    var varOk=/^rgb\(/.test(d.documentElement.style.getPropertyValue('--uic-bg')||'');
+    return keep && cls && varOk;
+  })());
+  ok('恢复默认背景：回到金色或橄榄绿（不是以前那套深蓝）', (function(){
+    w.resetBgAll();
+    var c=(w.state.ui.bg||{}).color;
+    var saved={};
+    try{ saved=JSON.parse(w.localStorage.getItem('coc-tool-v1')||'{}'); }catch(e){}
+    return ['#a3843f','#7f9450'].indexOf(c)>=0 && saved.ui && saved.ui.bg && saved.ui.bg.color===c;
+  })());
+  ok('背景图片存 IndexedDB、state 里只留标记（localStorage 只有 5MB，塞图会丢）', (function(){
+    var src=fs.readFileSync(path.join(__dirname,'..','src','21-theme-bg.js'),'utf8');
+    return /idbPut\(BGIMG_KEY/.test(src) && /bg\.image='idb'/.test(src) &&
+      /bgShrinkImage/.test(src) && /bgImageClear/.test(src);
+  })());
+
+  ok('装饰：默认打开（存档里没这一项时补 true 并落盘）', (function(){
+    delete w.state.ui.decor;
+    w.applyDecorState();
+    var saved={};
+    try{ saved=JSON.parse(w.localStorage.getItem('coc-tool-v1')||'{}'); }catch(e){}
+    return w.state.ui.decor===true && d.querySelectorAll('.decor-bit').length>0 && saved.ui && saved.ui.decor===true;
+  })());
+
+  ok('手机端：右半屏（模组/规则书/更多小玩意儿）改成整屏浮层，背景不再跟着滚', (function(){
+    var flat=cssText.replace(/\s+/g,'');
+    return flat.indexOf('.sidepane{position:fixed')>=0 && flat.indexOf('body.sideopen{overflow:hidden')>=0;
+  })());
+  ok('手机端：触屏不再显示「拖进来」那条虚线提示', /@media\(hover:none\)\{\.sp-drop\{display:none;?\}\}/.test(cssText.replace(/\s+/g,'')));
+
+  ok('模组：文件框改成移出屏幕渲染（iOS Safari 上 display:none 的框点不动）', (function(){
+    w.switchTab('surveyors');
+    if(!w.sidePaneIsOpen('module')) w.toggleSidePane('module');
+    var fi=$('moduleFileInput'), fo=$('moduleFolderInput');
+    if(!fi || !fo) return false;
+    return /file-hidden/.test(fi.className||'') && !/display:\s*none/.test(fi.getAttribute('style')||'') &&
+      /file-hidden/.test(fo.className||'') &&
+      !!d.querySelector('.sp-head label[for="moduleFileInput"]');
+  })());
+  ok('模组：选文件先把 FileList 抄成数组再清空 input（Safari 直接清 value 会把 files 一起清掉）', (function(){
+    var src=fs.readFileSync(path.join(__dirname,'..','src','28-side-pane.js'),'utf8');
+    return /\[\]\.slice\.call\(\(ev\.target&&ev\.target\.files\)\|\|\[\]\)/.test(src) &&
+      /function moduleCanPickFolder\(\)/.test(src);
+  })());
+  await new Promise(function(done){
+    w.switchTab('surveyors');
+    if(!w.sidePaneIsOpen('module')) w.toggleSidePane('module');
+    var f=new w.File(['手机端第一条线索'], '手机模组.txt', {type:'text/plain'});
+    w.onModulePick({ target: { files:[f], value:'x' } });
+    setTimeout(done, 900);
+  });
+  ok('模组：手机端选一个文件也能读进来（走 onModulePick 这条真实路径）', (function(){
+    return (w.moduleFiles||[]).some(function(f){ return f.name==='手机模组.txt' && /手机端第一条线索/.test(f.text||''); });
+  })());
+
   ok('静态检查：src 里没有「漏 var 的全局赋值」（离线版严格模式会整段挂掉）', (function(){
     var bad=require('./scan-undef')();
     if (bad.length) console.log('   -> ' + bad.map(function(b){return b.file+':'+b.line+' '+b.name;}).join(', '));

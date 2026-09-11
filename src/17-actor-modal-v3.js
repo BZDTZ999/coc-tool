@@ -105,7 +105,7 @@ function openActorModal(id, kind){
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:none">
           <div id="am-avatar-prev">${avatarView(a,'lg')}</div>
           <label class="muted" style="flex-direction:row;align-items:center">上传头像
-            <input type="file" id="am-avatar-file" accept="image/*" style="display:none" onchange="onAvatarFile(event)"></label>
+            <input type="file" id="am-avatar-file" accept="image/*" class="file-hidden" onchange="onAvatarFile(event)"></label>
           <div class="row" style="gap:4px">
             <button class="small ghost" onclick="pickAvatarFile()">📁 选图</button>
             ${a.avatar.custom?'<button class="small danger" onclick="clearAvatarCustom()">清除自定义</button>':''}

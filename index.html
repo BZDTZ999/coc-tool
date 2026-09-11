@@ -13,10 +13,11 @@
 <div class="topbar">
   <header>
     <div class="brand"><b>🪄 带团妙妙小工具</b><small>Call of Cthulhu · 读卡 / NPC / 地图路线 / 战斗</small></div>
+    <div class="hcamp" id="hcampSlot"></div>
     <div class="row hbtn" style="gap:6px">
       <button class="small ghost" onclick="exportBackup()">⬇ 备份数据</button>
       <label class="small" style="flex-direction:row;gap:6px">⬆ 恢复备份
-        <input type="file" accept=".json" id="fileRestore" style="display:none" onchange="restoreBackup(event)">
+        <input type="file" accept=".json" id="fileRestore" class="file-hidden" onchange="restoreBackup(event)">
       </label>
       <button class="small ghost" onclick="openBgModal()">🎨 背景</button>
       <button class="small ghost" id="decorToggle" onclick="toggleDecor()" title="开关背景上一直漂浮的小图标">🐙 装饰</button>

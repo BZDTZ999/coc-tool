@@ -190,13 +190,19 @@ function moduleRestoreStore(cb){
     });
   });
 }
+/* iPhone / iPad 的 Safari 不支持「选文件夹」，那就别显示这个按钮（点了也没反应，反而像坏了） */
+function moduleCanPickFolder(){
+  try{ return ('webkitdirectory' in document.createElement('input')); }catch(e){ return false; }
+}
 function modulePickFile(){ var f=$('moduleFileInput'); if(f) f.click(); }
 function modulePickFolder(){ var f=$('moduleFolderInput'); if(f) f.click(); }
 function onModulePick(ev){
-  var fs=ev.target.files;
-  ev.target.value='';
-  if(!fs || !fs.length) return;
-  moduleAddFiles(fs, function(n){ if(n) toast('已加入 '+n+' 个文件'); });
+  /* 先把 FileList 抄成数组再清空 input：Safari 上直接 input.value='' 会把 files 一起清掉，
+     以前手机端就是这个原因读不到文件。 */
+  var fs=[].slice.call((ev.target&&ev.target.files)||[]);
+  if(ev.target) try{ ev.target.value=''; }catch(e){}
+  if(!fs.length) return;
+  moduleAddFiles(fs, function(n){ if(n) toast('已加入 '+n+' 个文件'); else toast('没读到文件（这个格式先拖到「文件」App 里再选）'); });
 }
 /* 读一个文件 → item（PDF / 图片走 object URL，Word 解析成 HTML，文本直接读） */
 function moduleReadOne(file, cb){
@@ -354,8 +360,8 @@ function renderModulePane(pane){
   var head='<div class="sp-head"><b>📖 模组</b>'+
     '<span class="hint">'+(many?('共 '+moduleFiles.length+' 份，点标签页换着看'):'左边照常带团，右边看模组')+'</span>'+
     '<div class="row sp-tools">'+
-      '<button class="small" onclick="modulePickFile()" title="可以一次选多个文件">⬆ 添加文件</button>'+
-      '<button class="small" onclick="modulePickFolder()" title="选一整个文件夹，里面的 PDF / Word / 图片会全部加进来">📁 文件夹</button>'+
+      '<label class="btn small btnfile" for="moduleFileInput" title="可以一次选多个文件（PDF / Word / 图片 / txt）"><span>⬆ 添加文件</span></label>'+
+      (moduleCanPickFolder()?'<label class="btn small btnfile" for="moduleFolderInput" title="选一整个文件夹，里面的 PDF / Word / 图片会全部加进来"><span>📁 文件夹</span></label>':'')+
       (moduleFiles.length?'<button class="small ghost" onclick="moduleClear()" title="从本机清除（不删你自己的文件）">🗑 全部清除</button>':'')+
       '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
     '</div></div>';
@@ -363,8 +369,8 @@ function renderModulePane(pane){
   var drop='<div class="sp-drop" id="spDrop">⬇ 把模组文件或<b>整个文件夹</b>拖到这里（PDF · Word · 图片 · txt/md'+
     (moduleFiles.length?'，可以继续加':'')+'）——拖到窗口里任何地方都行</div>';
   pane.innerHTML=head+moduleTabsHTML()+'<div class="sp-body'+(m&&m.kind==='pdf'?' sp-body-fill':'')+'">'+body+drop+'</div>'+
-    '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple style="display:none" onchange="onModulePick(event)">'+
-    '<input type="file" id="moduleFolderInput" webkitdirectory directory multiple style="display:none" onchange="onModulePick(event)">';
+    '<input type="file" id="moduleFileInput" class="file-hidden" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple onchange="onModulePick(event)">'+
+    '<input type="file" id="moduleFolderInput" class="file-hidden" webkitdirectory directory multiple onchange="onModulePick(event)">';
   moduleBindDrop();
   moduleScrollActiveTab();
   moduleFitTabs();
@@ -465,13 +471,17 @@ function moduleFitTabs(){
 }
 function moduleBodyHTML(m){
   if(!m){
+    var wide=(function(){ try{ return (window.innerWidth||1200)>900; }catch(e){ return true; } })();
+    var tip=wide ? '把模组拖进来，或点「⬆ 添加文件 / 📁 文件夹」'
+                 : '点上面「⬆ 添加文件」选模组（可以一次选好几个）';
     return '<div class="sp-empty">'+
-      '<p><b>把模组拖进来，或点「⬆ 添加文件 / 📁 文件夹」</b></p>'+
+      '<p><b>'+tip+'</b></p>'+
       '<p class="hint">支持 <b>PDF</b>、<b>Word（.docx）</b>、<b>图片</b>（png / jpg / gif / webp…）、<b>txt / md</b>；'+
       '多文件模组可以一次全加进来，上面会出一排标签页换着看，不用来回换。</p>'+
       '<p class="hint">PDF 用浏览器自带的阅读器（可缩放、可搜）；Word 直接排成网页看（有自己的搜索高亮）；'+
       '图片点一下可以切「适应窗口 / 原始大小」。</p>'+
-      '<p class="hint">文件只存在你自己的浏览器里，刷新后还在，不上传任何服务器。想左右调宽度：拖中间那条细线，双击回到一半一半。</p></div>';
+      '<p class="hint">文件只存在你自己的浏览器里，刷新后还在，不上传任何服务器。'+
+      (wide?'想左右调宽度：拖中间那条细线，双击回到一半一半。':'手机上这一栏会铺满整屏，看完点右上角 ✕ 收起。')+'</p></div>';
   }
   var bar='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span>';
   if(m.kind==='pdf'){

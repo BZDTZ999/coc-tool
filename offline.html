@@ -20,8 +20,8 @@ a{color:var(--gold)}
 .topbar{position:sticky;top:0;z-index:40;background:rgba(18,20,26,.97);backdrop-filter:blur(8px);
   border-bottom:1px solid var(--line);box-shadow:0 4px 18px rgba(0,0,0,.35)}
 header{display:flex;align-items:center;gap:12px;padding:10px 18px 4px}
-.brand{display:flex;align-items:baseline;gap:10px}
-.brand b{font-size:19px;letter-spacing:2px;color:var(--gold)}
+.brand{display:flex;align-items:baseline;gap:10px;flex:none;min-width:0}
+.brand b{font-size:19px;letter-spacing:2px;color:var(--gold);white-space:nowrap}
 .brand small{color:var(--muted)}
 .hbtn{margin-left:auto}
 button,.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel2);color:var(--ink);
@@ -37,14 +37,18 @@ nav{display:flex;gap:4px;padding:8px 16px 0;flex-wrap:wrap;background:rgba(18,20
 nav button{border:none;background:transparent;color:var(--muted);padding:8px 14px;border-radius:10px 10px 0 0;border-bottom:2px solid transparent}
 nav button.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(255,255,255,.03)}
 nav{margin-top:2px}
-nav .navcamp{display:flex;align-items:center;gap:6px;flex:0 1 340px;min-width:190px;max-width:380px;
-  margin:0 4px 0 8px;padding:3px 10px;border:1px solid var(--line);border-radius:10px 10px 0 0;background:rgba(255,255,255,.025)}
-nav .navcamp-lab{color:var(--gold);font-size:12px;font-weight:700;white-space:nowrap;flex:none}
-nav .navcamp input{flex:1;min-width:0;background:#14161c;border:1px solid var(--line);color:var(--ink);
+/* 本次团名挪到顶栏「带团妙妙小工具」那一行（原来塞在菜单栏中间，窄屏/Ipad 横屏会被挤到换行） */
+.hcamp{display:flex;align-items:center;min-width:0;flex:0 1 380px;margin-left:8px}
+/* 窗口不够宽时先收掉品牌副标题（Call of Cthulhu · …），别让它把「带团妙妙小工具」挤到换行 */
+@media(max-width:1280px){ .brand small{display:none} }
+.navcamp{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:150px;max-width:400px;
+  padding:3px 10px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.025)}
+.navcamp-lab{color:var(--gold);font-size:12px;font-weight:700;white-space:nowrap;flex:none}
+.navcamp input{flex:1;min-width:0;background:#14161c;border:1px solid var(--line);color:var(--ink);
   border-radius:7px;padding:3px 8px;font-size:13px;height:26px}
-nav .navcamp input::placeholder{color:#8b93a7}
-body.bgcustom nav .navcamp{background:var(--uic-d);border-color:var(--uic-line)}
-body.bgcustom nav .navcamp input{background:var(--uic-a);border-color:var(--uic-line);color:var(--ink)}
+.navcamp input::placeholder{color:#8b93a7}
+body.bgcustom .navcamp{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .navcamp input{background:var(--uic-a);border-color:var(--uic-line);color:var(--ink)}
 
 main{padding:18px;max-width:1280px;margin:0 auto}
 section.tab{display:none}
@@ -333,6 +337,9 @@ body{min-height:100vh}
   nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:6px 6px 0;margin-top:0}
   nav::-webkit-scrollbar{display:none}
   nav .navcamp{flex:0 0 auto;min-width:150px;max-width:250px;margin:0 4px}
+  .hcamp{flex:1 1 150px;margin-left:0}
+  .navcamp{min-width:120px;max-width:none}
+  .navcamp input{font-size:16px;height:30px}
   nav button{flex:none;white-space:nowrap;padding:9px 11px;font-size:13.5px;min-height:42px}
   .card{padding:11px 10px}
   .card h3{font-size:13.5px}
@@ -373,6 +380,9 @@ body{min-height:100vh}
   .vehrow{grid-template-columns:1fr 84px}
 }
 @media(max-width:430px){
+  /* 顶栏那排小按钮在一行里塞下（不然「❔ 说明」会被挤到下一行，顶栏白白多占一行） */
+  .hbtn{gap:3px}
+  .hbtn .small{padding:4px 6px;font-size:11px}
   main{padding:8px 6px calc(env(safe-area-inset-bottom,0px) + 10px)}
   .card{padding:10px 8px}
   #pcList{grid-template-columns:minmax(0,1fr)!important}
@@ -952,6 +962,9 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
 .sp-head b{color:var(--gold)}
 .sp-tools{margin-left:auto;gap:5px;flex-wrap:nowrap}
+/* 让「⬆ 添加文件 / 📁 文件夹」既能当按钮点、又是真正的 <label for>（手机 Safari 上最稳） */
+label.btnfile,.btnfile{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.file-hidden{position:absolute;left:-9999px;top:0;width:1px;height:1px;opacity:0;overflow:hidden}
 .sp-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:auto}
 .sp-empty{padding:14px;line-height:1.9}
 .sp-empty p{margin:6px 0}
@@ -1113,21 +1126,34 @@ body.fs-map .splitwrap,body.fs-combat .splitwrap{display:block}
 @media(max-width:900px){
   .splitwrap{display:block}
   .splitbar{display:none}
-  .sidepane{position:static;height:auto;max-height:none;margin-top:12px;flex-basis:auto!important;width:auto}
-  .sp-frame{height:70vh}
+  /* 手机 / 平板竖屏：右半屏（模组·规则书·更多小玩意儿）改成整屏浮层。
+     以前是接在左半边下面，手机上点「📖 模组」后要往下滚很久才看得到，看起来就像没反应。 */
+  .sidepane{position:fixed;left:0;right:0;top:0;bottom:0;width:100%;height:100vh;
+    margin:0;flex-basis:auto!important;border-radius:0;border-left:0;border-right:0;
+    z-index:70;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  @supports(height:100dvh){ .sidepane{height:100dvh} }
+  body.sideopen{overflow:hidden}
+  .sp-head{position:sticky;top:0;z-index:3;padding:6px 8px}
+  .sp-head .sp-tools{margin-left:auto;flex-wrap:wrap;gap:4px}
+  .sp-tabs{padding:5px 6px}
+  .sp-frame{height:calc(100vh - 170px)}
+  @supports(height:100dvh){ .sp-frame{height:calc(100dvh - 170px)} }
   .rb-wrap{flex-direction:column}
   .rb-side{width:auto;max-height:34vh;border-right:0;border-bottom:1px solid var(--line)}
 }
+/* 触屏上没有「拖进来」这回事，省掉这条虚线提示 */
+@media(hover:none){ .sp-drop{display:none} }
 </style>
 </head>
 <body>
 <div class="topbar">
   <header>
     <div class="brand"><b>🪄 带团妙妙小工具</b><small>Call of Cthulhu · 读卡 / NPC / 地图路线 / 战斗</small></div>
+    <div class="hcamp" id="hcampSlot"></div>
     <div class="row hbtn" style="gap:6px">
       <button class="small ghost" onclick="exportBackup()">⬇ 备份数据</button>
       <label class="small" style="flex-direction:row;gap:6px">⬆ 恢复备份
-        <input type="file" accept=".json" id="fileRestore" style="display:none" onchange="restoreBackup(event)">
+        <input type="file" accept=".json" id="fileRestore" class="file-hidden" onchange="restoreBackup(event)">
       </label>
       <button class="small ghost" onclick="openBgModal()">🎨 背景</button>
       <button class="small ghost" id="decorToggle" onclick="toggleDecor()" title="开关背景上一直漂浮的小图标">🐙 装饰</button>
@@ -2077,7 +2103,8 @@ function defaultState(){
     maps: [],            // 场景地图
     activeMapId: null,
     vehicles: defaultVehicles(),
-    combat: { round:0, phase:'行动', participants:[], log:[] }
+    combat: { round:0, phase:'行动', participants:[], log:[] },
+    ui: { decor:true }   // 背景漂浮小图标默认就是开的
   };
 }
 var state = null;
@@ -3081,6 +3108,8 @@ function wipeData(){
   /* 上传的模组存在 IndexedDB 里（不是 localStorage），要单独清掉，否则「清空」后右半屏还留着旧模组。 */
   try{ if(typeof moduleClear==='function') moduleClear(); }catch(e){}
   try{ if(typeof idbDel==='function') idbDel('module'); }catch(e){}
+  /* 背景图片也存在 IndexedDB 里，一起清掉 */
+  try{ if(typeof bgImageClear==='function') bgImageClear(); }catch(e){}
   try{ if(typeof closeSidePane==='function') closeSidePane(); }catch(e){}
   state=defaultState();
   saveStateQuiet();
@@ -3281,7 +3310,7 @@ function scaffoldSections(){
         <div id="dropZone" class="notice" style="cursor:pointer;border:2px dashed var(--acc)">
           🖱 直接把人物卡 .xlsx 拖到这里，即可解析（也支持点击选择文件）
         </div>
-        <input type="file" id="fileImport" accept=".xlsx,.xls" style="display:none" onchange="onPickCardFile(event)">
+        <input type="file" id="fileImport" accept=".xlsx,.xls" class="file-hidden" onchange="onPickCardFile(event)">
         <div id="importPreview"></div>
         </div>
       </div>
@@ -3334,7 +3363,7 @@ function scaffoldSections(){
               <button class="small ghost" onclick="zoomReset()">重置</button>
             </span>
             <label class="muted" id="mapScaleBox" style="flex-direction:row;align-items:center;gap:4px">比例尺：1格=<input id="mapScale" type="number" step="any" inputmode="decimal" min="0" style="width:190px" value="1">km<button class="small ghost" onclick="onScaleChange()">设</button></label>
-            <label class="muted" style="flex-direction:row;align-items:center;gap:4px">底图<input type="file" id="mapBg" accept="image/*" style="display:none" onchange="onBgPick(event)"><button class="small ghost" onclick="document.getElementById('mapBg').click()">上传</button></label>
+            <label class="muted" style="flex-direction:row;align-items:center;gap:4px">底图<input type="file" id="mapBg" accept="image/*" class="file-hidden" onchange="onBgPick(event)"><button class="small ghost" onclick="document.getElementById('mapBg').click()">上传</button></label>
           </div>
         </div>
       </div>
@@ -3345,7 +3374,7 @@ function scaffoldSections(){
       <div class="pod card" id="pod-props" hidden>
         <div class="panel-head"><b>🧩 摆件素材</b><span class="muted" style="font-size:11px">点按放入画布 · 可拖动 / 删除 · 也能上传自己的图</span></div>
         <div class="proplist" id="propPalette"></div>
-        <input type="file" id="customPropFile" accept="image/*" multiple style="display:none" onchange="addCustomPropFiles(event)">
+        <input type="file" id="customPropFile" accept="image/*" multiple class="file-hidden" onchange="addCustomPropFiles(event)">
       </div>
       <div class="pod card" id="pod-veh" hidden>
         <div class="panel-head"><b>🚗 载具 / 时间速度</b>
@@ -3424,7 +3453,7 @@ function scaffoldSections(){
     <div class="card stagecard" id="combatStageCard">
       <div class="panel-head"><b>🏟 战斗场景</b>
         <div class="row">
-          <label class="muted" style="flex-direction:row;gap:4px">上传底图<input type="file" id="battleBg" accept="image/*" style="display:none" onchange="onBattleBg(event)"></label>
+          <label class="muted" style="flex-direction:row;gap:4px">上传底图<input type="file" id="battleBg" accept="image/*" class="file-hidden" onchange="onBattleBg(event)"></label>
           <button class="small ghost" onclick="clearBattleBg()">清除底图</button>
           <button class="small ghost" id="combatFsBtn" onclick="toggleSceneFs('combat')" title="全屏查看战斗场景（右下角 ↩ 返回退出）">⛶ 全屏</button>
           <span class="hint fs-hide">头像可拖动；点选可操作</span>
@@ -3440,7 +3469,7 @@ function scaffoldSections(){
         <summary><b>🎨 场景道具</b><span class="muted" style="font-weight:400">（点击展开/收回）</span></summary>
         <div class="hint" style="margin-bottom:6px">点图标即放进战斗场景，之后可直接拖动到任意位置；选中后点「删除选中道具」可移除；也支持上传自己的图片当道具。</div>
         <div class="proplist" id="battlePropPalette"></div>
-        <input type="file" id="battlePropFile" accept="image/*" multiple style="display:none" onchange="onBattlePropFile(event)">
+        <input type="file" id="battlePropFile" accept="image/*" multiple class="file-hidden" onchange="onBattlePropFile(event)">
         <div class="row" style="margin-top:6px;gap:6px">
           <button class="small ghost" onclick="document.getElementById('battlePropFile').click()">＋ 上传自定义道具</button>
           <button class="small danger" onclick="deleteSelectedBattleProp()">🗑 删除选中道具</button>
@@ -3468,15 +3497,16 @@ function scaffoldSections(){
     <h4>✏️ 编辑调查员</h4><p>点小卡右下角 ✏️：属性、护甲（可挑参考防具预置）、HP/SAN/MP、技能（高于基础值的算「已加点」排上面，其余收进折叠区）、武器、背包 / 随身用品、剧情道具、法术、资产、背景、经历都在这里改。武器「类型」可从卡里「武器列表」下拉选，选完技能 / 伤害 / 射程 / 弹匣会自动填好。</p>
     <h4>⬇ 导出人物卡</h4><p>小卡右下角 ⬇ 导出卡：先按“最初导入那张卡”算出这次团的变化，写进卡里的「调查员经历」（模组名用顶部「🎪 本次团名」，技能变化写进「成长」列），再把整张卡填进<b>你导入时用的那张模板</b>下载，文件名是 团名-角色名.xlsx。卡里原本的公式都会保留：武器“选类型自动算”、成功率按使用技能取值（查不到该技能时保留公式 + 原卡数值，不留空、不乱码）、信用评级、本职★ 查表、<b>属性雷达图</b>；自定义子技能名按卡里「类别 + 具体名」两格分段写回；卡右上角「任意特长」照原样读写（详情卡里不单独列出）；中式职业扩展那张卡的本职技能按它自己的职业表算。</p>
     <h4>📊 属性雷达图</h4><p>点小卡右下角 ✏️ 打开详情，属性 3×3 右边就是雷达图（力量 / 体质 / 体型 / 敏捷 / 外貌 / 智力 / 意志 / 教育 / 幸运），和卡里「附表」那张九维图同一套数，改属性会实时重画。</p>
-    <h4>📖 模组（右半屏）</h4><p>菜单栏点「📖 模组」：左边照常带团，右半边用来放模组。支持 <b>PDF</b>、<b>Word（.docx）</b>、<b>图片</b>（png / jpg / gif / webp…）、<b>txt / md</b>。可以「⬆ 添加文件」一次选多个、点「📁 文件夹」整个文件夹加进来，或者直接把文件 / 文件夹<b>拖到窗口里任何地方</b>（会自动打开模组栏，拖拽时顶上提示「松手就把这些文件放进模组」）；加进去的会在顶上排成一排<b>标签页</b>，点一下换一份，标签上的 ✕ 把那份移出去，多文件模组不用再来回换；<b>标签可以按住拖动换顺序</b>（顺序会记住），一行放不下时标签名会自动缩短（全称 → 省略号 → 只剩两个字），这一条的高度是固定的，不会被挤扁。Word 会连着表格 / 图片 / 标题一起排成网页看（还能调字号），上方搜索框回车可高亮命中、↑ ↓ 逐条跳转；PDF 用浏览器自带阅读器（可缩放、可搜）；图片点一下在「适应窗口 / 原始大小」之间切。文件存在本机浏览器里（刷新后还在），不会上传。中间的细条可拖动调整左右宽度，双击回一半一半。</p>
+    <h4>📖 模组（右半屏）</h4><p>菜单栏点「📖 模组」：左边照常带团，右半边用来放模组。支持 <b>PDF</b>、<b>Word（.docx）</b>、<b>图片</b>（png / jpg / gif / webp…）、<b>txt / md</b>。可以「⬆ 添加文件」一次选多个、点「📁 文件夹」整个文件夹加进来，或者直接把文件 / 文件夹<b>拖到窗口里任何地方</b>（会自动打开模组栏，拖拽时顶上提示「松手就把这些文件放进模组」）；加进去的会在顶上排成一排<b>标签页</b>，点一下换一份，标签上的 ✕ 把那份移出去，多文件模组不用再来回换；<b>标签可以按住拖动换顺序</b>（顺序会记住），一行放不下时标签名会自动缩短（全称 → 省略号 → 只剩两个字），这一条的高度是固定的，不会被挤扁。手机上点「⬆ 添加文件」从「文件」App 里挑（可以多选；Safari 不支持选目录，所以手机不显示「📁 文件夹」）。Word 会连着表格 / 图片 / 标题一起排成网页看（还能调字号），上方搜索框回车可高亮命中、↑ ↓ 逐条跳转；PDF 用浏览器自带阅读器（可缩放、可搜）；图片点一下在「适应窗口 / 原始大小」之间切。文件存在本机浏览器里（刷新后还在），不会上传。中间的细条可拖动调整左右宽度，双击回一半一半。</p>
     <h4>📚 规则书（右半屏）</h4><p>菜单栏点「📚 规则书」：整套 COC7 核心规则书按<b>原版 PDF</b>放在右半屏，表格 / 颜色 / 流程图和纸书一模一样；左边有 <b>书签目录</b>（点条目直接跳页）和 <b>全文搜索</b>（输入关键词回车，命中页会列出来，点一下就跳过去），目录可以「☰ 收起目录 / 展开目录」。</p>
     <h4>🧰 更多小玩意儿（右半屏）</h4><p>菜单栏点「🧰 更多小玩意儿」：左边照常带团，右半边两个小工具（顶上子页签切换）。<b>🎲 跑团随机</b>：随机名字（中文 / 英文带中文翻译 / 日文带假名读音，可选性别，一次 1/6/12/20 个）、随机 NPC（姓名 / 年龄 / 性别 / 职业 / 性格 / 外貌 / 着装 / 小习惯 / 家庭状况 / 爱好 / 恐惧 / 秘密 / 信仰 / 口头禅一次全出，某一行不满意就点那一行的 ⟳ 单独重掷）、随机地点（场所 / 城镇 / 街道 / 建筑 / 房间，每处带一句能直接用的话）；结果点一下就能复制。<b>🌙 天文·天象</b>：选<b>日期</b> + <b>地点</b>（内置 100 来个城市，也能手填经纬度与时区），给出当天的月相（名称 / 月龄 / 照明率）、月出月落、日出日落、白昼黑夜时长、天黑与完全黑暗的时段、今晚能看到的亮星与星座、肉眼可见的行星（带方位与星等）、流星雨（峰值前后，含月光影响）、当地可见的日食月食，还有折叠的<b>本月天象日历</b>（月相节点 / 流星雨峰值 / 日月食 / 节气）；极昼极夜白夜会照实说明，时间按该城市标准时算（不换算夏令时）。天文数据用的是真实星历（astronomy-engine，MIT），不是编的。</p><h4>🏷 便签标签</h4><p>调查员页最左侧可自定义标签（emoji、任意长度、可改色、可删）。点选标签再点小卡即可贴上，也能直接把标签拖到小卡上；便签可挪到别的卡，点 ✕ 移除，每张小卡最多 6 个。</p>
     <h4>👤 NPC 与敌人</h4><p>先选<b>类别</b>（人类 / 动物 / 神话生物，默认「全部」），再选<b>具体条目</b>，设数量后生成 —— 属性按规则书的骰式现掷（如 CON 2D6×5），所以每次生成都是新的随机值；神话生物已按规则书预填标志性法术。之后还能改阵营与数值。四列小卡（盟友 / 中立 / 敌人 / 其他）可拖拽排序，列名点标题就能改。</p>
     <h4>🗺️ 地图与路线</h4><p>上面一条二级菜单栏：🗺 地图（切地图 / 载入预设 / 缩放 / 比例尺 / 换底图）· 🧍 地图角色 · 🧩 摆件素材 · 🚗 载具·时间速度（点开就用，再点收起，一次只开一个），下面整幅地图占满宽度，再往下是路线时间计算 / 地点 / 道路路径（一张地图都没有时也还在，会提示你「＋ 新建地图」）。三个工具：🖱 拖动地点（相连道路的 km 实时重算）· 🧍 移动角色/摆件（只挪角色和素材，不动地点与道路）· 📍 添加地点。比例尺「1格 = __ km」→ 设。</p>
     <h4>⚔️ 战斗</h4><p>上面一条二级菜单栏：👥 添加角色（把调查员 / NPC / 临时成员加入战斗）· ⚔️ 战斗桌（本次战斗标题 / 下一轮 / 清空，点开就用、再点收起），下面战斗场景占满宽度，再往下依次是战斗成员表、行动日志；点角色后详情浮在屏幕最左侧。成员自动左右排布（可拖动）；攻击不用先选目标，直接打对面第一个还站着的成员；改 HP/SAN/MP/护甲或实时增删武器 / 道具 / 法术都会同步回角色档案与小卡，也可点「↻ 同步档案」。状态徽标与 🎨 场景道具素材库都在这一页。</p>
     <h4>🎲 骰子与 SAN 检定</h4><p>顶部「📜 剧本/笔记」「🎲 骰子」是悬浮栏目，不切页面、一次只开一个。骰子可指定角色与技能（技能按数值从高到低排，已加点带 ☆），1D100 自动给出普通 / 困难 / 极难 / 大成功 / 大失败；SAN 页可做理智检定、损失掷骰、INT 判定与疯狂症状，损失会自动写回角色。</p>
+    <h4>🎨 背景 · 🐙 装饰 · 📱 手机与平板</h4><p>第一次打开会从 <b>暗金 / 橄榄绿</b> 里随机挑一套当默认皮肤（不再是以前那身深蓝），挑到哪套会记住，<b>刷新不变</b>；自己选的颜色 / 上传的背景图<b>刷新后也一定还在</b>（颜色存本机，背景图存在浏览器的 IndexedDB 里，不占 localStorage 那 5MB 的额度）。想还原点「↺ 恢复默认背景」（会重新随机一套）。「🐙 装饰」那层漂浮小图标<b>默认就是开着的</b>，只有自己点「装饰：关」才关。</p><p><b>手机 / 平板</b>（iPhone 16 / 17、iPad mini 6、iPad Air 4 都调过）：顶栏第一行是「🪄 带团妙妙小工具 + 🎪 本次团名」，第二行是备份 / 背景 / 装饰 / 说明；菜单栏一行横着划。<b>「🎪 本次团名」就在品牌名那一行</b>（不再塞在菜单栏中间，免得 iPad 横屏把菜单栏挤成两行）。点「📖 模组 / 📚 规则书 / 🧰 更多小玩意儿」时右半屏会<b>铺满整屏</b>，右上角 ✕ 收起；手机上加模组点「⬆ 添加文件」从「文件」App 里挑（Safari 不支持选目录，所以手机不显示「📁 文件夹」）。</p>
     <h4>⛶ 场景全屏</h4><p>地图 / 战斗场景都有「⛶ 全屏」（Esc 或右下角 ↩ 返回退出）。全屏后右下角只剩图标菜单，其中 📋调查员 / 👤NPC与敌人 / 📜剧本笔记 / 🎲骰子 是压在场景上的半屏浮层，一次只开一个。战斗里点角色，详情都浮在屏幕最左侧（普通模式也一样）；地图全屏时工具栏缩到左下角。</p>
-    <h4>💾 数据</h4><p>数据只存本机浏览器。请常用右上角「⬇ 备份数据」导出 JSON 定期存档；本工具不上传任何数据。「⚠️ 清空全部本地数据」会连上传的模组一起清掉。</p>
+    <h4>💾 数据</h4><p>数据只存本机浏览器。请常用右上角「⬇ 备份数据」导出 JSON 定期存档；本工具不上传任何数据。「⚠️ 清空全部本地数据」会连上传的模组与背景图一起清掉。</p>
     <div class="vdiv"></div>
     <button class="danger" onclick="wipeData()">⚠️ 清空全部本地数据</button>
   </div></div>`
@@ -4880,6 +4910,10 @@ function initApp(){
   if(typeof mapPodsInit==='function') mapPodsInit();
   if(typeof combatPodsInit==='function') combatPodsInit();
   switchTab('surveyors');
+  /* 背景色 / 装饰都依赖 state，统一在这里跟着初始化走一遍（挂在 document 上的启动钩子会早于这里） */
+  if(typeof applyUiBg==='function'){ try{ applyUiBg(); }catch(e){} }
+  if(typeof decorEnsureDefault==='function'){ try{ decorEnsureDefault(); }catch(e){} }
+  if(typeof applyDecorState==='function'){ try{ applyDecorState(); }catch(e){} }
   maybeShowWelcome();
   window.setTimeout(function(){ logRoll('🔧 已就绪。首次使用已预置示例 NPC 与示例地图（可删）。','info'); },60);
 }
@@ -5341,7 +5375,7 @@ function openActorModal(id, kind){
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:none">
           <div id="am-avatar-prev">${avatarView(a,'lg')}</div>
           <label class="muted" style="flex-direction:row;align-items:center">上传头像
-            <input type="file" id="am-avatar-file" accept="image/*" style="display:none" onchange="onAvatarFile(event)"></label>
+            <input type="file" id="am-avatar-file" accept="image/*" class="file-hidden" onchange="onAvatarFile(event)"></label>
           <div class="row" style="gap:4px">
             <button class="small ghost" onclick="pickAvatarFile()">📁 选图</button>
             ${a.avatar.custom?'<button class="small danger" onclick="clearAvatarCustom()">清除自定义</button>':''}
@@ -6489,15 +6523,34 @@ function updateSkillSplitCounts(){
 }
 
 /* ---------- 🎨 页面背景：颜色 / 自定义图片 ---------- */
+/* 两组「默认皮肤」：第一次打开随机抽一个（金色 / 橄榄绿），抽到哪个会存进本机，刷新不会变。
+   想要换一种：右上角「🎨 背景」里点另两个色块，或点「↺ 恢复默认背景」重新随机。 */
+var BG_DEFAULT_THEMES=[{k:'gold',name:'暗金',hex:'#a3843f'},{k:'olive',name:'橄榄绿',hex:'#7f9450'}];
 var BG_SWATCHES=[
-  ['','深空默认'],['#1c222f','石墨蓝'],['#262b38','石板灰'],['#2a2418','暖棕'],
-  ['#141c26','深海军'],['#241420','暗紫红'],['#16281b','墨绿'],['#241f12','暗金']
+  ['#a3843f','暗金（默认）'],['#7f9450','橄榄绿（默认）'],
+  ['#1c222f','石墨蓝'],['#262b38','石板灰'],['#2a2418','暖棕'],
+  ['#141c26','深海军'],['#241420','暗紫红'],['#16281b','墨绿']
 ];
+function bgThemeOf(k){
+  for(var i=0;i<BG_DEFAULT_THEMES.length;i++) if(BG_DEFAULT_THEMES[i].k===k) return BG_DEFAULT_THEMES[i];
+  return BG_DEFAULT_THEMES[0];
+}
+function bgRandomTheme(){ return BG_DEFAULT_THEMES[Math.floor(Math.random()*BG_DEFAULT_THEMES.length)]; }
 function uiBgState(){
   if(!state.ui) state.ui={};
   if(!state.ui.bg) state.ui.bg={color:'',image:null};
-  return state.ui.bg;
+  var bg=state.ui.bg;
+  /* 老存档没选过颜色（或颜色被清成空）：按默认主题随机挑一个并记下来，之后刷新都跟着它 */
+  if(!bg.def || !BG_DEFAULT_THEMES.some(function(t){ return t.k===bg.def; })){
+    var t=bgRandomTheme();
+    bg.def=t.k;
+    if(!bg.color) bg.color=t.hex;
+    try{ saveStateQuiet(); }catch(e){}
+  }
+  return bg;
 }
+/* 当前实际用于推导整套 UI 配色的底色 */
+function uiBgColor(){ var bg=uiBgState(); return bg.color || bgThemeOf(bg.def).hex; }
 /* 主题引擎：把用户背景色推导成整套 UI 面板色（写入 CSS 变量，所有组件跟随适配） */
 function hexToRgb(h){
   var s=String(h||'').replace('#','').trim();
@@ -6535,31 +6588,81 @@ function themeCanvasColor(){
   var v=String(document.documentElement.style.getPropertyValue('--uic-bg')||'').trim();
   return v||'#151922';
 }
+/* 背景图片单独存在 IndexedDB 里：localStorage 只有 5MB，图片塞进 state 很容易写不进去，
+   那样表现就是「设了背景图，一刷新就没了」。state 里只留一个小缩略图（给设置面板预览）。 */
+var BGIMG_KEY='bgImage';
+var _bgImgUrl=null;                       /* 当前生效的背景图 dataURL（内存里） */
+function applyBgImageToBody(){
+  var b=document.body; if(!b) return;
+  if(_bgImgUrl){
+    b.style.backgroundImage='linear-gradient(rgba(12,12,14,.80),rgba(12,12,14,.80)),url("'+_bgImgUrl+'")';
+    b.style.backgroundSize='cover'; b.style.backgroundPosition='center'; b.style.backgroundAttachment='fixed';
+  } else {
+    /* 纯色背景也压一层深色半透明，保证白字可读；卡片等面板再以半透明融入 */
+    b.style.backgroundImage='linear-gradient(rgba(12,12,14,.55),rgba(12,12,14,.55))';
+    b.style.backgroundSize=''; b.style.backgroundPosition=''; b.style.backgroundAttachment='';
+  }
+}
+function bgImageLoad(cb){
+  if(!window.indexedDB || typeof idbGet!=='function'){ if(cb) cb(null); return; }
+  idbGet(BGIMG_KEY, function(v){ if(cb) cb(v||null); });
+}
+function bgImageSave(url, cb){
+  if(!window.indexedDB || typeof idbPut!=='function'){ if(cb) cb(false); return; }
+  idbPut(BGIMG_KEY, url, function(){ if(cb) cb(true); });
+}
+function bgImageClear(){
+  _bgImgUrl=null;
+  if(window.indexedDB && typeof idbDel==='function') idbDel(BGIMG_KEY);
+}
+/* 大图（手机拍的 4~8MB）先缩到 1800px、JPEG 0.82 再存，省空间也省内存 */
+function bgShrinkImage(file, cb){
+  var fr=new FileReader();
+  fr.onload=function(){
+    var raw=String(fr.result||'');
+    var im=new Image();
+    im.onload=function(){
+      try{
+        var MAXW=1800, w=im.naturalWidth||im.width, h=im.naturalHeight||im.height;
+        if(!w || !h){ cb(raw); return; }
+        var k=Math.min(1, MAXW/w);
+        var cw=Math.max(1, Math.round(w*k)), ch=Math.max(1, Math.round(h*k));
+        var cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+        var cx=cv.getContext('2d'); cx.drawImage(im,0,0,cw,ch);
+        cb(cv.toDataURL('image/jpeg',0.82));
+      }catch(e){ cb(raw); }
+    };
+    im.onerror=function(){ cb(raw); };
+    im.src=raw;
+  };
+  fr.onerror=function(){ cb(null); };
+  fr.readAsDataURL(file);
+}
 function applyUiBg(){
   if(!state) return;
   var bg=uiBgState(), b=document.body;
-  var has=(bg.color||bg.image)?true:false;
-  b.classList.toggle('bgcustom', has);
-  if(!bg.color && !bg.image){
-    clearThemeVars();
-    b.style.removeProperty('background');
-    b.style.removeProperty('background-color');
-    b.style.removeProperty('background-image');
-    b.style.removeProperty('background-size');
-    b.style.removeProperty('background-position');
-    b.style.removeProperty('background-attachment');
-    return;
-  }
-  applyThemeVars(bg.color||'#14161c');
-  b.style.backgroundColor = bg.color || 'rgba(20,22,28,.9)';
+  var color=uiBgColor();
+  b.classList.add('bgcustom');
+  applyThemeVars(color);
+  b.style.backgroundColor = color;
+  /* state 里存的是 'idb' 标记（图片本体在 IndexedDB）；这里把真正生效的图取出来 */
   if(bg.image){
-    b.style.backgroundImage='linear-gradient(rgba(13,15,20,.82),rgba(13,15,20,.82)),url("'+bg.image+'")';
-    b.style.backgroundSize='cover'; b.style.backgroundPosition='center'; b.style.backgroundAttachment='fixed';
+    if(String(bg.image).indexOf('data:')===0){
+      /* 老存档：图片直接塞在 state 里，搬进 IndexedDB，别再拖累 localStorage */
+      _bgImgUrl=bg.image;
+      (function(){ var url=bg.image; bg.image='idb'; bg.imgThumb=bg.imgThumb||url; saveStateQuiet(); bgImageSave(url); })();
+    } else if(_bgImgUrl){
+      /* 已经加载好了 */
+    } else {
+      bgImageLoad(function(url){
+        if(url){ _bgImgUrl=url; applyBgImageToBody(); }
+        else { uiBgState().image=null; uiBgState().imgThumb=null; saveStateQuiet(); applyBgImageToBody(); }
+      });
+    }
   } else {
-    // 纯色背景也压一层深色半透明，保证白字可读；卡片等面板再以半透明融入
-    b.style.backgroundImage='linear-gradient(rgba(13,15,20,.66),rgba(13,15,20,.66))';
-    b.style.backgroundSize=''; b.style.backgroundPosition=''; b.style.backgroundAttachment='';
+    _bgImgUrl=null;
   }
+  applyBgImageToBody();
   /* 主题色一变，画布底色立即跟随（地图默认底 / 战斗场景默认底） */
   try{
     if(typeof drawMapCanvas==='function') drawMapCanvas();
@@ -6568,13 +6671,14 @@ function applyUiBg(){
 }
 function refreshBgUI(){
   var bg=uiBgState();
-  var cIn=$('bg-color-input'); if(cIn) cIn.value=bg.color||'#14161c';
-  var hasImg=!!bg.image;
+  var cIn=$('bg-color-input'); if(cIn) cIn.value=uiBgColor();
   var prev=$('bg-img-prev');
-  if(prev) prev.style.display=hasImg?'block':'none';
-  if(hasImg&&prev) prev.style.backgroundImage='url("'+bg.image+'")';
+  if(prev){
+    prev.style.display=_bgImgUrl?'block':'none';
+    if(_bgImgUrl) prev.style.backgroundImage='url("'+_bgImgUrl+'")';
+  }
   document.querySelectorAll('#bgModal .bgsw').forEach(function(btn){
-    btn.classList.toggle('on', (btn.dataset.color||'')===(bg.color||''));
+    btn.classList.toggle('on', (btn.dataset.color||'')===uiBgColor());
   });
 }
 function openBgModal(){
@@ -6585,7 +6689,7 @@ function openBgModal(){
     <div class="modal-body">
       <h4 class="sectiontitle">背景颜色</h4>
       <div class="row" style="gap:6px">
-        ${BG_SWATCHES.map(function(s){return '<button type="button" class="bgsw'+(s[0]===''?'':'')+'" data-color="'+s[0]+'" title="'+esc(s[1])+'" onclick="setBgColor(this.dataset.color)"><span class="bgsample" style="background:'+(s[0]||'radial-gradient(1200px 600px at 80% -10%, #2a2418 0%, #14161c 55%)')+'"></span></button>';}).join('')}
+        ${BG_SWATCHES.map(function(s){return '<button type="button" class="bgsw" data-color="'+s[0]+'" title="'+esc(s[1])+'" onclick="setBgColor(this.dataset.color)"><span class="bgsample" style="background:'+s[0]+'"></span></button>';}).join('')}
       </div>
       <div class="row" style="margin-top:8px;gap:8px">
         <label style="flex-direction:row;align-items:center;gap:6px">自定义
@@ -6595,16 +6699,16 @@ function openBgModal(){
       <h4 class="sectiontitle" style="margin-top:14px">背景图片（可选，自动加深保证文字可读）</h4>
       <div class="row" style="gap:8px">
         <label class="muted" style="flex-direction:row;align-items:center;gap:4px;flex:1">上传图片
-          <input type="file" id="bg-img-file" accept="image/*" style="display:none" onchange="onBgImgFile(event)">
-          <button class="small" onclick="document.getElementById('bg-img-file').click()">📁 选图</button>
+          <input type="file" id="bg-img-file" class="file-hidden" accept="image/*" onchange="onBgImgFile(event)">
+          <span class="btn small btnfile">📁 选图</span>
         </label>
-        ${(function(){ var bg=uiBgState(); return bg.image?'<button class="small danger" onclick="clearBgImage()">清除图片</button>':''; })()}
+        ${(function(){ return uiBgState().image?'<button class="small danger" onclick="clearBgImage()">清除图片</button>':''; })()}
       </div>
       <div id="bg-img-prev" style="display:none;height:110px;background-size:cover;background-position:center;border-radius:10px;border:1px solid var(--line);margin-top:8px"></div>
       <div class="vdiv"></div>
       <div class="row" style="justify-content:space-between">
         <button class="small ghost" onclick="resetBgAll()">↺ 恢复默认背景</button>
-        <span class="hint">设置保存在本机；开启后卡片/顶栏等会自动半透明适配</span>
+        <span class="hint">设置保存在本机，刷新后还在；卡片/顶栏会跟着这套配色一起变</span>
       </div>
     </div></div>`;
   refreshBgUI();
@@ -6613,22 +6717,46 @@ function openBgModal(){
 function setBgColor(hex){
   var bg=uiBgState();
   bg.color=(hex||'').trim();
-  bg.image=bg.image||null;
+  var hit=BG_DEFAULT_THEMES.filter(function(t){ return t.hex===bg.color; })[0];
+  if(hit) bg.def=hit.k;                       /* 点的是默认皮肤，就把它记成默认，别让刷新换掉 */
   saveStateQuiet(); applyUiBg(); refreshBgUI();
   if(bg.color) toast('背景颜色已更新');
 }
 function onBgImgFile(e){
-  var f=e.target.files&&e.target.files[0]; if(!f||!/^image\//.test(f.type)) return;
-  var r=new FileReader();
-  r.onload=function(){
-    var bg=uiBgState(); bg.image=r.result; if(!bg.color) bg.color='';
-    saveState(); applyUiBg(); refreshBgUI(); toast('背景图片已设置');
-  };
-  r.readAsDataURL(f); e.target.value='';
+  var f=e.target.files&&e.target.files[0];
+  e.target.value='';
+  if(!f || !/^image\//.test(f.type||'')) return;
+  bgShrinkImage(f, function(url){
+    if(!url){ toast('这张图片读不出来'); return; }
+    _bgImgUrl=url;
+    var bg=uiBgState(); bg.image='idb'; bg.imgThumb=url;
+    bgImageSave(url, function(ok){
+      try{ saveState(); }catch(err){}
+      applyUiBg(); refreshBgUI();
+      toast(ok?'背景图片已设置（刷新后还在）':'背景图片已设置（本机存储不可用，刷新后可能要重设）');
+    });
+  });
 }
-function clearBgImage(){ var bg=uiBgState(); bg.image=null; saveState(); applyUiBg(); refreshBgUI(); toast('已清除背景图片'); }
-function resetBgAll(){ var bg=uiBgState(); bg.color=''; bg.image=null; saveState(); applyUiBg(); refreshBgUI(); toast('已恢复默认背景'); }
-(function(){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', applyUiBg); else applyUiBg(); })();
+function clearBgImage(){
+  var bg=uiBgState(); bg.image=null; bg.imgThumb=null;
+  bgImageClear(); saveState(); applyUiBg(); refreshBgUI(); toast('已清除背景图片');
+}
+function resetBgAll(){
+  var bg=uiBgState(), t=bgRandomTheme();
+  bg.color=t.hex; bg.def=t.k; bg.image=null; bg.imgThumb=null;
+  bgImageClear(); saveState(); applyUiBg(); refreshBgUI();
+  toast('已恢复默认背景（这次是'+t.name+'）');
+}
+/* 启动时应用一次背景。
+   注意要用 window 上的 DOMContentLoaded：事件先派发到 document 再冒泡到 window，
+   而 initApp 是挂在 window 上的 —— 以前这里挂在 document 上，等于在 state 加载完之前就跑，
+   `if(!state) return;` 直接返回，于是「设好的自定义背景一刷新就没了」。 */
+(function(){
+  function go(){ try{ applyUiBg(); }catch(e){} }
+  if(document.readyState==='loading') window.addEventListener('DOMContentLoaded', go);
+  else go();
+  setTimeout(go, 0);                     /* 兜底：不管谁先谁后，加载完再来一次 */
+})();
 
 /* ---------- 📜 剧本摘要/笔记 与 🎲 骰子：与页面平级的两个悬浮栏目 ---------- */
 var openFloatPanel=null;
@@ -6649,7 +6777,7 @@ function renderNav(){
     b.onclick=function(){ switchTab(t[0]); };
     nav.appendChild(b);
   });
-  nav.appendChild(campaignNameField());
+  ensureCampaignField();
   [['nav-script','📜 剧本/笔记','script'],['nav-dice','🎲 骰子','dice']].forEach(function(x){
     var b=document.createElement('button');
     b.id=x[0]; b.textContent=x[1];
@@ -6670,7 +6798,19 @@ function renderNav(){
     nav.appendChild(b);
   });
 }
-/* 本次团名：放在导航栏正中间，可随时改名；导出人物卡 / 写入调查员经历都会用到它。 */
+/* 本次团名：挂在顶栏「带团妙妙小工具」那一行（窄屏不再把菜单栏挤到换行）。
+   只建一次，之后每次 renderNav 只同步值，免得输入时被重画打断。 */
+function ensureCampaignField(){
+  var slot=$('hcampSlot'); if(!slot) return;
+  if(!$('campaignName')){
+    slot.innerHTML='';
+    slot.appendChild(campaignNameField());
+    return;
+  }
+  var inp=$('campaignName');
+  if(inp && document.activeElement!==inp && inp.value!==campaignName()) inp.value=campaignName();
+}
+/* 本次团名：可随时改名；导出人物卡 / 写入调查员经历都会用到它。 */
 function campaignName(){
   var v=state.ui&&state.ui.campaignName;
   return (v==null?'':String(v)).trim();
@@ -7294,10 +7434,18 @@ function decorTierRoll(){
   for(var i=0;i<DECOR_TIERS.length;i++){ acc+=DECOR_TIERS[i].p; if(r<acc) return DECOR_TIERS[i].k; }
   return 'normal';
 }
+/* 默认开：只有用户自己点「装饰：关」才关（存档里显式 false）。
+   老存档没有这一项时顺手补上 true，保证「装饰默认打开」。 */
 function decorOn(){ return !!(state&&state.ui&&state.ui.decor!==false); }
+function decorEnsureDefault(){
+  if(!state) return;
+  if(!state.ui) state.ui={};
+  if(state.ui.decor==null){ state.ui.decor=true; try{ saveStateQuiet(); }catch(e){} }
+}
 function decorCountFor(vw){ return vw<420?8:(vw<860?11:(vw<1400?15:20)); }
 function applyDecorState(){
   var body=document.body; if(!body) return;
+  decorEnsureDefault();
   body.classList.toggle('decoroff', !decorOn());
   var btn=$('decorToggle');
   if(btn){
@@ -7421,7 +7569,8 @@ function stopDecorBits(){
 }
 (function bootDecor(){
   function start(){ applyDecorState(); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', start);
+  /* 同样要挂在 window 上：挂 document 会赶在 state 加载之前跑（那时只会上成「装饰：关」） */
+  if(document.readyState==='loading') window.addEventListener('DOMContentLoaded', start);
   else start();
   /* 兜底：无论 DOMContentLoaded 与数据兜底谁先跑，都要按最终 state.ui.decor 同步一次 */
   setTimeout(start, 0);
@@ -8953,13 +9102,19 @@ function moduleRestoreStore(cb){
     });
   });
 }
+/* iPhone / iPad 的 Safari 不支持「选文件夹」，那就别显示这个按钮（点了也没反应，反而像坏了） */
+function moduleCanPickFolder(){
+  try{ return ('webkitdirectory' in document.createElement('input')); }catch(e){ return false; }
+}
 function modulePickFile(){ var f=$('moduleFileInput'); if(f) f.click(); }
 function modulePickFolder(){ var f=$('moduleFolderInput'); if(f) f.click(); }
 function onModulePick(ev){
-  var fs=ev.target.files;
-  ev.target.value='';
-  if(!fs || !fs.length) return;
-  moduleAddFiles(fs, function(n){ if(n) toast('已加入 '+n+' 个文件'); });
+  /* 先把 FileList 抄成数组再清空 input：Safari 上直接 input.value='' 会把 files 一起清掉，
+     以前手机端就是这个原因读不到文件。 */
+  var fs=[].slice.call((ev.target&&ev.target.files)||[]);
+  if(ev.target) try{ ev.target.value=''; }catch(e){}
+  if(!fs.length) return;
+  moduleAddFiles(fs, function(n){ if(n) toast('已加入 '+n+' 个文件'); else toast('没读到文件（这个格式先拖到「文件」App 里再选）'); });
 }
 /* 读一个文件 → item（PDF / 图片走 object URL，Word 解析成 HTML，文本直接读） */
 function moduleReadOne(file, cb){
@@ -9117,8 +9272,8 @@ function renderModulePane(pane){
   var head='<div class="sp-head"><b>📖 模组</b>'+
     '<span class="hint">'+(many?('共 '+moduleFiles.length+' 份，点标签页换着看'):'左边照常带团，右边看模组')+'</span>'+
     '<div class="row sp-tools">'+
-      '<button class="small" onclick="modulePickFile()" title="可以一次选多个文件">⬆ 添加文件</button>'+
-      '<button class="small" onclick="modulePickFolder()" title="选一整个文件夹，里面的 PDF / Word / 图片会全部加进来">📁 文件夹</button>'+
+      '<label class="btn small btnfile" for="moduleFileInput" title="可以一次选多个文件（PDF / Word / 图片 / txt）"><span>⬆ 添加文件</span></label>'+
+      (moduleCanPickFolder()?'<label class="btn small btnfile" for="moduleFolderInput" title="选一整个文件夹，里面的 PDF / Word / 图片会全部加进来"><span>📁 文件夹</span></label>':'')+
       (moduleFiles.length?'<button class="small ghost" onclick="moduleClear()" title="从本机清除（不删你自己的文件）">🗑 全部清除</button>':'')+
       '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
     '</div></div>';
@@ -9126,8 +9281,8 @@ function renderModulePane(pane){
   var drop='<div class="sp-drop" id="spDrop">⬇ 把模组文件或<b>整个文件夹</b>拖到这里（PDF · Word · 图片 · txt/md'+
     (moduleFiles.length?'，可以继续加':'')+'）——拖到窗口里任何地方都行</div>';
   pane.innerHTML=head+moduleTabsHTML()+'<div class="sp-body'+(m&&m.kind==='pdf'?' sp-body-fill':'')+'">'+body+drop+'</div>'+
-    '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple style="display:none" onchange="onModulePick(event)">'+
-    '<input type="file" id="moduleFolderInput" webkitdirectory directory multiple style="display:none" onchange="onModulePick(event)">';
+    '<input type="file" id="moduleFileInput" class="file-hidden" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple onchange="onModulePick(event)">'+
+    '<input type="file" id="moduleFolderInput" class="file-hidden" webkitdirectory directory multiple onchange="onModulePick(event)">';
   moduleBindDrop();
   moduleScrollActiveTab();
   moduleFitTabs();
@@ -9228,13 +9383,17 @@ function moduleFitTabs(){
 }
 function moduleBodyHTML(m){
   if(!m){
+    var wide=(function(){ try{ return (window.innerWidth||1200)>900; }catch(e){ return true; } })();
+    var tip=wide ? '把模组拖进来，或点「⬆ 添加文件 / 📁 文件夹」'
+                 : '点上面「⬆ 添加文件」选模组（可以一次选好几个）';
     return '<div class="sp-empty">'+
-      '<p><b>把模组拖进来，或点「⬆ 添加文件 / 📁 文件夹」</b></p>'+
+      '<p><b>'+tip+'</b></p>'+
       '<p class="hint">支持 <b>PDF</b>、<b>Word（.docx）</b>、<b>图片</b>（png / jpg / gif / webp…）、<b>txt / md</b>；'+
       '多文件模组可以一次全加进来，上面会出一排标签页换着看，不用来回换。</p>'+
       '<p class="hint">PDF 用浏览器自带的阅读器（可缩放、可搜）；Word 直接排成网页看（有自己的搜索高亮）；'+
       '图片点一下可以切「适应窗口 / 原始大小」。</p>'+
-      '<p class="hint">文件只存在你自己的浏览器里，刷新后还在，不上传任何服务器。想左右调宽度：拖中间那条细线，双击回到一半一半。</p></div>';
+      '<p class="hint">文件只存在你自己的浏览器里，刷新后还在，不上传任何服务器。'+
+      (wide?'想左右调宽度：拖中间那条细线，双击回到一半一半。':'手机上这一栏会铺满整屏，看完点右上角 ✕ 收起。')+'</p></div>';
   }
   var bar='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span>';
   if(m.kind==='pdf'){
