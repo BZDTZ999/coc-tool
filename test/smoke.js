@@ -718,7 +718,10 @@ const ready = new Promise((res) => {
   const panelHtml = $('activePanel').innerHTML;
   ok('战斗详情头：名字行 + DEX/DB 行 + 状态网格', /combphead/.test(panelHtml) && /cphline/.test(panelHtml) && /cphdex/.test(panelHtml) && /combstates/.test(panelHtml));
   ok('状态按钮 3 个一行、共两行 6 个', d.querySelectorAll('#activePanel .combstates button').length === 6);
-  ok('战斗详情里有“收起”按钮', !!d.querySelector('#activePanel .fs-only'));
+  ok('战斗详情里有“收起”按钮（普通模式也在）', (function(){
+    var b=d.querySelector('#activePanel button[onclick*="selectComb(null)"]');
+    return !!b && !/fs-only/.test(b.className||'') && /收起/.test(b.textContent);
+  })());
 
   // 战斗全屏：点场景空白处收起详情
   w.toggleSceneFs('combat');
@@ -1496,25 +1499,24 @@ const ready = new Promise((res) => {
     var p=w.CoCParser.parseWorkbook(w.XLSX.read(bytes,{type:'array'}));
     return written && (p.customTraits||[]).join(',')==='考古学,钓鱼';
   })());
-  ok('信用评级：改这一格会同时改「信用评级」技能成功率，导出保留卡上公式', (function(){
-    var a=expActor(); a.id='expCredit';
-    a.skills=[{name:'信用评级',total:30,base:0}];
+  ok('详情卡：不再单独列出 信用评级 / 其他资产 / 任意特长（后台读写照旧）', (function(){
+    var a=expActor(); a.id='expNoField';
     S.actors.push(a);
     w.openActorModal(a.id,'pc');
-    var inp=$('am-credit'); inp.value='45%';
-    inp.dispatchEvent(new w.Event('input',{bubbles:true}));
-    var chip=[].slice.call(d.querySelectorAll('#am-skills .skillchip, #am-default-skills .skillchip'))
-      .filter(function(c){ var n=c.querySelector('.sk-name'); return n && n.value==='信用评级'; })[0];
-    var live=!!chip && Number(chip.querySelector('.sk-total').value)===45;
-    w.collectFromModal();
-    var saved=(a.skills||[]).filter(function(s){return s.name==='信用评级';})[0];
-    var inActor=!!saved && saved.total===45;
+    var html=$('actorModal').innerHTML;
+    var gone=!$('am-credit') && !$('am-other-assets') && !$('am-traits') &&
+      html.indexOf('am-credit')<0 && html.indexOf('am-other-assets')<0 && html.indexOf('am-traits')<0;
+    var kept=!!$('am-cash') && !!$('am-currency') && !!$('am-asset-vehicle');
     w.closeActorModal();
+    return gone && kept;
+  })());
+  ok('信用评级：后台读写不变（导出保留卡上公式 + 显示值）', (function(){
+    var a=expActor(); a.id='expCredit';
+    a.skills=[{name:'信用评级',total:45,base:0}]; a.credit='45%';
     var ws=w.XLSX.read(w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes,{type:'array'}).Sheets['人物卡'];
     var wrote=String(ws['B62'].v)==='45%' && !!ws['B62'].f;
-    S.actors=S.actors.filter(function(x){ return x.id!==a.id; });
-    w.saveStateQuiet();
-    return live && inActor && wrote;
+    var p=w.CoCParser.parseWorkbook(w.XLSX.read(w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes,{type:'array'}));
+    return wrote && String(p.assets.credit||'')==='45%';
   })());
 
   /* ---------- 清空本地数据：上传的模组也一起清 ---------- */
@@ -1530,6 +1532,108 @@ const ready = new Promise((res) => {
     w.state=stSave; w.confirmBox=boxSave; w.idbDel=delSave; w.moduleClear=clearSave; w.closeSidePane=closeSave;
     w.saveStateQuiet(); w.switchTab('surveyors');
     return r;
+  })());
+
+
+  /* ---------- 本轮：详情卡删项 / 载具四列 / 战斗收起详情 / NPC 模板与属性 ---------- */
+  ok('载具·时间速度：一行四个（窄屏自动减列）', (function(){
+    var flat=cssText.replace(/\s+/g,'');
+    return /\.smallgrid\{[^}]*repeat\(4,/.test(flat) &&
+      /@media\(max-width:1240px\)\{\.smallgrid\{grid-template-columns:repeat\(3,/.test(flat) &&
+      /\.smallgrid>\.listitem\{margin-bottom:0/.test(flat);
+  })());
+
+  w.switchTab('combat');
+  ok('战斗：详情面板自带「收起 ✕」，普通模式也能收（不再只在全屏出现）', (function(){
+    var parts=S.combat.participants||(S.combat.participants=[]);
+    var before=parts.length;
+    parts.push({id:'t-part-x', actorId:null, kind:'npc', name:'临时测试', side:'敌人', dex:50, state:'正常',
+      hp:{cur:5,max:5}, san:{cur:5,max:5}, mp:{cur:1,max:1}, armor:0, attrs:{}, skills:[], weapons:[], inv:[], spells:[], bagItems:[]});
+    w.selectComb('t-part-x');
+    var btns=[].slice.call($('activePanel').querySelectorAll('button')).filter(function(b){ return /收起/.test(b.textContent); });
+    var btn=btns[0];
+    var good=!!btn && !/fs-only/.test(btn.className||'') && /selectComb\(null\)/.test(btn.getAttribute('onclick')||'');
+    w.selectComb(null);
+    parts.length=before;
+    return good;
+  })());
+
+  ok('NPC：一级「类别」+ 二级「具体条目」下拉，选类别只列该类模板', (function(){
+    w.switchTab('npcs');
+    var cat=$('npcTplCat'), sel=$('npcTplSel');
+    if(!cat || !sel) return false;
+    var catN=cat.options.length, allN=sel.options.length;
+    cat.value='动物'; w.npcTplOptions();
+    var animalN=sel.options.length;
+    cat.value='神话生物'; w.npcTplOptions();
+    var mythN=sel.options.length;
+    cat.value=''; w.npcTplOptions();
+    var backN=sel.options.length;
+    return catN>=3 && allN>=20 && animalN>0 && animalN<allN && mythN>animalN && backN===allN;
+  })());
+
+  ok('NPC：属性按规则书骰式现掷（人类 5 的倍数、每次都不一样）', (function(){
+    var cat=$('npcTplCat'); if(cat) cat.value='';
+    w.npcTplOptions();
+    $('npcTplSel').value='警察';
+    var before=S.actors.length, seen=[], sample=null;
+    for(var i=0;i<8;i++){
+      w.genNpcFromTpl();
+      var a=S.actors[S.actors.length-1];
+      if(!sample) sample=a;
+      seen.push(a.attrs.str);
+    }
+    var mult5=seen.every(function(v){ return v>0 && v%5===0; });
+    var varies=seen.filter(function(v,i){ return seen.indexOf(v)===i; }).length>1;
+    var sane=!!sample && sample.hp.max===Math.floor((sample.attrs.con+sample.attrs.siz)/10);
+    S.actors.length=before;
+    w.closeActorModal();
+    return mult5 && varies && sane;
+  })());
+  ok('NPC：骰式解析认得 3D6×5 / 2D6+6×5，也认得定值与老区间', (function(){
+    var a=w.rollDiceExpr('3D6×5'), b=w.rollDiceExpr('2D6+6×5'), c=w.rollDiceExpr(30), d=w.rollDiceExpr([40,60]);
+    return a>=15 && a<=90 && a%5===0 && b>=40 && b<=90 && b%5===0 && c===30 && d>=40 && d<=60;
+  })());
+
+  ok('NPC 小卡：KP 自己填的备注优先显示（没填时显示模板提示）', (function(){
+    w.switchTab('npcs');
+    $('npcTplCat').value=''; w.npcTplOptions();
+    $('npcTplSel').value='市民';
+    var before=S.actors.length;
+    w.genNpcFromTpl();
+    var npc=S.actors[S.actors.length-1];
+    var mini=function(){ return $('npcList').querySelector('.npcmini[data-id="'+npc.id+'"] .npc-note'); };
+    var tplNote='普通市民，警觉但不善战斗';
+    var showsTpl=!!mini() && mini().textContent.indexOf(tplNote)===0;
+    $('am-npc-back').value='KP 自己写的备注';
+    w.saveActorModal();
+    var showsMine=!!mini() && mini().textContent.indexOf('KP 自己写的备注')>=0;
+    S.actors.length=before;
+    w.closeActorModal(); w.renderNpcs();
+    return showsTpl && showsMine;
+  })());
+
+  ok('NPC 小卡：阵营下拉不会顶出卡片（min-width:0 + max-width:100%）', (function(){
+    var html=w.npcMiniHTML({id:'x',kind:'npc',name:'测试',side:'中立',count:1,
+      attrs:{},hp:{cur:1,max:1},san:{cur:1,max:1},mp:{cur:1,max:1},skills:[],spells:[],weapons:[],inv:[],bagItems:[]});
+    var flat=cssText.replace(/\s+/g,'');
+    return /class="npc-side"/.test(html) && /min-width:0/.test(html) &&
+      /\.npcmini\.npc-side\{[^}]*min-width:0[^}]*max-width:100%/.test(flat);
+  })());
+
+  ok('说明文字：已删除的那几条不再出现', (function(){
+    var all=d.documentElement.innerHTML;
+    var gone=[
+      '阅读器自带的目录 / 页码 / Ctrl+F 都能用',
+      '数量=该队在场景中的个体数',
+      '载入预设地图时里程已按当前比例尺算好',
+      '油桶·爆炸·椅子·餐桌·雕像等',
+      '点一行看详情',
+      '原版 · 全书',
+      '头像上显示 HP/SAN/MP',
+      '力量~幸运 · 保存后同步档案与小卡'
+    ];
+    return gone.every(function(t){ return all.indexOf(t)<0; });
   })());
 
   console.log('\n==== RESULT: ' + passed + ' passed, ' + failures.length + ' failed ====');

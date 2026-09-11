@@ -182,7 +182,13 @@ footer{display:flex;flex-direction:column;align-items:center;gap:0}
 .side-盟友{color:#8fd69b;border-color:rgba(143,214,155,.4)}
 .side-中立{color:#c9c6b8;border-color:rgba(201,198,184,.4)}
 .side-敌人{color:#e08f8f;border-color:rgba(224,143,143,.4)}
-.smallgrid{display:grid;gap:8px}
+/* 「载具 / 时间速度」那张表：一行四个，窄屏自动减列（以前一行一个，太占地方） */
+.smallgrid{display:grid;gap:8px;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1240px){.smallgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.smallgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.smallgrid{grid-template-columns:1fr}}
+.smallgrid>.listitem{margin-bottom:0;padding:6px 8px;min-width:0}
+.smallgrid .vehrow input,.smallgrid select{min-width:0}
 .vehrow{display:grid;grid-template-columns:1fr 70px;gap:6px;align-items:center}
 .bars3{display:flex;flex-direction:column;gap:3px;margin-top:6px}
 .bars3 .brow{display:grid;grid-template-columns:44px 1fr 44px;gap:6px;align-items:center;font-size:11px;font-family:var(--mono)}
@@ -280,6 +286,9 @@ canvas#mapCanvas{width:auto;height:auto;display:block}
 @media(max-width:1250px){.npcminigrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
 .npcmini{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:0}
 .npcmini:hover{border-color:var(--acc)}
+/* 阵营下拉：让它老实待在卡片里（以前窄列时长选项会把卡片顶破） */
+.npcmini .row{min-width:0}
+.npcmini .npc-side{flex:1 1 0;min-width:0;max-width:100%}
 .npcmini .bars3 .brow{grid-template-columns:34px 1fr 34px;font-size:10px}
 .npcmini .bar{height:6px}
 .npccol+.npccol{border-left:1px solid var(--line);padding-left:10px}
@@ -2113,47 +2122,7 @@ var TABS = [
 
 /* ================= 调查员 / NPC 库 ================= */
 var pendingFile = null, pendingParse = null, currentActorModal = null, editingActorId = null;
-var NPC_TPL = [
-  {name:'市民', race:'人类', def:2, attrs:{str:[35,50],con:[35,55],pow:[40,60],dex:[35,55],app:[40,60],siz:[40,60],int:[40,60],edu:[40,60],luck:[20,50]},
-   skills:{斗殴:[20,35],闪避:[20,30],潜行:[10,30]}, weapons:[{name:'拳头',type:'徒手',skill:'斗殴',damage:'1D3+DB',ammoCap:0}],
-   hpNote:'普通市民', armor:0, mov:8},
-  {name:'警察', race:'人类', def:2, attrs:{str:[50,70],con:[50,70],pow:[40,60],dex:[45,65],app:[40,60],siz:[55,75],int:[45,65],edu:[50,70],luck:[30,60]},
-   skills:{斗殴:[45,60],手枪:[45,60],闪避:[30,45],侦查:[40,60],聆听:[40,60]}, weapons:[{name:'.38 左轮',type:'枪械',skill:'手枪',damage:'1D10',ammoCap:6},{name:'警棍',type:'钝器',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   hpNote:'装备警用左轮与警棍', armor:1, mov:8},
-  {name:'暴徒', race:'人类', def:2, attrs:{str:[60,85],con:[55,80],pow:[35,55],dex:[45,60],app:[35,55],siz:[60,80],int:[35,55],edu:[30,55],luck:[20,45]},
-   skills:{斗殴:[50,70],手枪:[40,60],恐吓:[40,60],闪避:[30,45]}, weapons:[{name:'棒球棍',type:'钝器',skill:'斗殴',damage:'1D8+DB',ammoCap:0},{name:'.45 手枪',type:'枪械',skill:'手枪',damage:'1D10+2',ammoCap:7}],
-   hpNote:'街头打手', armor:1, mov:8},
-  {name:'邪教徒', race:'人类', def:2, attrs:{str:[40,60],con:[40,60],pow:[60,80],dex:[40,60],app:[40,60],siz:[45,65],int:[50,70],edu:[40,60],luck:[10,30]},
-   skills:{斗殴:[35,50],匕首:[40,60],克苏鲁神话:[5,25],闪避:[25,40]}, weapons:[{name:'仪式匕首',type:'刀剑',skill:'匕首',damage:'1D4+DB',ammoCap:0}],
-   hpNote:'疯狂但组织化', armor:0, mov:8},
-  {name:'雇佣兵', race:'人类', def:3, attrs:{str:[65,85],con:[60,80],pow:[45,65],dex:[55,70],app:[40,60],siz:[60,80],int:[40,60],edu:[50,70],luck:[20,45]},
-   skills:{斗殴:[55,75],步枪:[50,70],手枪:[55,70],闪避:[40,55],侦查:[40,60]}, weapons:[{name:'.45 手枪',type:'枪械',skill:'手枪',damage:'1D10+2',ammoCap:7},{name:'战斗步枪',type:'枪械',skill:'步枪',damage:'2D6+2',ammoCap:5}],
-   hpNote:'战场老手', armor:2, mov:8},
-  {name:'医生', race:'人类', def:2, attrs:{str:[35,55],con:[40,60],pow:[50,70],dex:[40,60],app:[45,65],siz:[45,65],int:[65,85],edu:[75,90],luck:[20,50]},
-   skills:{急救:[60,80],医学:[50,75],斗殴:[20,35],闪避:[25,40],心理学:[40,60]}, weapons:[{name:'手术刀',type:'刀剑',skill:'斗殴',damage:'1D4',ammoCap:0}],
-   hpNote:'会急救但不太能打', armor:0, mov:8},
-  {name:'教授/研究员', race:'人类', def:2, attrs:{str:[30,50],con:[30,55],pow:[50,75],dex:[35,55],app:[40,60],siz:[45,65],int:[70,90],edu:[75,95],luck:[20,50]},
-   skills:{图书馆使用:[60,85],神秘学:[50,80],说服:[40,65],闪避:[20,35],斗殴:[20,30]}, weapons:[{name:'手杖',type:'钝器',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   hpNote:'学者，命比较脆', armor:0, mov:8},
-  {name:'深潜者', race:'神话生物', def:3, attrs:{str:60,con:60,pow:60,dex:50,app:35,siz:60,int:50,edu:55,luck:0},
-   skills:{斗殴:30,闪避:30,游泳:70,恐吓:40}, weapons:[{name:'利爪',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
-   hpNote:'蛙状两栖生物，水陆两栖', armor:1, mov:8, note:'可呼唤更多同伴，陆上行动迟缓'},
-  {name:'食尸鬼', race:'神话生物', def:3, attrs:{str:60,con:60,pow:50,dex:60,app:25,siz:60,int:45,edu:30,luck:0},
-   skills:{斗殴:30,闪避:35,潜行:50,撕咬:30}, weapons:[{name:'牙与爪',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
-   hpNote:'食尸鬼以腐肉为食', armor:0, mov:8, note:'地下钻行，嗅觉追踪'},
-  {name:'米-戈', race:'神话生物', def:3, attrs:{str:40,con:70,pow:60,dex:50,app:30,siz:60,int:75,edu:70,luck:0},
-   skills:{斗殴:30,闪避:30,飞行:60}, weapons:[{name:'钳爪',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
-   hpNote:'飞行真菌生物，可致脑损伤', armor:0, mov:6, note:'飞行速度 20 码/轮，携带飞行时更高'},
-  {name:'夜魇', race:'神话生物', def:3, attrs:{str:60,con:80,pow:50,dex:60,app:20,siz:70,int:35,edu:20,luck:0},
-   skills:{斗殴:50,闪避:40,攫抓:50}, weapons:[{name:'攫抓与咬',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   hpNote:'无面有角，喜攫人飞行', armor:0, mov:8, note:'常成群出现'},
-  {name:'修格斯', race:'神话生物', def:5, attrs:{str:85,con:90,pow:75,dex:55,app:15,siz:95,int:50,edu:50,luck:0},
-   skills:{斗殴:70,闪避:35}, weapons:[{name:'碾压',type:'钝击',skill:'斗殴',damage:'1D10+DB',ammoCap:0}],
-   hpNote:'巨大原生质怪，拟态一切', armor:0, mov:6, note:'免疫常规武器劈砍'},
-  {name:'星之眷属', race:'神话生物', def:4, attrs:{str:100,con:100,pow:80,dex:60,app:50,siz:120,int:60,edu:60,luck:0},
-   skills:{斗殴:60,闪避:35}, weapons:[{name:'巨爪',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   hpNote:'与克苏鲁同形的巨型眷属', armor:5, mov:8, note:'恐怖外形每轮可能造成 SAN 损失'}
-];
+/* NPC 模板表在 10-npc-gen.js（这里原来那份是被覆盖的死数据，已删） */
 
 
 function randBetween(min,max){ return Math.round(min + Math.random()*(max-min)); }
@@ -2993,13 +2962,13 @@ function scaffoldSections(){
   <div class="card">
     <h3>👤 NPC 与敌人库（模板生成、数值/数量/阵营全可改）</h3>
     <div class="row">
+      <label>类别<select id="npcTplCat" onchange="npcTplOptions()"></select></label>
       <label>模板<select id="npcTplSel"></select></label>
       <label style="max-width:110px">数量<input type="number" id="npcTplCount" value="1" min="1" style="width:80px"></label>
       <label>默认阵营<select id="npcTplSide"></select></label>
       <button onclick="genNpcFromTpl()" class="primary">🎲 按模板生成</button>
       <button onclick="openActorModal(null,'npc')">✏️ 手动新建 NPC</button>
     </div>
-    <div class="hint" style="margin-top:6px">数量=该队在场景中的个体数；阵营决定 NPC 在战斗场景里默认站左（调查员/盟友）还是站右（中立/敌人）。</div>
   </div>
   <div id="npcList"></div>`;
   // 地图：二级菜单栏（地图 / 角色 / 素材 / 载具）点开就用、再点收起；地图本体占满整个宽度
@@ -3080,7 +3049,7 @@ function scaffoldSections(){
           <button class="fsicon" onclick="zoomReset()" title="重置缩放">↺</button>
         </div>
       </div>
-      <div id="mapHint" class="hint" style="margin-top:4px">“📍 添加地点”后在图上落点；“🖱 拖动地点”只动地点并实时重算相连道路的 km；“🧍 移动角色/摆件”只挪角色和素材，不会碰到地点与道路。载入预设地图时里程已按当前比例尺算好。</div>
+      <div id="mapHint" class="hint" style="margin-top:4px">“📍 添加地点”后在图上落点；“🖱 拖动地点”只动地点并实时重算相连道路的 km；“🧍 移动角色/摆件”只挪角色和素材，不会碰到地点与道路。</div>
     </div>
     <div id="routeCard"></div>
     <div class="grid2">
@@ -3129,11 +3098,11 @@ function scaffoldSections(){
       <div class="battlecanvas-wrap"><canvas id="battleCanvas" width="940" height="500"></canvas></div>
       <div class="row" style="justify-content:space-between;margin-top:4px">
         <span class="scene-side side-调查员">调查员阵营 ← 左</span>
-        <span class="hint">点上方「👥 添加角色」加入 / 移出；头像上显示 HP/SAN/MP</span>
+        <span class="hint">点上方「👥 添加角色」加入 / 移出</span>
         <span class="scene-side side-敌人">→ 敌人阵营 右</span>
       </div>
       <details class="ccard" data-coll="bprops" id="battlePropsCard">
-        <summary><b>🎨 场景道具</b><span class="muted" style="font-weight:400">（点击展开/收回；油桶·爆炸·椅子·餐桌·雕像等 60+）</span></summary>
+        <summary><b>🎨 场景道具</b><span class="muted" style="font-weight:400">（点击展开/收回）</span></summary>
         <div class="hint" style="margin-bottom:6px">点图标即放进战斗场景，之后可直接拖动到任意位置；选中后点「删除选中道具」可移除；也支持上传自己的图片当道具。</div>
         <div class="proplist" id="battlePropPalette"></div>
         <input type="file" id="battlePropFile" accept="image/*" multiple style="display:none" onchange="onBattlePropFile(event)">
@@ -3145,7 +3114,7 @@ function scaffoldSections(){
     </div>
     <div class="card" id="activePanel"><div class="hint">点场景里的头像或成员行，这里出现 HP/攻击/道具面板。</div></div>
     <div class="card" id="combatMemberCard">
-      <div class="panel-head"><b>🪖 战斗成员</b><span class="hint">点一行看详情；左边「加入/移出」在「👥 添加角色」里</span></div>
+      <div class="panel-head"><b>🪖 战斗成员</b></div>
       <div class="tblwrap"><table id="combatTable"><thead><tr>
         <th style="width:26px"></th><th>成员</th><th>阵营</th><th class="num">敏捷</th><th>生命</th>
         <th>SAN</th><th>MP</th><th>状态</th><th style="width:128px"></th>
@@ -3161,14 +3130,14 @@ function scaffoldSections(){
       <span class="hint">第一次打开会自动弹这个说明，这里可以随时重看。</span>
     </div>
     <h4>📥 导入调查员卡</h4><p>把受支持的 4 种卡中任意一张填好的 .xlsx 拖进「调查员」页的虚线框（或点击选择），解析后直接入库。姓名 / 玩家 / 职业 / 属性 / 全部技能 / 武器表 / 随身物品（卡右侧「背包格」那一列也并进同一张清单）/ 法术 / 现金与资产表 / 背景 9 条 + 正文 / 卡右上角「任意特长」/ 调查员经历都会读进来。武器行「只选了类型、名字留空」也照样读（用类型当显示名）。</p>
-    <h4>✏️ 编辑调查员</h4><p>点小卡右下角 ✏️：属性、护甲（可挑参考防具预置）、HP/SAN/MP、技能（高于基础值的算「已加点」排上面，其余收进折叠区）、武器、背包 / 随身用品、剧情道具、法术、资产、背景、任意特长（每行一条，写回卡右上角那几格）、经历都在这里改。武器「类型」可从卡里「武器列表」下拉选，选完技能 / 伤害 / 射程 / 弹匣会自动填好；改「信用评级」时技能里的「信用评级」成功率会跟着一起改。</p>
-    <h4>⬇ 导出人物卡</h4><p>小卡右下角 ⬇ 导出卡：先按“最初导入那张卡”算出这次团的变化，写进卡里的「调查员经历」（模组名用顶部「🎪 本次团名」，技能变化写进「成长」列），再把整张卡填进<b>你导入时用的那张模板</b>下载，文件名是 团名-角色名.xlsx。卡里原本的公式都会保留：武器“选类型自动算”、成功率按使用技能取值（查不到该技能时保留公式 + 原卡数值，不留空、不乱码）、信用评级查表、本职★ 查表、<b>属性雷达图</b>；自定义子技能名按卡里「类别 + 具体名」两格分段写回；中式职业扩展那张卡的本职技能按它自己的职业表算。</p>
+    <h4>✏️ 编辑调查员</h4><p>点小卡右下角 ✏️：属性、护甲（可挑参考防具预置）、HP/SAN/MP、技能（高于基础值的算「已加点」排上面，其余收进折叠区）、武器、背包 / 随身用品、剧情道具、法术、资产、背景、经历都在这里改。武器「类型」可从卡里「武器列表」下拉选，选完技能 / 伤害 / 射程 / 弹匣会自动填好。</p>
+    <h4>⬇ 导出人物卡</h4><p>小卡右下角 ⬇ 导出卡：先按“最初导入那张卡”算出这次团的变化，写进卡里的「调查员经历」（模组名用顶部「🎪 本次团名」，技能变化写进「成长」列），再把整张卡填进<b>你导入时用的那张模板</b>下载，文件名是 团名-角色名.xlsx。卡里原本的公式都会保留：武器“选类型自动算”、成功率按使用技能取值（查不到该技能时保留公式 + 原卡数值，不留空、不乱码）、信用评级、本职★ 查表、<b>属性雷达图</b>；自定义子技能名按卡里「类别 + 具体名」两格分段写回；卡右上角「任意特长」照原样读写（详情卡里不单独列出）；中式职业扩展那张卡的本职技能按它自己的职业表算。</p>
     <h4>📊 属性雷达图</h4><p>点小卡右下角 ✏️ 打开详情，属性 3×3 右边就是雷达图（力量 / 体质 / 体型 / 敏捷 / 外貌 / 智力 / 意志 / 教育 / 幸运），和卡里「附表」那张九维图同一套数，改属性会实时重画。</p>
     <h4>📖 模组（右半屏）</h4><p>菜单栏点「📖 模组」：左边照常带团，右半边用来放模组。支持 Word（.docx）、PDF、txt / md，直接拖进去就行。Word 会连着表格 / 图片 / 标题一起排成网页看（还能调字号），上方搜索框回车可高亮命中、↑ ↓ 逐条跳转；PDF 用浏览器自带阅读器（可缩放、可搜）。文件存在本机浏览器里（刷新后还在），不会上传。中间的细条可拖动调整左右宽度，双击回一半一半。</p>
-    <h4>📚 规则书（右半屏）</h4><p>菜单栏点「📚 规则书」：整套 COC7 核心规则书（318 页）按<b>原版 PDF</b>放在右半屏，表格 / 颜色 / 流程图和纸书一模一样，正文里 PDF 自带的目录 / 页码 / Ctrl+F 都能用；左边还有 <b>书签目录</b>（点条目直接跳页）和 <b>全文搜索</b>（输入关键词回车，命中页会列出来，点一下就跳过去），目录可以「☰ 收起目录 / 展开目录」。</p>
+    <h4>📚 规则书（右半屏）</h4><p>菜单栏点「📚 规则书」：整套 COC7 核心规则书按<b>原版 PDF</b>放在右半屏，表格 / 颜色 / 流程图和纸书一模一样；左边有 <b>书签目录</b>（点条目直接跳页）和 <b>全文搜索</b>（输入关键词回车，命中页会列出来，点一下就跳过去），目录可以「☰ 收起目录 / 展开目录」。</p>
     <h4>🏷 便签标签</h4><p>调查员页最左侧可自定义标签（emoji、任意长度、可改色、可删）。点选标签再点小卡即可贴上，也能直接把标签拖到小卡上；便签可挪到别的卡，点 ✕ 移除，每张小卡最多 6 个。</p>
-    <h4>👤 NPC 与敌人</h4><p>选模板（神话生物已按规则书预填标志性法术）→ 设数量 → 生成，之后还能改阵营与数值。四列小卡（盟友 / 中立 / 敌人 / 其他）可拖拽排序，列名点标题就能改。</p>
-    <h4>🗺️ 地图与路线</h4><p>上面一条二级菜单栏：🗺 地图（切地图 / 载入预设 / 缩放 / 比例尺 / 换底图）· 🧍 地图角色 · 🧩 摆件素材 · 🚗 载具·时间速度（点开就用，再点收起，一次只开一个），下面整幅地图占满宽度，再往下是路线时间计算 / 地点 / 道路路径（一张地图都没有时也还在，会提示你「＋ 新建地图」）。三个工具：🖱 拖动地点（相连道路的 km 实时重算）· 🧍 移动角色/摆件（只挪角色和素材，不动地点与道路）· 📍 添加地点。比例尺「1格 = __ km」→ 设；切换预设地图时里程已按当前比例尺算好。</p>
+    <h4>👤 NPC 与敌人</h4><p>先选<b>类别</b>（人类 / 动物 / 神话生物，默认「全部」），再选<b>具体条目</b>，设数量后生成 —— 属性按规则书的骰式现掷（如 CON 2D6×5），所以每次生成都是新的随机值；神话生物已按规则书预填标志性法术。之后还能改阵营与数值。四列小卡（盟友 / 中立 / 敌人 / 其他）可拖拽排序，列名点标题就能改。</p>
+    <h4>🗺️ 地图与路线</h4><p>上面一条二级菜单栏：🗺 地图（切地图 / 载入预设 / 缩放 / 比例尺 / 换底图）· 🧍 地图角色 · 🧩 摆件素材 · 🚗 载具·时间速度（点开就用，再点收起，一次只开一个），下面整幅地图占满宽度，再往下是路线时间计算 / 地点 / 道路路径（一张地图都没有时也还在，会提示你「＋ 新建地图」）。三个工具：🖱 拖动地点（相连道路的 km 实时重算）· 🧍 移动角色/摆件（只挪角色和素材，不动地点与道路）· 📍 添加地点。比例尺「1格 = __ km」→ 设。</p>
     <h4>⚔️ 战斗</h4><p>上面一条二级菜单栏：👥 添加角色（把调查员 / NPC / 临时成员加入战斗）· ⚔️ 战斗桌（本次战斗标题 / 下一轮 / 清空，点开就用、再点收起），下面战斗场景占满宽度，再往下依次是战斗成员表、行动日志；点角色后详情浮在屏幕最左侧。成员自动左右排布（可拖动）；攻击不用先选目标，直接打对面第一个还站着的成员；改 HP/SAN/MP/护甲或实时增删武器 / 道具 / 法术都会同步回角色档案与小卡，也可点「↻ 同步档案」。状态徽标与 🎨 场景道具素材库都在这一页。</p>
     <h4>🎲 骰子与 SAN 检定</h4><p>顶部「📜 剧本/笔记」「🎲 骰子」是悬浮栏目，不切页面、一次只开一个。骰子可指定角色与技能（技能按数值从高到低排，已加点带 ☆），1D100 自动给出普通 / 困难 / 极难 / 大成功 / 大失败；SAN 页可做理智检定、损失掷骰、INT 判定与疯狂症状，损失会自动写回角色。</p>
     <h4>⛶ 场景全屏</h4><p>地图 / 战斗场景都有「⛶ 全屏」（Esc 或右下角 ↩ 返回退出）。全屏后右下角只剩图标菜单，其中 📋调查员 / 👤NPC与敌人 / 📜剧本笔记 / 🎲骰子 是压在场景上的半屏浮层，一次只开一个。战斗里点角色，详情都浮在屏幕最左侧（普通模式也一样）；地图全屏时工具栏缩到左下角。</p>
@@ -3318,86 +3287,254 @@ function renderSurveyors(){
   if(pendingParse) renderImportPreview();
 }
 
-/* ---------- NPC 模板（含阵营/头像） ---------- */
+/* ---------- NPC 模板（属性按规则书的骰式，每次生成现掷；阵营/头像/技能/武器按规则书整理） ----------
+   属性一律写成骰式（如 '3D6×5'、'2D6+6×5'、'1D6×5'），生成时现掷一次 —— 所以每只怪都是新的随机值，
+   人类与常见怪物掷出来通常是 5 的倍数（规则书的 ×5 就是这么来的）。数值是便于 KP 快速上手的近似值。 */
+function npcAttrs(over){
+  var o={str:'3D6×5',con:'3D6×5',pow:'3D6×5',dex:'3D6×5',app:'3D6×5',siz:'2D6+6×5',int:'2D6+6×5',edu:'2D6+6×5',luck:'3D6×5'};
+  if(over) Object.keys(over).forEach(function(k){ o[k]=over[k]; });
+  return o;
+}
+/* 掷一条属性骰：'3D6×5'、'2D6+6×5'、'1D6'、'2D6+2' 都认；也兼容老的 [最小,最大] 与定值 */
+function rollDiceExpr(expr){
+  if(expr==null) return null;
+  if(typeof expr==='number') return expr;
+  if(Array.isArray(expr)) return randBetween(expr[0],expr[1]);
+  var s=String(expr).replace(/\s+/g,'').replace(/[xX✕*]/g,'×').replace(/[−–—]/g,'-');
+  var m=s.match(/^(\d*)D(\d+)([+-]\d+)?(?:×(\d+))?$/i);
+  if(!m) return num(expr)||0;
+  var n=parseInt(m[1]||'1',10), faces=parseInt(m[2],10), mod=parseInt(m[3]||'0',10), mul=parseInt(m[4]||'1',10);
+  var sum=0; for(var i=0;i<n;i++) sum+=Math.floor(Math.random()*faces)+1;
+  return (sum+mod)*mul;
+}
 NPC_TPL = [
+  /* ===== 人类：普通人与行当 ===== */
   {name:'市民', race:'人类', side:'中立', avatar:'🧔', def:2,
-   attrs:{str:[35,50],con:[35,55],pow:[40,60],dex:[35,55],app:[40,60],siz:[40,60],int:[40,60],edu:[40,60],luck:[20,50]},
+   attrs:npcAttrs({}),
    skills:{斗殴:[20,35],闪避:[20,30],潜行:[10,30]}, weapons:[{name:'拳头',type:'徒手',skill:'斗殴',damage:'1D3+DB',ammoCap:0}],
    armor:0, mov:8, note:'普通市民，警觉但不善战斗'},
   {name:'警察', race:'人类', side:'盟友', avatar:'👮', def:2,
-   attrs:{str:[50,70],con:[50,70],pow:[40,60],dex:[45,65],app:[40,60],siz:[55,75],int:[45,65],edu:[50,70],luck:[30,60]},
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',siz:'2D6+6×5',dex:'3D6×5'}),
    skills:{斗殴:[45,60],手枪:[45,60],闪避:[30,45],侦查:[40,60],聆听:[40,60]}, weapons:[{name:'.38 左轮',type:'枪械',skill:'手枪',damage:'1D10',ammoCap:6},{name:'警棍',type:'钝器',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
    armor:1, mov:8, note:'警用左轮与警棍'},
-  {name:'医生', race:'人类', side:'盟友', avatar:'🧑⚕️', def:2,
-   attrs:{str:[35,55],con:[40,60],pow:[50,70],dex:[40,60],app:[45,65],siz:[45,65],int:[65,85],edu:[75,90],luck:[20,50]},
+  {name:'医生', race:'人类', side:'盟友', avatar:'🧑‍⚕️', def:2,
+   attrs:npcAttrs({int:'2D6+6×5',edu:'2D6+6×5'}),
    skills:{急救:[60,80],医学:[50,75],斗殴:[20,35],闪避:[25,40],心理学:[40,60]}, weapons:[{name:'手术刀',type:'刀剑',skill:'斗殴',damage:'1D4',ammoCap:0}],
    armor:0, mov:8, note:'会急救但不太能打'},
-  {name:'教授/研究员', race:'人类', side:'盟友', avatar:'🧑🎓', def:2,
-   attrs:{str:[30,50],con:[30,55],pow:[50,75],dex:[35,55],app:[40,60],siz:[45,65],int:[70,90],edu:[75,95],luck:[20,50]},
+  {name:'教授/研究员', race:'人类', side:'盟友', avatar:'🧑‍🎓', def:2,
+   attrs:npcAttrs({str:'2D6×5',con:'2D6×5',int:'3D6×5',edu:'3D6×5'}),
    skills:{图书馆使用:[60,85],神秘学:[50,80],说服:[40,65],闪避:[20,35],斗殴:[20,30]}, weapons:[{name:'手杖',type:'钝器',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
    armor:0, mov:8, note:'学者，命比较脆'},
-  {name:'暴徒', race:'人类', side:'敌人', avatar:'🕵️', def:2,
-   attrs:{str:[60,85],con:[55,80],pow:[35,55],dex:[45,60],app:[35,55],siz:[60,80],int:[35,55],edu:[30,55],luck:[20,45]},
+  {name:'记者', race:'人类', side:'中立', avatar:'📰', def:2,
+   attrs:npcAttrs({int:'3D6×5',edu:'3D6×5'}),
+   skills:{侦查:[45,65],图书馆使用:[40,60],话术:[35,55],心理学:[30,50],闪避:[25,40]}, weapons:[{name:'相机（当钝器）',type:'钝器',skill:'斗殴',damage:'1D4+DB',ammoCap:0}],
+   armor:0, mov:8, note:'鼻子灵、跑得快，随身带闪光灯'},
+  {name:'侦探', race:'人类', side:'中立', avatar:'🕵️', def:2,
+   attrs:npcAttrs({int:'3D6×5',edu:'3D6×5'}),
+   skills:{侦查:[55,75],心理学:[45,65],聆听:[40,60],潜行:[35,55],手枪:[35,55]}, weapons:[{name:'.32 短管左轮',type:'枪械',skill:'手枪',damage:'1D8',ammoCap:6}],
+   armor:0, mov:8, note:'私家侦探，善于跟人'},
+  {name:'学生', race:'人类', side:'中立', avatar:'🎓', def:2,
+   attrs:npcAttrs({str:'2D6×5',con:'2D6×5',siz:'2D6+6×5',int:'3D6×5',edu:'2D6×5'}),
+   skills:{图书馆使用:[40,60],母语:[50,70],闪避:[25,40],聆听:[25,45]}, weapons:[{name:'拳头',type:'徒手',skill:'斗殴',damage:'1D3+DB',ammoCap:0}],
+   armor:0, mov:8, note:'年轻、知道得多、容易上头'},
+  {name:'流浪汉', race:'人类', side:'中立', avatar:'🧥', def:2,
+   attrs:npcAttrs({app:'2D6×5',siz:'2D6+6×5',edu:'2D6×5'}),
+   skills:{潜行:[35,55],聆听:[30,50],侦查:[25,45],话术:[20,40]}, weapons:[{name:'铁管',type:'钝器',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:0, mov:8, note:'街头见得多，什么都不会说'},
+  {name:'码头工人', race:'人类', side:'中立', avatar:'⚓', def:2,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',siz:'2D6+6×5',int:'2D6×5'}),
+   skills:{斗殴:[35,55],攀爬:[40,60],游泳:[35,55],投掷:[30,50]}, weapons:[{name:'撬棍',type:'钝器',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:1, mov:8, note:'膀大腰圆，讲义气'},
+  {name:'出租车司机', race:'人类', side:'中立', avatar:'🚕', def:2,
+   attrs:npcAttrs({int:'2D6×5',edu:'2D6×5'}),
+   skills:{汽车驾驶:[50,70],侦查:[30,50],话术:[30,50],闪避:[25,40]}, weapons:[{name:'扳手',type:'钝器',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:0, mov:8, note:'城市的耳朵，知道哪条路最短'},
+  {name:'拳击手', race:'人类', side:'中立', avatar:'🥊', def:2,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',siz:'2D6+6×5',app:'2D6×5',int:'2D6×5',edu:'2D6×5'}),
+   skills:{斗殴:[60,80],闪避:[50,70],恐吓:[35,55],投掷:[35,55]}, weapons:[{name:'拳套',type:'徒手',skill:'斗殴',damage:'1D3+DB',ammoCap:0}],
+   armor:0, mov:9, note:'靠拳头吃饭，出手快'},
+  {name:'士兵', race:'人类', side:'中立', avatar:'🪖', def:3,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',dex:'3D6×5',edu:'2D6+6×5'}),
+   skills:{步枪:[45,70],手枪:[40,60],斗殴:[40,60],闪避:[35,55],潜行:[30,50]}, weapons:[{name:'军用步枪',type:'枪械',skill:'步枪',damage:'2D6+4',ammoCap:5},{name:'刺刀',type:'刀剑',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:2, mov:8, note:'受过训练，纪律性强'},
+  {name:'牧师', race:'人类', side:'盟友', avatar:'⛪', def:2,
+   attrs:npcAttrs({str:'2D6×5',edu:'2D6+6×5'}),
+   skills:{说服:[45,65],心理学:[40,60],图书馆使用:[35,55],历史:[30,50]}, weapons:[{name:'手杖',type:'钝器',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:0, mov:8, note:'信仰坚定，但别指望他懂神秘学'},
+  {name:'暴徒', race:'人类', side:'敌人', avatar:'🔪', def:2,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',siz:'2D6+6×5',pow:'2D6×5',int:'2D6×5',edu:'2D6×5'}),
    skills:{斗殴:[50,70],手枪:[40,60],恐吓:[40,60],闪避:[30,45]}, weapons:[{name:'棒球棍',type:'钝器',skill:'斗殴',damage:'1D8+DB',ammoCap:0},{name:'.45 手枪',type:'枪械',skill:'手枪',damage:'1D10+2',ammoCap:7}],
    armor:1, mov:8, note:'街头打手，色厉内荏'},
+  {name:'黑帮老大', race:'人类', side:'敌人', avatar:'🕴️', def:3,
+   attrs:npcAttrs({str:'3D6×5',pow:'3D6×5',int:'3D6×5',edu:'2D6+6×5'}),
+   skills:{斗殴:[50,70],手枪:[55,75],恐吓:[60,80],话术:[50,70],心理学:[40,60]}, weapons:[{name:'.38 左轮',type:'枪械',skill:'手枪',damage:'1D10',ammoCap:6}],
+   armor:1, mov:8, note:'手下多，一般不自己动手'},
   {name:'邪教徒', race:'人类', side:'敌人', avatar:'🧙', def:2,
-   attrs:{str:[40,60],con:[40,60],pow:[60,80],dex:[40,60],app:[40,60],siz:[45,65],int:[50,70],edu:[40,60],luck:[10,30]},
+   attrs:npcAttrs({pow:'3D6×5',int:'2D6+6×5',edu:'2D6+6×5',luck:'1D6×5'}),
    skills:{斗殴:[35,50],匕首:[40,60],克苏鲁神话:[5,25],闪避:[25,40]}, weapons:[{name:'仪式匕首',type:'刀剑',skill:'匕首',damage:'1D4+DB',ammoCap:0}],
    armor:0, mov:8, note:'疯狂但组织化'},
   {name:'雇佣兵', race:'人类', side:'中立', avatar:'🤠', def:3,
-   attrs:{str:[65,85],con:[60,80],pow:[45,65],dex:[55,70],app:[40,60],siz:[60,80],int:[40,60],edu:[50,70],luck:[20,45]},
+   attrs:npcAttrs({str:'4D6×5',con:'3D6×5',dex:'3D6×5',int:'2D6+6×5',edu:'2D6+6×5'}),
    skills:{斗殴:[55,75],步枪:[50,70],手枪:[55,70],闪避:[40,55],侦查:[40,60]}, weapons:[{name:'.45 手枪',type:'枪械',skill:'手枪',damage:'1D10+2',ammoCap:7},{name:'战斗步枪',type:'枪械',skill:'步枪',damage:'2D6+2',ammoCap:5}],
    armor:2, mov:8, note:'战场老手，给钱办事'},
+  /* ===== 动物（规则书附录「动物」） ===== */
+  {name:'狗', race:'动物', side:'中立', avatar:'🐕', def:2,
+   attrs:npcAttrs({str:'2D6×5',con:'2D6×5',pow:'2D6×5',dex:'2D6+6×5',app:'1D6×5',siz:'1D6×5',int:'1D6×5',edu:0,luck:0}),
+   skills:{撕咬:[35,55],闪避:[30,50],聆听:[50,70],追踪:[40,65]}, weapons:[{name:'撕咬',type:'爪',skill:'撕咬',damage:'1D6+DB',ammoCap:0}],
+   armor:0, mov:9, note:'看家护院，听主人指挥'},
+  {name:'狼', race:'动物', side:'敌人', avatar:'🐺', def:2,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',pow:'3D6×5',dex:'2D6+6×5',app:'1D6×5',siz:'2D6×5',int:'1D6×5',edu:0,luck:0}),
+   skills:{撕咬:[40,60],闪避:[35,55],潜行:[40,60],追踪:[45,65]}, weapons:[{name:'撕咬',type:'爪',skill:'撕咬',damage:'1D8+DB',ammoCap:0}],
+   armor:0, mov:9, note:'成群出没，先扑最弱的'},
+  {name:'熊', race:'动物', side:'敌人', avatar:'🐻', def:3,
+   attrs:npcAttrs({str:'6D6×5',con:'4D6×5',pow:'3D6×5',dex:'2D6×5',app:'1D6×5',siz:'6D6×5',int:'1D6×5',edu:0,luck:0}),
+   skills:{斗殴:[45,65],闪避:[25,40],攀爬:[35,55]}, weapons:[{name:'爪击/熊抱',type:'爪',skill:'斗殴',damage:'1D8+DB',ammoCap:0}],
+   armor:2, mov:8, note:'一巴掌能拍碎车窗'},
+  {name:'马', race:'动物', side:'中立', avatar:'🐎', def:2,
+   attrs:npcAttrs({str:'5D6×5',con:'4D6×5',pow:'2D6×5',dex:'2D6×5',app:'2D6×5',siz:'6D6×5',int:'1D6×5',edu:0,luck:0}),
+   skills:{踢踏:[35,55],闪避:[25,40],聆听:[35,55]}, weapons:[{name:'踢踏/踩踏',type:'钝击',skill:'踢踏',damage:'1D6+DB',ammoCap:0}],
+   armor:0, mov:10, note:'受惊会狂奔，骑手要过「骑术」'},
+  {name:'猫', race:'动物', side:'中立', avatar:'🐈', def:2,
+   attrs:npcAttrs({str:'1D6×5',con:'1D6×5',pow:'2D6×5',dex:'2D6+6×5',app:'2D6×5',siz:'1D6×5',int:'1D6×5',edu:0,luck:0}),
+   skills:{抓咬:[25,45],闪避:[55,75],潜行:[60,80],攀爬:[60,80]}, weapons:[{name:'抓咬',type:'爪',skill:'抓咬',damage:'1D3',ammoCap:0}],
+   armor:0, mov:9, note:'无声无息，夜里最能作怪'},
+  {name:'大猩猩', race:'动物', side:'敌人', avatar:'🦍', def:2,
+   attrs:npcAttrs({str:'5D6×5',con:'3D6×5',pow:'2D6×5',dex:'2D6+6×5',app:'1D6×5',siz:'4D6×5',int:'1D6×5',edu:0,luck:0}),
+   skills:{斗殴:[45,65],闪避:[30,45],攀爬:[50,70]}, weapons:[{name:'撕咬/捶打',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:1, mov:8, note:'力气惊人，真打起来很危险'},
+  {name:'毒蛇', race:'动物', side:'敌人', avatar:'🐍', def:2,
+   attrs:npcAttrs({str:'1D6×5',con:'1D6×5',pow:'2D6×5',dex:'3D6×5',app:'1D6×5',siz:'1D6×5',int:'1D6×5',edu:0,luck:0}),
+   skills:{咬击:[40,60],闪避:[40,60],潜行:[50,70]}, weapons:[{name:'毒牙',type:'刺',skill:'咬击',damage:'1D3+毒',ammoCap:0}],
+   armor:0, mov:8, note:'咬中要过 CON，失败按规则书吃毒伤'},
+  {name:'鲨鱼', race:'动物', side:'敌人', avatar:'🦈', def:3,
+   attrs:npcAttrs({str:'6D6×5',con:'5D6×5',pow:'3D6×5',dex:'3D6×5',app:'1D6×5',siz:'6D6×5',int:'1D6×5',edu:0,luck:0}),
+   skills:{撕咬:[55,75],闪避:[30,45]}, weapons:[{name:'撕咬',type:'爪',skill:'撕咬',damage:'2D6+DB',ammoCap:0}],
+   armor:1, mov:9, note:'血腥味一起，甩不掉'},
+  /* ===== 神话生物（规则书第十四章；数值是可以随手调的近似值） ===== */
   {name:'深潜者', race:'神话生物', side:'敌人', avatar:'🐸', def:3,
-   attrs:{str:60,con:60,pow:60,dex:50,app:35,siz:60,int:50,edu:55,luck:0},
+   attrs:npcAttrs({str:'4D6×5',con:'3D6×5',pow:'3D6×5',dex:'3D6×5',app:'1D6×5',siz:'3D6×5',int:'3D6×5',edu:'2D6×5',luck:0}),
    skills:{斗殴:30,闪避:30,游泳:70,恐吓:40}, weapons:[{name:'利爪',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
    spells:['深潜者联络术'], armor:1, mov:8, note:'两栖蛙状生物，可呼唤同伴'},
   {name:'食尸鬼', race:'神话生物', side:'敌人', avatar:'🧟', def:3,
-   attrs:{str:60,con:60,pow:50,dex:60,app:25,siz:60,int:45,edu:30,luck:0},
+   attrs:npcAttrs({str:'4D6×5',con:'3D6×5',pow:'3D6×5',dex:'3D6×5',app:'1D6×5',siz:'3D6×5',int:'3D6×5',edu:'2D6×5',luck:0}),
    skills:{斗殴:30,闪避:35,潜行:50}, weapons:[{name:'牙与爪',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
    spells:['食尸鬼联络术'], armor:0, mov:8, note:'以腐肉为食，地下钻行'},
   {name:'米-戈', race:'神话生物', side:'敌人', avatar:'🦟', def:3,
-   attrs:{str:40,con:70,pow:60,dex:50,app:30,siz:60,int:75,edu:70,luck:0},
+   attrs:npcAttrs({str:'2D6×5',con:'4D6×5',pow:'3D6×5',dex:'3D6×5',app:'1D6×5',siz:'3D6×5',int:'4D6×5',edu:'4D6×5',luck:0}),
    skills:{斗殴:30,闪避:30,飞行:60}, weapons:[{name:'钳爪',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
    spells:['米-戈联络术'], armor:0, mov:6, note:'飞行真菌生物'},
   {name:'夜魇', race:'神话生物', side:'敌人', avatar:'👾', def:3,
-   attrs:{str:60,con:80,pow:50,dex:60,app:20,siz:70,int:35,edu:20,luck:0},
+   attrs:npcAttrs({str:'4D6×5',con:'4D6×5',pow:'3D6×5',dex:'4D6×5',app:'1D6×5',siz:'4D6×5',int:'2D6×5',edu:'1D6×5',luck:0}),
    skills:{斗殴:50,闪避:40,攫抓:50}, weapons:[{name:'攫抓与咬',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
    armor:0, mov:8, note:'无面有角，常成群出现'},
   {name:'修格斯', race:'神话生物', side:'敌人', avatar:'🫧', def:5,
-   attrs:{str:85,con:90,pow:75,dex:55,app:15,siz:95,int:50,edu:50,luck:0},
+   attrs:npcAttrs({str:'8D6×5',con:'8D6×5',pow:'4D6×5',dex:'3D6×5',app:'1D6×5',siz:'10D6×5',int:'3D6×5',edu:'2D6×5',luck:0}),
    skills:{斗殴:70,闪避:35}, weapons:[{name:'碾压',type:'钝击',skill:'斗殴',damage:'1D10+DB',ammoCap:0}],
    spells:['外神仆役召唤、束缚术'], armor:0, mov:6, note:'巨大原生质怪，拟态一切'},
   {name:'星之眷属', race:'神话生物', side:'敌人', avatar:'🌊', def:4,
-   attrs:{str:100,con:100,pow:80,dex:60,app:50,siz:120,int:60,edu:60,luck:0},
+   attrs:npcAttrs({str:'8D6×5',con:'8D6×5',pow:'4D6×5',dex:'4D6×5',app:'2D6×5',siz:'8D6×5',int:'3D6×5',edu:'2D6×5',luck:0}),
    skills:{斗殴:60,闪避:35}, weapons:[{name:'巨爪',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   spells:['克苏鲁的星之眷族联络术'], armor:5, mov:8, note:'恐怖外形'}
+   spells:['克苏鲁的星之眷族联络术'], armor:5, mov:8, note:'恐怖外形'},
+  {name:'拜亚基', race:'神话生物', side:'敌人', avatar:'🦇', def:3,
+   attrs:npcAttrs({str:'4D6×5',con:'4D6×5',pow:'3D6×5',dex:'4D6×5',app:'1D6×5',siz:'6D6×5',int:'2D6×5',edu:'1D6×5',luck:0}),
+   skills:{斗殴:45,闪避:35,恐吓:40}, weapons:[{name:'爪与咬',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   spells:['拜亚基召唤、束缚术'], armor:0, mov:8, note:'可飞越星际的翼兽；陆上笨拙，飞行灵活。'},
+  {name:'炎之精', race:'神话生物', side:'敌人', avatar:'🔥', def:3,
+   attrs:npcAttrs({str:'1D6×5',con:'2D6×5',pow:'3D6×5',dex:'4D6×5',app:'1D6×5',siz:'1D6×5',int:'2D6×5',edu:'1D6×5',luck:0}),
+   skills:{斗殴:30,闪避:60}, weapons:[{name:'烈焰之触',type:'火焰',skill:'斗殴',damage:'1D6+灼烧',ammoCap:0}],
+   spells:['炎之精召唤、束缚术'], armor:0, mov:9, note:'火焰聚成的星间生物，免疫常规物理。'},
+  {name:'星之精', race:'神话生物', side:'敌人', avatar:'🌌', def:4,
+   attrs:npcAttrs({str:'4D6×5',con:'4D6×5',pow:'3D6×5',dex:'3D6×5',app:'1D6×5',siz:'4D6×5',int:'3D6×5',edu:'2D6×5',luck:0}),
+   skills:{斗殴:45,闪避:35,潜行:60}, weapons:[{name:'无形触须吸血',type:'触须',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   spells:['星之精召唤、束缚术'], armor:0, mov:9, note:'肉眼几乎不可见，靠近才显出血肉。'},
+  {name:'巨噬蠕虫', race:'神话生物', side:'敌人', avatar:'🐛', def:6,
+   attrs:npcAttrs({str:'8D6×5',con:'6D6×5',pow:'4D6×5',dex:'1D6×5',app:'1D6×5',siz:'12D6×5',int:'2D6×5',edu:'1D6×5',luck:0}),
+   skills:{斗殴:80,闪避:10}, weapons:[{name:'碾压',type:'钝击',skill:'斗殴',damage:'3D10+DB',ammoCap:0}],
+   armor:0, mov:5, note:'地下巨虫，所到之处地陷如城。'},
+  {name:'飞水螅', race:'神话生物', side:'敌人', avatar:'🌪️', def:5,
+   attrs:npcAttrs({str:'6D6×5',con:'6D6×5',pow:'4D6×5',dex:'3D6×5',app:'1D6×5',siz:'8D6×5',int:'4D6×5',edu:'2D6×5',luck:0}),
+   skills:{斗殴:60,闪避:35}, weapons:[{name:'触手挥击',type:'触须',skill:'斗殴',damage:'2D8+DB',ammoCap:0}],
+   spells:['飞水螅联络术'], armor:0, mov:10, note:'半物质性的古代掠食者，风与狂啸相伴。'},
+  {name:'空鬼', race:'神话生物', side:'敌人', avatar:'🕳️', def:3,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',pow:'3D6×5',dex:'3D6×5',app:'1D6×5',siz:'3D6×5',int:'3D6×5',edu:'2D6×5',luck:0}),
+   skills:{斗殴:40,闪避:35,潜行:55}, weapons:[{name:'钩爪',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:0, mov:8, note:'穿梭维度的灰色掠食者，能突然现身。'},
+  {name:'恐怖猎手', race:'神话生物', side:'敌人', avatar:'🐉', def:4,
+   attrs:npcAttrs({str:'4D6×5',con:'4D6×5',pow:'4D6×5',dex:'4D6×5',app:'1D6×5',siz:'5D6×5',int:'3D6×5',edu:'1D6×5',luck:0}),
+   skills:{斗殴:55,闪避:35,恐吓:60}, weapons:[{name:'利爪与撕咬',type:'爪',skill:'斗殴',damage:'1D8+DB',ammoCap:0}],
+   armor:0, mov:10, note:'被禁忌咒文引来的飞行猎犬状恐怖。'},
+  {name:'蛇人', race:'神话生物', side:'敌人', avatar:'🐍', def:3,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',pow:'3D6×5',dex:'4D6×5',app:'3D6×5',siz:'3D6×5',int:'4D6×5',edu:'4D6×5',luck:0}),
+   skills:{斗殴:50,闪避:50,潜行:60,神秘学:50}, weapons:[{name:'爪击/淬毒刃',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
+   armor:1, mov:8, note:'古老退化种族，常拟人形混入社会。'},
+  {name:'夏盖虫族', race:'神话生物', side:'敌人', avatar:'🦗', def:3,
+   attrs:npcAttrs({str:'1D6×5',con:'2D6×5',pow:'4D6×5',dex:'4D6×5',app:'1D6×5',siz:'1D6×5',int:'4D6×5',edu:'2D6×5',luck:0}),
+   skills:{斗殴:30,闪避:60,恐吓:40}, weapons:[{name:'针刺',type:'刺',skill:'斗殴',damage:'1D3+毒',ammoCap:0}],
+   armor:0, mov:8, note:'夏盖星昆虫，成群出现并寄生宿主。'},
+  {name:'月兽', race:'神话生物', side:'敌人', avatar:'🫧', def:4,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',pow:'3D6×5',dex:'3D6×5',app:'1D6×5',siz:'3D6×5',int:'4D6×5',edu:'2D6×5',luck:0}),
+   skills:{斗殴:45,闪避:30,恐吓:50}, weapons:[{name:'触手抽打',type:'触须',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:0, mov:8, note:'夜之梦境的巨蛞蝓状骑手，乘坐夜魇。'},
+  {name:'黑山羊幼崽', race:'神话生物', side:'敌人', avatar:'🌿', def:5,
+   attrs:npcAttrs({str:'8D6×5',con:'8D6×5',pow:'6D6×5',dex:'4D6×5',app:'1D6×5',siz:'10D6×5',int:'4D6×5',edu:'2D6×5',luck:0}),
+   skills:{斗殴:70,闪避:25}, weapons:[{name:'巨蹄践踏/触手',type:'钝击',skill:'斗殴',damage:'1D10+DB',ammoCap:0}],
+   armor:2, mov:8, note:'黑暗母神的后裔，多肢巨兽。'},
+  {name:'沼泽人', race:'神话生物', side:'敌人', avatar:'🌫️', def:3,
+   attrs:npcAttrs({str:'3D6×5',con:'3D6×5',pow:'3D6×5',dex:'3D6×5',app:'1D6×5',siz:'3D6×5',int:'3D6×5',edu:'1D6×5',luck:0}),
+   skills:{斗殴:45,闪避:35,潜行:70,游泳:60}, weapons:[{name:'沼泽巨掌',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:0, mov:8, note:'湿地里拖人下水的烂泥状生物。'},
+  {name:'廷达洛斯猎犬', race:'神话生物', side:'敌人', avatar:'📐', def:3,
+   attrs:npcAttrs({str:'2D6×5',con:'3D6×5',pow:'3D6×5',dex:'4D6×5',app:'1D6×5',siz:'2D6×5',int:'3D6×5',edu:'1D6×5',luck:0}),
+   skills:{斗殴:45,闪避:50,潜行:60}, weapons:[{name:'利齿与舌',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
+   armor:0, mov:9, note:'从任何角度都能扑来，只走直线抄近路。'},
+  {name:'古老者', race:'神话生物', side:'敌人', avatar:'🦑', def:3,
+   attrs:npcAttrs({str:'4D6×5',con:'4D6×5',pow:'4D6×5',dex:'3D6×5',app:'1D6×5',siz:'4D6×5',int:'4D6×5',edu:'4D6×5',luck:0}),
+   skills:{斗殴:50,闪避:30,科学:60,历史:60}, weapons:[{name:'触手/爪',type:'触须',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
+   armor:2, mov:8, note:'南极冰原下的桶状古族，会用奇异科技。'},
+  {name:'钻地魔虫', race:'神话生物', side:'敌人', avatar:'🪱', def:5,
+   attrs:npcAttrs({str:'8D6×5',con:'8D6×5',pow:'4D6×5',dex:'2D6×5',app:'1D6×5',siz:'10D6×5',int:'3D6×5',edu:'2D6×5',luck:0}),
+   skills:{斗殴:70,闪避:20}, weapons:[{name:'碾压与吞噬',type:'钝击',skill:'斗殴',damage:'2D6+DB',ammoCap:0}],
+   armor:3, mov:4, note:'地下的庞然巨物，靠近会引发地震。'}
 ];
+/* 模板下拉：一级选「类别」，二级选具体条目（默认「全部」把所有条目列在一起） */
 function npcTplOptions(){
   var sel=$('npcTplSel'); if(!sel) return;
-  var groups={};
-  NPC_TPL.forEach(function(t){ (groups[t.race]=groups[t.race]||[]).push(t); });
-  sel.innerHTML=Object.keys(groups).map(function(g){
-    return '<optgroup label="'+esc(g)+'">'+groups[g].map(function(t){ return '<option value="'+esc(t.name)+'">'+esc(t.name)+'</option>'; }).join('')+'</optgroup>';
-  }).join('');
+  var cats=[], groups={};
+  NPC_TPL.forEach(function(t){ if(cats.indexOf(t.race)<0) cats.push(t.race); (groups[t.race]=groups[t.race]||[]).push(t); });
+  var catSel=$('npcTplCat');
+  if(catSel){
+    var keep=catSel.value||'';
+    var want='<option value="">全部（'+NPC_TPL.length+'）</option>'+cats.map(function(c){
+      return '<option value="'+esc(c)+'">'+esc(c)+'（'+groups[c].length+'）</option>';
+    }).join('');
+    if(catSel.innerHTML!==want){ catSel.innerHTML=want; catSel.value=(cats.indexOf(keep)>=0)?keep:''; }
+  }
+  var cur=(catSel&&catSel.value&&groups[catSel.value])?groups[catSel.value]:NPC_TPL;
+  var list=cur.map(function(t){ return {name:t.name, race:t.race}; });
+  var prev=sel.value;
+  if(sel.options.length!==list.length || [].slice.call(sel.options).some(function(o,i){ return o.value!==list[i].name; })){
+    sel.innerHTML=list.map(function(t){ return '<option value="'+esc(t.name)+'">'+esc(t.name)+'</option>'; }).join('');
+  }
+  if(list.some(function(t){ return t.name===prev; })) sel.value=prev;
+  else if(list.length) sel.value=list[0].name;
   var sideSel=$('npcTplSide');
   if(sideSel && !sideSel.options.length){
     sideSel.innerHTML='<option value="">跟随模板(推荐)</option>'+['盟友','中立','敌人'].map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
   }
-  var selMain=$('npcTplSel');
-  if(selMain && sideSel){ selMain.onchange=function(){ sideSel.value=''; }; }
+  if(sel && sideSel){ sel.onchange=function(){ sideSel.value=''; }; }
 }
 function genNpcFromTpl(){
-  var name=$('npcTplSel').value;
+  var name=$('npcTplSel')?$('npcTplSel').value:'';
   var tpl=NPC_TPL.filter(function(t){return t.name===name;})[0];
   if(!tpl){ toast('请先选模板'); return; }
   var cnt=Math.max(1,Math.round(num($('npcTplCount').value))||1);
   var side=$('npcTplSide')&&$('npcTplSide').value?$('npcTplSide').value:(tpl.side||'敌人');
   if(side==='调查员') side='盟友';
+  /* 属性按模板的骰式现掷一次：每只都是新的随机值（规则书里 CON 2D6×5 这类就掷 2D6×5） */
   var attrs={};
   ['str','con','pow','dex','app','siz','int','edu','luck'].forEach(function(k){
-    var v=tpl.attrs[k];
-    attrs[k]=Array.isArray(v)?randBetween(v[0],v[1]):v;
+    var v=rollDiceExpr(tpl.attrs[k]);
+    attrs[k]=Math.max(0,Math.round(v==null?0:v));
   });
   var hpMax=Math.max(1,Math.floor((attrs.con+attrs.siz)/10));
   var skills=[],weapons=[];
@@ -3411,7 +3548,7 @@ function genNpcFromTpl(){
   var spells=(tpl.spells||[]).map(function(nm){ return spellFromName(nm); });
   var actor={
     id:uid('npc'), kind:'npc', count:cnt, side:side,
-    template:(tpl.race==='神话生物'?'神话生物·':'人类·')+tpl.name,
+    template:(tpl.race==='神话生物'?'神话生物·':(tpl.race==='动物'?'动物·':'人类·'))+tpl.name,
     name:tpl.name+(cnt>1?' ×'+cnt:''), note:tpl.note||'',
     avatar:{preset:tpl.avatar||defaultAvatarForActor('npc',side), custom:null},
     attrs:attrs, hp:{cur:hpMax,max:hpMax}, mp:{cur:Math.floor(attrs.pow/5),max:Math.floor(attrs.pow/5)},
@@ -3694,7 +3831,7 @@ function renderMapVehicles(){
     var opts='<option value="">— 不指定 —</option>'+actorsOnMap.map(function(a){
       return '<option value="'+a.id+'"'+(v.assign===a.id?' selected':'')+'>'+esc(a.name)+'</option>';
     }).join('');
-    return `<div class="listitem" style="padding:6px 8px;margin-bottom:6px">
+    return `<div class="listitem vehcard">
       <div class="vehrow">
         <input type="text" value="${esc(v.name)}" data-i="${i}" data-k="name" onchange="onVehInput(this)" title="名称">
         <input type="number" value="${v.kmh}" data-i="${i}" data-k="kmh" onchange="onVehInput(this)" min="0" title="km/h">
@@ -4535,53 +4672,7 @@ function collectSpellsFromModal(m, a){
   });
 }
 
-/* ---------- B. 神话生物补充（按你规则书第十四章命名；数值为便于 KP 快速参考的可调近似值） ---------- */
-NPC_TPL = NPC_TPL.concat([
-  {name:'拜亚基', race:'神话生物', side:'敌人', avatar:'🦇', def:3,
-   attrs:{str:[65,85],con:[50,70],pow:[45,65],dex:[55,75],app:[25,40],siz:[80,110],int:[30,50],edu:[20,40],luck:0},
-   skills:{斗殴:45,闪避:35,恐吓:40}, weapons:[{name:'爪与咬',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   spells:['拜亚基召唤、束缚术'], armor:0, mov:8, note:'可飞越星际的翼兽；陆上笨拙，飞行灵活。'},
-  {name:'炎之精', race:'神话生物', side:'敌人', avatar:'🔥', def:3,
-   attrs:{str:[15,25],con:[25,40],pow:[50,70],dex:[70,85],app:[10,15],siz:[15,25],int:[35,55],edu:[10,20],luck:0},
-   skills:{斗殴:30,闪避:60}, weapons:[{name:'烈焰之触',type:'火焰',skill:'斗殴',damage:'1D6+灼烧',ammoCap:0}],
-   spells:['炎之精召唤、束缚术'], armor:0, mov:9, note:'火焰聚成的星间生物，免疫常规物理。'},
-  {name:'星之精', race:'神话生物', side:'敌人', avatar:'🌌', def:4,
-   attrs:{str:[70,95],con:[60,85],pow:[50,70],dex:[50,70],app:[5,10],siz:[70,95],int:[45,65],edu:[20,40],luck:0},
-   skills:{斗殴:45,闪避:35,潜行:60}, weapons:[{name:'无形触须吸血',type:'触须',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   spells:['星之精召唤、束缚术'], armor:0, mov:9, note:'肉眼几乎不可见，靠近才显出血肉。'},
-  {name:'巨噬蠕虫', race:'神话生物', side:'敌人', avatar:'🐛', def:6,
-   attrs:{str:200,con:160,pow:80,dex:30,app:1,siz:300,int:10,edu:10,luck:0},
-   skills:{斗殴:80,闪避:10}, weapons:[{name:'碾压',type:'钝击',skill:'斗殴',damage:'3D10+DB',ammoCap:0}],
-   armor:0, mov:5, note:'地下巨虫，所到之处地陷如城。'},
-  {name:'飞水螅', race:'神话生物', side:'敌人', avatar:'🌪️', def:5,
-   attrs:{str:150,con:150,pow:80,dex:60,app:5,siz:200,int:70,edu:50,luck:0},
-   skills:{斗殴:60,闪避:35}, weapons:[{name:'触手挥击',type:'触须',skill:'斗殴',damage:'2D8+DB',ammoCap:0}],
-   spells:['飞水螅联络术'], armor:0, mov:10, note:'半物质性的古代掠食者，风与狂啸相伴。'},
-  {name:'空鬼', race:'神话生物', side:'敌人', avatar:'🕳️', def:3,
-   attrs:{str:60,con:55,pow:50,dex:50,app:5,siz:60,int:60,edu:40,luck:0},
-   skills:{斗殴:40,闪避:35,潜行:55}, weapons:[{name:'钩爪',type:'爪',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   armor:0, mov:8, note:'穿梭维度的灰色掠食者，能突然现身。'},
-  {name:'恐怖猎手', race:'神话生物', side:'敌人', avatar:'🐉', def:4,
-   attrs:{str:[80,120],con:[80,110],pow:[60,80],dex:[60,80],app:[5,15],siz:[90,130],int:[50,70],edu:[20,40],luck:0},
-   skills:{斗殴:55,闪避:35,恐吓:60}, weapons:[{name:'利爪与撕咬',type:'爪',skill:'斗殴',damage:'1D8+DB',ammoCap:0}],
-   armor:0, mov:10, note:'被禁忌咒文引来的飞行猎犬状恐怖。'},
-  {name:'蛇人', race:'神话生物', side:'敌人', avatar:'🐍', def:3,
-   attrs:{str:60,con:60,pow:55,dex:70,app:45,siz:60,int:65,edu:60,luck:0},
-   skills:{斗殴:50,闪避:50,潜行:60,神秘学:50}, weapons:[{name:'爪击/淬毒刃',type:'爪',skill:'斗殴',damage:'1D6',ammoCap:0}],
-   armor:1, mov:8, note:'古老退化种族，常拟人形混入社会。'},
-  {name:'夏盖虫族', race:'神话生物', side:'敌人', avatar:'🦗', def:3,
-   attrs:{str:[20,30],con:[35,45],pow:[55,75],dex:[60,80],app:[5,10],siz:[20,30],int:[65,85],edu:[30,50],luck:0},
-   skills:{斗殴:30,闪避:60,恐吓:40}, weapons:[{name:'针刺',type:'刺',skill:'斗殴',damage:'1D3+毒',ammoCap:0}],
-   armor:0, mov:8, note:'夏盖星昆虫，成群出现并寄生宿主。'},
-  {name:'月兽', race:'神话生物', side:'敌人', avatar:'🫧', def:4,
-   attrs:{str:[60,85],con:[60,85],pow:[50,70],dex:[50,70],app:[5,15],siz:[60,85],int:[60,80],edu:[40,60],luck:0},
-   skills:{斗殴:45,闪避:30,恐吓:50}, weapons:[{name:'触手抽打',type:'触须',skill:'斗殴',damage:'1D6+DB',ammoCap:0}],
-   armor:0, mov:8, note:'夜之梦境的巨蛞蝓状骑手，乘坐夜魇。'},
-  {name:'黑山羊幼崽', race:'神话生物', side:'敌人', avatar:'🌿', def:5,
-   attrs:{str:150,con:150,pow:110,dex:70,app:5,siz:200,int:80,edu:60,luck:0},
-   skills:{斗殴:70,闪避:25}, weapons:[{name:'巨蹄践踏/触手',type:'钝击',skill:'斗殴',damage:'1D10+DB',ammoCap:0}],
-   armor:2, mov:8, note:'黑暗母神的后裔，多肢巨兽。'}
-]);
+/* 神话生物模板表都在 10-npc-gen.js（这里原来那份 concat 的重复数据已删，避免两处维护）。 */
 
 /* ---------- C. 调查员卡：紧凑信息+右上头像+HP/SAN/MP/法术+DB/武器+剧情道具 ---------- */
 /* 调查员经历 → “跑过几个团” → 小卡外框等级：
@@ -4710,11 +4801,11 @@ function npcMiniHTML(a){
           <b class="nm" style="font-size:12.5px">${esc(a.name)}</b>
           <span class="sidebadge side-${esc(s)}">${esc(s)}</span>
         </div>
-        <div class="sub npc-note" style="font-size:11px">${esc((a.note||a.notes||'').slice(0,46))}</div>
+        <div class="sub npc-note" style="font-size:11px">${esc((a.notes||a.note||'').slice(0,46))}</div>
       </div>
     </div>
     <div class="row" style="gap:4px;margin-top:5px;align-items:center">
-      <select style="flex:1;font-size:11px;padding:1px 4px" onchange="quickSetNpcSide('${a.id}',this)">
+      <select class="npc-side" style="flex:1 1 0;min-width:0;font-size:11px;padding:1px 4px" onchange="quickSetNpcSide('${a.id}',this)">
         <option value="">阵营…</option>
         ${SIDES.filter(function(x){return x!=='调查员';}).map(function(x){return '<option value="'+x+'"'+(s===x?' selected':'')+'>'+x+'</option>';}).join('')}
         <option value="__custom__">✎ 自定义阵营…</option>
@@ -4984,8 +5075,6 @@ function openActorModal(id, kind){
       <div class="row">
         <label>现金<input type="number" id="am-cash" value="${a.cash||0}" style="width:120px"></label>
         <label>货币<input type="text" id="am-currency" value="${esc(a.currency||'美元')}" style="width:120px"></label>
-        <label>信用评级<input type="text" id="am-credit" value="${esc(a.credit||'')}" placeholder="如 5%/2%/1%" style="width:150px" oninput="onCreditInput(this)" title="改这里 → 卡里「信用评级」技能的成功率会自动跟着改（导出时也写回卡里）"></label>
-        <label>其他资产<input type="text" id="am-other-assets" value="${esc(a.otherAssets||'')}" placeholder="如 50" style="width:110px"></label>
       </div>
       <div class="row" style="margin-top:6px">
         <span class="hint" style="align-self:center">其他资产表：</span>
@@ -4998,7 +5087,6 @@ function openActorModal(id, kind){
       <label style="margin-top:6px">资产详述<textarea rows="2" id="am-assets-detail">${esc(a.assetsDetail||'')}</textarea></label>
       ${a.kind==='pc'?'<h4 class="sectiontitle">📜 背景故事（拆条 + 正文小段）</h4>':''}
       ${a.kind==='pc'?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">'+histHTML+'</div>':'<div class="vdiv"></div><label>背景备注<textarea id="am-hist-appearance" rows="2" style="display:none"></textarea><textarea rows="2" id="am-npc-back">'+esc(a.notes||a.note||'')+'</textarea></label>'}
-      <label style="margin-top:8px" title="人物卡右上角「任意特长」那几格（自由文本，一格一条）">任意特长（每行一条）<textarea rows="2" id="am-traits">${esc((a.customTraits||[]).join('\n'))}</textarea></label>
       ${a.kind==='pc'?'<label style="margin-top:8px">背景故事正文（小段文字）<textarea rows="4" id="am-backstory">'+esc(a.backstory||'')+'</textarea></label>':''}
       ${a.kind==='pc'?'<div style="margin-top:10px"><h4 class="sectiontitle">🗂 调查员经历（1 段 = 多跑过 1 个团）</h4>'
         +'<div id="am-campaigns">'+(campaignRows||'')+'</div>'
@@ -5673,7 +5761,7 @@ function renderActivePanel(){
       <div class="cphmeta">
         <span class="num cphdex">DEX ${c.dex||0} · DB ${esc(c.db||'0')}</span>
         ${c.actorId?'<button class="small ghost" title="把当前装备/法术改动同步写回调查员或NPC档案（小卡同步显示）" onclick="combSyncToActor()">↻ 同步档案</button>':''}
-        <button class="small ghost fs-only" title="收起角色详情（也可直接点场景空白处）" onclick="selectComb(null)">收起 ✕</button>
+        <button class="small ghost" title="收起角色详情（也可直接点场景空白处）" onclick="selectComb(null)">收起 ✕</button>
       </div>
     </div>
     <div class="combstates">
@@ -5695,7 +5783,7 @@ function renderActivePanel(){
       <div class="armorfoot">受击时先扣护甲，其余伤害反馈到 HP 条</div>
     </div>
   </div>
-  <h4 class="small-title">🧬 属性（力量~幸运 · 保存后同步档案与小卡）</h4>
+  <h4 class="small-title">🧬 属性</h4>
   <div class="combattrgrid">
     ${ATTR_LABELS.map(function(l){return '<div class="cat" title="'+esc(l[2])+'"><em>'+esc(l[1].split(' ')[0])+'</em><input type="number" id="ca-'+l[0]+'" value="'+(((c.attrs||{})[l[0]])||0)+'" min="0"></div>';}).join('')}
   </div>
@@ -9026,7 +9114,6 @@ function rbFrameSrc(p){
 }
 function renderRulebookPane(pane){
   pane.innerHTML='<div class="sp-head"><b>📚 规则书</b>'+
-    '<span class="hint">'+(rulebookData? '原版 · 全书 '+rbPageCount()+' 页 · 目录 '+((rulebookData.toc||[]).length)+' 条':'正在加载…')+'</span>'+
     '<div class="row sp-tools">'+
       '<button class="small ghost" id="rbTocBtn" onclick="rbToggleToc()" title="展开/收起左侧目录与搜索">☰ 收起目录</button>'+
       '<button class="small ghost" onclick="rbZoomBy(-1)" title="缩小">A－</button>'+
@@ -9045,7 +9132,6 @@ function renderRulebookPane(pane){
           '<button class="small ghost" onclick="rbGoto(rulebookPage-1)">‹ 上一页</button>'+
           '<span class="rb-pageno"><input type="number" id="rbPageInput" value="'+rulebookPage+'" min="1" onchange="rbGoto(parseInt(this.value,10))"> / <span id="rbPageMax">'+rbPageCount()+'</span></span>'+
           '<button class="small ghost" onclick="rbGoto(rulebookPage+1)">下一页 ›</button>'+
-          '<span class="hint" id="rbHint">正文就是原版 PDF：阅读器自带的目录 / 页码 / Ctrl+F 都能用；左边目录搜索点一下也会跳页</span>'+
           '<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗ 新窗口</button>'+
         '</div>'+
         '<iframe class="rb-frame" id="rbFrame" title="COC7th 核心规则书"></iframe>'+

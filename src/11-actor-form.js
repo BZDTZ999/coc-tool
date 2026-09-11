@@ -266,7 +266,7 @@ function renderMapVehicles(){
     var opts='<option value="">— 不指定 —</option>'+actorsOnMap.map(function(a){
       return '<option value="'+a.id+'"'+(v.assign===a.id?' selected':'')+'>'+esc(a.name)+'</option>';
     }).join('');
-    return `<div class="listitem" style="padding:6px 8px;margin-bottom:6px">
+    return `<div class="listitem vehcard">
       <div class="vehrow">
         <input type="text" value="${esc(v.name)}" data-i="${i}" data-k="name" onchange="onVehInput(this)" title="名称">
         <input type="number" value="${v.kmh}" data-i="${i}" data-k="kmh" onchange="onVehInput(this)" min="0" title="km/h">

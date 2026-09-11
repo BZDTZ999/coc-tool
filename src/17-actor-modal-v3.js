@@ -175,8 +175,6 @@ function openActorModal(id, kind){
       <div class="row">
         <label>现金<input type="number" id="am-cash" value="${a.cash||0}" style="width:120px"></label>
         <label>货币<input type="text" id="am-currency" value="${esc(a.currency||'美元')}" style="width:120px"></label>
-        <label>信用评级<input type="text" id="am-credit" value="${esc(a.credit||'')}" placeholder="如 5%/2%/1%" style="width:150px" oninput="onCreditInput(this)" title="改这里 → 卡里「信用评级」技能的成功率会自动跟着改（导出时也写回卡里）"></label>
-        <label>其他资产<input type="text" id="am-other-assets" value="${esc(a.otherAssets||'')}" placeholder="如 50" style="width:110px"></label>
       </div>
       <div class="row" style="margin-top:6px">
         <span class="hint" style="align-self:center">其他资产表：</span>
@@ -189,7 +187,6 @@ function openActorModal(id, kind){
       <label style="margin-top:6px">资产详述<textarea rows="2" id="am-assets-detail">${esc(a.assetsDetail||'')}</textarea></label>
       ${a.kind==='pc'?'<h4 class="sectiontitle">📜 背景故事（拆条 + 正文小段）</h4>':''}
       ${a.kind==='pc'?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">'+histHTML+'</div>':'<div class="vdiv"></div><label>背景备注<textarea id="am-hist-appearance" rows="2" style="display:none"></textarea><textarea rows="2" id="am-npc-back">'+esc(a.notes||a.note||'')+'</textarea></label>'}
-      <label style="margin-top:8px" title="人物卡右上角「任意特长」那几格（自由文本，一格一条）">任意特长（每行一条）<textarea rows="2" id="am-traits">${esc((a.customTraits||[]).join('\n'))}</textarea></label>
       ${a.kind==='pc'?'<label style="margin-top:8px">背景故事正文（小段文字）<textarea rows="4" id="am-backstory">'+esc(a.backstory||'')+'</textarea></label>':''}
       ${a.kind==='pc'?'<div style="margin-top:10px"><h4 class="sectiontitle">🗂 调查员经历（1 段 = 多跑过 1 个团）</h4>'
         +'<div id="am-campaigns">'+(campaignRows||'')+'</div>'

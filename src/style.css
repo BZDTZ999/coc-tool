@@ -174,7 +174,13 @@ footer{display:flex;flex-direction:column;align-items:center;gap:0}
 .side-盟友{color:#8fd69b;border-color:rgba(143,214,155,.4)}
 .side-中立{color:#c9c6b8;border-color:rgba(201,198,184,.4)}
 .side-敌人{color:#e08f8f;border-color:rgba(224,143,143,.4)}
-.smallgrid{display:grid;gap:8px}
+/* 「载具 / 时间速度」那张表：一行四个，窄屏自动减列（以前一行一个，太占地方） */
+.smallgrid{display:grid;gap:8px;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:1240px){.smallgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:900px){.smallgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.smallgrid{grid-template-columns:1fr}}
+.smallgrid>.listitem{margin-bottom:0;padding:6px 8px;min-width:0}
+.smallgrid .vehrow input,.smallgrid select{min-width:0}
 .vehrow{display:grid;grid-template-columns:1fr 70px;gap:6px;align-items:center}
 .bars3{display:flex;flex-direction:column;gap:3px;margin-top:6px}
 .bars3 .brow{display:grid;grid-template-columns:44px 1fr 44px;gap:6px;align-items:center;font-size:11px;font-family:var(--mono)}
@@ -272,6 +278,9 @@ canvas#mapCanvas{width:auto;height:auto;display:block}
 @media(max-width:1250px){.npcminigrid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}}
 .npcmini{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:0}
 .npcmini:hover{border-color:var(--acc)}
+/* 阵营下拉：让它老实待在卡片里（以前窄列时长选项会把卡片顶破） */
+.npcmini .row{min-width:0}
+.npcmini .npc-side{flex:1 1 0;min-width:0;max-width:100%}
 .npcmini .bars3 .brow{grid-template-columns:34px 1fr 34px;font-size:10px}
 .npcmini .bar{height:6px}
 .npccol+.npccol{border-left:1px solid var(--line);padding-left:10px}

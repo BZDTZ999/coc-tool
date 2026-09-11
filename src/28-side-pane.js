@@ -688,7 +688,6 @@ function rbFrameSrc(p){
 }
 function renderRulebookPane(pane){
   pane.innerHTML='<div class="sp-head"><b>📚 规则书</b>'+
-    '<span class="hint">'+(rulebookData? '原版 · 全书 '+rbPageCount()+' 页 · 目录 '+((rulebookData.toc||[]).length)+' 条':'正在加载…')+'</span>'+
     '<div class="row sp-tools">'+
       '<button class="small ghost" id="rbTocBtn" onclick="rbToggleToc()" title="展开/收起左侧目录与搜索">☰ 收起目录</button>'+
       '<button class="small ghost" onclick="rbZoomBy(-1)" title="缩小">A－</button>'+
@@ -707,7 +706,6 @@ function renderRulebookPane(pane){
           '<button class="small ghost" onclick="rbGoto(rulebookPage-1)">‹ 上一页</button>'+
           '<span class="rb-pageno"><input type="number" id="rbPageInput" value="'+rulebookPage+'" min="1" onchange="rbGoto(parseInt(this.value,10))"> / <span id="rbPageMax">'+rbPageCount()+'</span></span>'+
           '<button class="small ghost" onclick="rbGoto(rulebookPage+1)">下一页 ›</button>'+
-          '<span class="hint" id="rbHint">正文就是原版 PDF：阅读器自带的目录 / 页码 / Ctrl+F 都能用；左边目录搜索点一下也会跳页</span>'+
           '<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗ 新窗口</button>'+
         '</div>'+
         '<iframe class="rb-frame" id="rbFrame" title="COC7th 核心规则书"></iframe>'+

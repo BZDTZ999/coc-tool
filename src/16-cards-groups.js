@@ -125,11 +125,11 @@ function npcMiniHTML(a){
           <b class="nm" style="font-size:12.5px">${esc(a.name)}</b>
           <span class="sidebadge side-${esc(s)}">${esc(s)}</span>
         </div>
-        <div class="sub npc-note" style="font-size:11px">${esc((a.note||a.notes||'').slice(0,46))}</div>
+        <div class="sub npc-note" style="font-size:11px">${esc((a.notes||a.note||'').slice(0,46))}</div>
       </div>
     </div>
     <div class="row" style="gap:4px;margin-top:5px;align-items:center">
-      <select style="flex:1;font-size:11px;padding:1px 4px" onchange="quickSetNpcSide('${a.id}',this)">
+      <select class="npc-side" style="flex:1 1 0;min-width:0;font-size:11px;padding:1px 4px" onchange="quickSetNpcSide('${a.id}',this)">
         <option value="">阵营…</option>
         ${SIDES.filter(function(x){return x!=='调查员';}).map(function(x){return '<option value="'+x+'"'+(s===x?' selected':'')+'>'+x+'</option>';}).join('')}
         <option value="__custom__">✎ 自定义阵营…</option>

@@ -155,7 +155,7 @@ function renderActivePanel(){
       <div class="cphmeta">
         <span class="num cphdex">DEX ${c.dex||0} · DB ${esc(c.db||'0')}</span>
         ${c.actorId?'<button class="small ghost" title="把当前装备/法术改动同步写回调查员或NPC档案（小卡同步显示）" onclick="combSyncToActor()">↻ 同步档案</button>':''}
-        <button class="small ghost fs-only" title="收起角色详情（也可直接点场景空白处）" onclick="selectComb(null)">收起 ✕</button>
+        <button class="small ghost" title="收起角色详情（也可直接点场景空白处）" onclick="selectComb(null)">收起 ✕</button>
       </div>
     </div>
     <div class="combstates">
@@ -177,7 +177,7 @@ function renderActivePanel(){
       <div class="armorfoot">受击时先扣护甲，其余伤害反馈到 HP 条</div>
     </div>
   </div>
-  <h4 class="small-title">🧬 属性（力量~幸运 · 保存后同步档案与小卡）</h4>
+  <h4 class="small-title">🧬 属性</h4>
   <div class="combattrgrid">
     ${ATTR_LABELS.map(function(l){return '<div class="cat" title="'+esc(l[2])+'"><em>'+esc(l[1].split(' ')[0])+'</em><input type="number" id="ca-'+l[0]+'" value="'+(((c.attrs||{})[l[0]])||0)+'" min="0"></div>';}).join('')}
   </div>
