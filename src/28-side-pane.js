@@ -28,7 +28,10 @@ function toggleSidePane(kind){
   renderNav();
   renderSidePane();
 }
-function closeSidePane(){ sidePaneCfg().open=false; saveStateQuiet(); applySidePane(); renderNav(); }
+function closeSidePane(){
+  sidePaneCfg().open=false; saveStateQuiet(); applySidePane(); renderNav();
+  pdfJumpClose();                     /* 右半屏收起来时，PDF 的「快速跳页」面板也一起收掉 */
+}
 function applySidePane(){
   var c=sidePaneCfg(), pane=$('sidePane'), bar=$('splitBar'), left=$('splitLeft');
   if(!pane || !bar) return;
@@ -494,8 +497,10 @@ function moduleBodyHTML(m){
   var bar='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span>';
   if(m.kind==='pdf'){
     if(!m.url) return moduleLostHTML(m);
-    return bar+'<span class="hint">'+moduleSizeText(m.size)+'</span></div>'+
-      '<div class="pdfv-bar">'+pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="pdfOpenInTab()" title="在新标签页用系统的阅读器打开">↗ 新窗口</button>')+'</div>'+
+    /* 手机 / 平板上这一行会被 CSS 收掉（.sp-filebar-pdf）：文件名在标签页上已经有了 */
+    return '<div class="sp-filebar sp-filebar-pdf"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span>'+
+      '<span class="hint">'+moduleSizeText(m.size)+'</span></div>'+
+      '<div class="pdfv-bar">'+pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="pdfOpenInTab()" title="在新标签页用系统的阅读器打开">↗<span class="lbl"> 新窗口</span></button>')+'</div>'+
       '<div class="pdfv-host" id="spPdfHost" title="模组 PDF"></div>';
   }
   if(m.kind==='image'){
@@ -1076,7 +1081,7 @@ function renderRulebookPane(pane){
       '</div>'+
       '<div class="rb-main">'+
         '<div class="rb-bar">'+
-          pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗ 新窗口</button>')+
+          pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗<span class="lbl"> 新窗口</span></button>')+
         '</div>'+
         '<div class="pdfv-host" id="rbFrame" title="COC7th 核心规则书"></div>'+
       '</div>'+

@@ -1318,6 +1318,76 @@ const ready = new Promise((res) => {
     if(!b64 || b64.length<1e6) return false;
     return w.atob(b64.slice(0,8)).slice(0,5)==='%PDF-' && w.rbFrameSrc(10).length>b64.length;
   })());
+  var pdfScrollPage=-1;
+  await new Promise(function(done){
+    var host=$('sidePane').querySelector('#rbFrame');
+    var offs=w.pdfState.offsets;
+    w.pdfState.navLock=0;                      /* 模拟“用户自己滑动”（不是刚点过目录） */
+    try{ Object.defineProperty(host, 'scrollTop', {value:offs[20]||0, configurable:true, writable:true}); }
+    catch(e){ host.scrollTop=offs[20]||0; }
+    host.dispatchEvent(new w.Event('scroll'));
+    setTimeout(function(){ pdfScrollPage=w.pdfState.page; done(); }, 80);
+  });
+  ok('PDF：整本连续排开（一页一张画布），滑到哪儿页码就跟到哪儿 —— 手机上上下滑动 = 翻页', (function(){
+    var host=$('sidePane').querySelector('#rbFrame');
+    var n=w.pdfState.num;
+    var painted=w.pdfState.pages.filter(function(p){ return p.on; }).length;
+    return n===318 && w.pdfState.offsets.length===n &&
+      host.querySelectorAll('.pdfv-page').length===n &&
+      host.querySelectorAll('canvas.pdfv-canvas').length===n &&
+      painted>=1 && painted<=12 &&                    /* 只画视口附近那几页，不是 318 张一起画 */
+      pdfScrollPage===21 && String($('pdfPageInput').value)==='21' &&
+      w.pdfState.offsets[20]>w.pdfState.offsets[19];
+  })());
+  ok('PDF：☰ 跳页 面板给整本页码（没书签的 PDF 也能快速翻页），点一下就跳过去', (function(){
+    w.pdfToggleJump();
+    var panel=$('pdfJump');
+    var nums=panel?panel.querySelectorAll('.pdfv-jnum'):[];
+    if(!panel || !nums.length) return false;
+    var firstLabel=nums[0].textContent;
+    w.pdfJumpTo(50);
+    var jumped=w.pdfState.page===50 && String($('pdfPageInput').value)==='50';
+    var lit=panel.querySelector('.pdfv-jnum.on');
+    var litLabel=lit?lit.textContent:'';
+    var inp=$('pdfJumpInput');
+    if(inp){ inp.value='7'; w.pdfJumpGo(); }
+    var typed=w.pdfState.page===7;
+    var open=!!$('pdfJumpMask');
+    w.pdfToggleJump();
+    var closed=!$('pdfJumpMask');
+    return nums.length===318 && firstLabel==='1' && jumped && litLabel==='50' && typed && open && closed;
+  })());
+  var pdfOutlineTabs=false, pdfOutlineListed=false, pdfOutlineJumped=false;
+  await new Promise(function(done){
+    w.pdfJumpOpen();
+    var doc=w.pdfState.doc;                    /* 假的 PDF 文档：给它装上「书签目录」看看面板认不认 */
+    doc.getOutline=function(){ return Promise.resolve([{title:'第一章 调查员', dest:['r1'], items:[{title:'一之一', dest:'named'}]}]); };
+    doc.getPageIndex=function(){ return Promise.resolve(19); };
+    doc.getDestination=function(){ return Promise.resolve(['r1']); };
+    w.pdfLoadOutline(doc);
+    setTimeout(function(){
+      var tabs=d.querySelectorAll('#pdfJumpBody .pdfv-jtab');
+      pdfOutlineTabs=tabs.length===2 && /^页码/.test(tabs[0].textContent) && /^目录/.test(tabs[1].textContent);
+      w.pdfJumpTab('toc');
+      var items=d.querySelectorAll('#pdfJumpBody .pdfv-oitem');
+      pdfOutlineListed=items.length===2 && /第一章 调查员/.test(items[0].textContent) && /一之一/.test(items[1].textContent);
+      var id=items[0]?((items[0].getAttribute('onclick')||'').match(/'([^']+)'/)||[])[1]:'';
+      if(id) w.pdfOutlineGo(id);
+      setTimeout(function(){ pdfOutlineJumped=w.pdfState.page===20; w.pdfJumpClose(); done(); }, 60);
+    }, 60);
+  });
+  ok('PDF：自带书签时跳页面板多一个「目录」页签，列书签、点一下跳到那一页', pdfOutlineTabs && pdfOutlineListed && pdfOutlineJumped);
+  ok('手机 / 平板：PDF 工具条只留图标、上方说明文字收掉，跳页面板也跟着主题变色', (function(){
+    var flat=cssText.replace(/\s+/g,'');
+    return flat.indexOf('.pdfv-bar.lbl,.rb-bar.lbl{display:none')>=0 &&
+      flat.indexOf('.sp-head.hint{display:none')>=0 &&
+      flat.indexOf('.pdfv-bar.rb-pagenoinput,.rb-bar.rb-pagenoinput{width:52px')>=0 &&
+      flat.indexOf('.sp-filebar-pdf{display:none')>=0 &&
+      flat.indexOf('.pdfv-bar,.rb-bar{flex-wrap:nowrap')>=0 &&
+      flat.indexOf('.pdfv-pages{display:flex')>=0 &&
+      flat.indexOf('body.bgcustom.pdfv-jump{')>=0 &&
+      flat.indexOf('body.bgcustom.pdfv-jnum{')>=0;
+  })());
   ok('右半屏：再点一次同一个按钮就收起', (function(){
     w.toggleSidePane('rulebook');
     return $('sidePane').hidden && $('splitBar').hidden;
