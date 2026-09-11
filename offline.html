@@ -11112,7 +11112,7 @@ function skyCalToggle(on){ skyState.cal=!!on; }
 'use strict';
 var XP_TOOLS=[['random','🎲 跑团随机','随机名字 / NPC / 地点，KP 临场取材'],
   ['sky','🌙 天文·天象','选日期和地点，看当天的月相与日月出没'],
-  ['kp','✍️ KP正在瞎编！','一句话或几个标签，写出一段能直接念的描写（本地素材，不联网）']];
+  ['kp','✍️ KP正在瞎编！','一句话或几个标签，写出一段能直接念的描写（本地素材 · 口述体 · 不联网）']];
 var xpTool='random';
 function xpToolOf(c){
   var t=(c&&c.tool)||xpTool;
@@ -11845,7 +11845,7 @@ var KP_DELAY_W=['马上','立刻','立即','当场','突然','一下子','这一
 var KP_SCENES=[
   {v:'hospital', n:'废弃医院', w:['医院','医疗中心','病院','诊所','医馆','废弃医院','废弃病院','疗养院','精神病院','病栋','住院部','急诊室','病房楼'], subs:['病房','长走廊','手术室','地下室','停尸房'],
    L:{
-     open:['走廊尽头的灯管闪了两下，把斑驳的墙皮照得忽明忽暗。'],
+     open:['走廊里只有应急灯还亮着，一半的灯管是黑的。'],
      sight:['半塌的天花板垂着大片水渍，一道抓痕从门框一直拖到转角。','病床横七竖八地停在走廊里，床单泛着洗不掉的黄。'],
      sound:['某个房间里断续传来水滴声，一下一下，敲得人心口发紧。','通风管里像有什么在爬，节奏沉稳得不像老鼠。'],
      smell:['空气里是消毒水、霉斑和过期药品混在一起的味道。'],
@@ -11858,7 +11858,7 @@ var KP_SCENES=[
    }},
   {v:'house', n:'老宅', w:['老宅','老房子','古宅','旧宅','废弃住宅','宅子','祖宅','庄园','大屋'], subs:['门厅','客厅','阁楼','卧室','地窖'],
    L:{
-     open:['门轴发出一声长长的呻吟，像是这栋宅子终于被人吵醒。'],
+     open:['门没锁，推开的时候门轴响了一声。'],
      sight:['客厅的家具全盖着白布，形状在黑暗里像跪着的人影。','楼梯扶手的漆早已开裂，台阶中央被踩出一道浅浅的凹痕。'],
      sound:['头顶传来木板被踩过的轻响，停了一下，又响了一声。','风从某处缝隙钻进来，在空房间里拖出长长的呜咽。'],
      smell:['尘封多年的霉味里，混着一点甜丝丝的腐败气息。'],
@@ -11871,7 +11871,7 @@ var KP_SCENES=[
    }},
   {v:'church', n:'教堂', w:['教堂','礼拜堂','小教堂','修道院','圣堂','礼拜'], subs:['长椅区','圣坛','钟楼','告解室','地下墓室'],
    L:{
-     open:['推开沉重的木门，长椅的影子一条条铺在地上，像一排排肋骨。'],
+     open:['里面很暗，光从彩窗进来，落在地上是彩色的。'],
      sight:['彩窗碎了大半，玻璃渣在圣坛前铺成一片发亮的小石头。','圣像面朝下摔着，木屑散了一地。'],
      sound:['风穿过破窗，堂里便有了管风琴一样低低的呜声。','脚步会拖出长长的回音，连呼吸都被放大。'],
      smell:['蜡烛残油的味道压着底下一层淡淡的霉味。'],
@@ -11884,7 +11884,7 @@ var KP_SCENES=[
    }},
   {v:'forest', n:'森林', w:['森林','林地','密林','树林','丛林','山林','林子','树林里'], subs:['林间小径','营地','伐木场','沼泽边','枯树丛'],
    L:{
-     open:['树冠把天遮得严严实实，走进几步，身后的路就看不见了。'],
+     open:['树很密，走进几步就看不到来路。'],
      sight:['树干上有一道道平行的划痕，高度正好在人的胸口。','雾贴着地面游走，露出又吞掉一段又一段树根。'],
      sound:['枝叶的响动总比风先到，也总比风多留一会儿。','远处有树枝断裂的脆响，之后是很长的安静。'],
      smell:['腐叶和湿土的味道又厚又闷，像盖了一层被子。'],
@@ -11897,7 +11897,7 @@ var KP_SCENES=[
    }},
   {v:'port', n:'港口', w:['港口','码头','海港','渔港','船坞','岸边','栈桥'], subs:['仓库区','栈桥','渔船','灯塔','货场'],
    L:{
-     open:['海水在堤岸下拍出一声一声闷响，缆绳绷紧了又松开。'],
+     open:['海在堤岸下面响，码头上没有人。'],
      sight:['货箱堆在码头上，缝隙里黑得看不出深浅。','桅杆的剪影在雾里只剩一小截，像插进水里的针。'],
      sound:['浪头挤在船壳之间，发出黏腻的拍击声。','铁链在某个看不见的地方拖过甲板，声音又长又沉。'],
      smell:['海腥、柴油和腐烂的海藻混在一起，闻久了发晕。'],
@@ -11910,20 +11910,20 @@ var KP_SCENES=[
    }},
   {v:'school', n:'学校', w:['学校','校园','中学','小学','大学','教学楼','教室','校舍'], subs:['教室','走廊','操场','图书馆','医务室'],
    L:{
-     open:['走廊里整齐地排着储物柜，门一扇扇半开着，里面全空。'],
+     open:['走廊两边都是储物柜，门有一半开着。'],
      sight:['黑板上停着一句没写完的话，最后一个字被抹掉了。','课桌椅摆得整整齐齐，只有前排那把椅子翻倒着。'],
      sound:['某个教室里传来椅子被轻轻挪动的声音。','操场上的秋千在响，慢慢来回，没人推它。'],
      smell:['粉笔灰、旧书页和闷了很久的汗味。'],
      temp:['走廊比教室更冷，像有一整面墙在往外散气。'],
      touch:['课桌面上刻着密密麻麻的字，摸上去发涩。'],
-     light:['教室的灯只剩最后一盏，忽明忽暗地照着讲台。'],
+     light:['教室的灯只剩最后一盏，一闪一闪的。'],
      air:['明明已经放学很久了，这里还留着有人刚离开的痕迹。'],
      react:['有人忍不住去看后门，确认它没被人关上。'],
      anomaly:['广播喇叭自己响了一声，只有电流的沙沙声。']
    }},
   {v:'hotel', n:'酒店', w:['酒店','旅馆','宾馆','客栈','饭店','招待所','motel','旅店'], subs:['前台','走廊','客房','餐厅','电梯间'],
    L:{
-     open:['前台后面那排钟全停在不同的时间上，没有一只在走。'],
+     open:['前台后面那排钟全停在不同的时间，没有一只是在走的。'],
      sight:['地毯磨损出一条深色的走道，尽头贴着一张褪色的门牌。','电梯门停在半开的位置，轿厢里空着。'],
      sound:['走廊深处有推车的轮子滚过，转弯之后就没了。','水管在墙里咕噜作响，像有人在另一个房间说话。'],
      smell:['老式香皂、地毯灰和雪茄味混出一股过时的气味。'],
@@ -11936,7 +11936,7 @@ var KP_SCENES=[
    }},
   {v:'basement', n:'地下室', w:['地下室','地窖','地牢','地下通道','酒窖','地底','地下层'], subs:['储水间','锅炉房','储藏室','暗道','铁门后'],
    L:{
-     open:['木阶在脚下发出抗议的呻吟，每一步都像要塌。'],
+     open:['木台阶踩上去就响，每一步都像要断。'],
      sight:['潮气在墙上画出一片片深色的地图，角落堆着不知用途的箱子。','地面中央有一圈发白的痕迹，像长期放过什么东西。'],
      sound:['水滴落进积水里，回声比想象中大得多。','头顶传来脚步，但头顶没有房间。'],
      smell:['潮湿、石灰和一层若有若无的铁锈味。'],
@@ -11949,7 +11949,7 @@ var KP_SCENES=[
    }},
   {v:'cemetery', n:'墓地', w:['墓地','坟场','墓园','陵园','公墓','墓地里','坟地'], subs:['碑林','新坟','家族墓','小教堂','守墓人小屋'],
    L:{
-     open:['碑石一排排立在雾里，每一块都背对着刚才来的方向。'],
+     open:['碑一排排立在雾里，方向都背对着来路。'],
      sight:['新翻的土颜色比周围深，上面没有脚印。','枯花在碑前堆着，几朵还带着没干的水。'],
      sound:['风穿过碑林时，像有人从很远的地方穿行而过。','土层底下传来一声很轻的闷响。'],
      smell:['泥土、枯草和一种说不清的甜腥味。'],
@@ -11962,7 +11962,7 @@ var KP_SCENES=[
    }},
   {v:'lab', n:'实验室', w:['实验室','研究所','化验室','实验楼','机房','生物实验室'], subs:['操作台','培养室','样本库','冷冻间','观察窗后'],
    L:{
-     open:['门上的警示灯还亮着，冷冷地照在贴着封条的玻璃窗上。'],
+     open:['门上的警示灯还亮着，玻璃上贴着封条。'],
      sight:['不锈钢台面反着白光，地上拖着几道半干的痕迹。','一排培养柜全空了，柜门内侧留着指甲划出的白印。'],
      sound:['通风设备还在运转，发出持续的低频嗡鸣。','某台仪器突然滴了一声，屏幕跳出一行无法辨认的字符。'],
      smell:['化学试剂和腐坏的味道混在一起，呛得眼睛发酸。'],
@@ -11975,7 +11975,7 @@ var KP_SCENES=[
    }},
   {v:'town', n:'小镇', w:['小镇','镇子','村庄','村子','居民区','老街','街区'], subs:['主街','杂货铺','警察局','诊所','教堂前'],
    L:{
-     open:['主街两侧的门窗都关着，可每一扇窗后面都像有人在看。'],
+     open:['主街两边的门窗都关着，没有一家亮灯。'],
      sight:['店铺招牌褪了色，只有杂货铺门口还亮着一盏灯。','马路中央留着一道长长的刹车痕，尽头什么也没有。'],
      sound:['远处教堂的钟敲了不该敲的点数。','谁家的狗一直在叫，从头到尾没换过调子。'],
      smell:['湿木头、煤烟和久不通风的家具味。'],
@@ -11988,7 +11988,7 @@ var KP_SCENES=[
    }},
   {v:'train', n:'火车', w:['火车','列车','车厢','夜车','特快','蒸汽列车','铁路'], subs:['包厢','餐车','连接处','行李车','车顶'],
    L:{
-     open:['列车在夜色里前行，车轮声一下一下，把人晃得昏沉。'],
+     open:['列车在夜里开着，车轮声一下一下。'],
      sight:['车厢连接处晃得厉害，灯光随着节奏一亮一暗。','窗外掠过的只有自己的倒影，和永远黑着的原野。'],
      sound:['车轮的节奏里混进了别的东西，多敲了一拍。','隔壁包厢传来压得很低的争执，然后戛然而止。'],
      smell:['煤烟、皮革座垫和冷掉的咖啡味。'],
@@ -12004,13 +12004,13 @@ var KP_SCENES=[
 /* ================= 通用素材：不只是场景，天气 / 时间 / 氛围本身怎么写 ================= */
 var KP_UNIV={
   weather:{
-    storm:[['雨点砸在窗上，像有人用指节一下一下地敲。','sound'],['雨水顺着缝隙渗进来，在地上汇成一小滩。','sight'],
+    storm:[['雨点砸在窗上，一下一下，没停过。','sound'],['雨水顺着缝隙渗进来，在地上汇成一小滩。','sight'],
            ['雷声从远处压过来，玻璃跟着轻轻发抖。','sound'],['空气里全是水汽，衣服贴在身上又冷又沉。','touch']],
     rain:[['细雨把整片世界泡得发亮，屋檐下一条水线不停。','sight'],['雨声密而匀，把所有别的声音都盖住了。','sound'],
           ['湿气一点点钻进领口，肩膀很快就凉了。','touch']],
-    fog:[['雾把五步之外的东西都收走了，只剩轮廓。','sight'],['雾里的声音会自己拐弯，从背后绕回来。','sound'],
+    fog:[['雾把五步之外的东西都收走了，只剩轮廓。','sight'],['雾里的声音听着像从后面来的。','sound'],
          ['呼出来的气直接在面前化开，什么也看不清。','temp']],
-    snow:[['雪无声地落着，把地面上的痕迹一层层盖掉。','sight'],['脚踩下去，雪在下面发出一声很闷的响。','touch'],
+    snow:[['雪一直落，把地上的痕迹一点点盖掉。','sight'],['脚踩下去，雪在下面发出一声很闷的响。','touch'],
           ['雪花贴在脸上，一瞬间的凉，然后化成水。','temp']],
     clear:[['天色干净得反常，星星亮得有些刺眼。','sight'],['空气干燥，连灰尘都浮得很慢。','touch']],
     overcast:[['云压得很低，天光像蒙了一层灰布。','sight'],['整天都不见太阳，也说不清什么时候是正午。','sight']],
@@ -12162,11 +12162,11 @@ var KP_CREATURES=[
    }},
   {v:'shoggoth', n:'修格斯', w:['修格斯','Shoggoth','shoggoth','无定形之物','黑泥怪','原生质'],
    c:{
-     first:['走廊尽头那堆东西开始移动，你起初以为那是一块黑色的布。','整面墙一样的东西，缓缓立了起来。'],
+     first:['走廊尽头那堆东西开始动，一开始看着像一块黑布。','那东西像一整面墙，慢慢立了起来。'],
      look:['它没有固定形状，表面不断鼓起又陷下去，像沸腾的沥青。','它浑身都是眼睛，一颗一颗从黑里睁开，又合上。'],
      act:['它整个身体向前碾过，所过之处的东西都被卷进去。','它贴地铺开，慢慢逼近，像一片会走路的夜。'],
      sound:['它发出的声音像一整队人在同时说话，各种语言挤在一起。','那些音节里，偶尔会有一个很清楚的中文词。'],
-     smell:['像熬过头的油，再加上某种已经烂透的东西。','那味道浓得让人不敢张大嘴呼吸。'],
+     smell:['像熬过头的油，再加上某种已经烂透的东西。','味道很冲，人不敢大口喘气。'],
      temp:['它经过时空气变重，连呼吸都成了黏的。','靠近它时，皮肤上有一层说不清的温热。'],
      touch:['碰上去是温的，比想象中热，而且会自己往里陷。','被沾到的部分像被湿布裹住，甩不掉。'],
      env:['地面留下一条湿痕，墙皮被蹭掉一整条。','走廊里的水汽忽然全部朝它那个方向去了。'],
@@ -12180,7 +12180,7 @@ var KP_CREATURES=[
    }},
   {v:'nightgaunt', n:'夜魇', w:['夜魇','Nightgaunt','nightgaunt','夜妖','无面者','无脸怪'],
    c:{
-     first:['屋角的黑暗比别处更浓，然后那片黑暗动了。','一对膜翅无声地张开，把窗外的月光整个挡住。'],
+     first:['屋角特别黑，然后那片黑动了。','一对膜翅张开，把外面的月光挡住了。'],
      look:['它像人，可是没有脸——只有一片平滑的、什么都没有的皮肤。','身上是光滑的黑色，尾巴尖上有一排细钩。'],
      act:['它移动时不会碰到任何东西，也从不出声。','它会先贴到你身后，再慢慢伸手。'],
      sound:['它没有声音。连翅膀扇动都没有声音。','安静得让人开始怀疑自己的耳朵。'],
@@ -12291,7 +12291,7 @@ var KP_NEGN_KEYS=['creature','blood','gore','supernatural','sound','attack','dea
 /* ================= 状态（存在 state.ui.kp，刷新后还在） ================= */
 var kpState={
   tab:'scene', text:'', quick:{}, adv:{}, forbidden:{}, delay:{}, restriction:'',
-  length:'mid', showAdv:false, creature:'', cdim:{}, mine:[], draft:null, mute:{},
+  length:'mid', showAdv:false, creature:'', cdim:{}, mine:[], draft:null, mute:{}, recent:null,
   lines:[], hint:'', notes:[], ctx:null, seq:0, loaded:false
 };
 function kpEnsure(){
@@ -12313,6 +12313,7 @@ function kpEnsure(){
   if(s.cdim && typeof s.cdim==='object') kpState.cdim=s.cdim;
   if(s.mine && s.mine.length) kpState.mine=s.mine;
   if(s.mute && typeof s.mute==='object') kpState.mute=s.mute;
+  if(s.recent && typeof s.recent==='object') kpState.recent=s.recent;
   if(s.lines && s.lines.length){
     kpState.lines=s.lines; kpState.hint=s.hint||''; kpState.notes=s.notes||[];
     kpState.ctx=s.ctx||null; kpState.seq=s.seq||s.lines.length;
@@ -12324,7 +12325,8 @@ function kpSave(){
   state.ui.kp={text:kpState.text, quick:kpState.quick, adv:kpState.adv, forbidden:kpState.forbidden,
     delay:kpState.delay, restriction:kpState.restriction, length:kpState.length, tab:kpState.tab,
     creature:kpState.creature, cdim:kpState.cdim, mine:kpState.mine, lines:kpState.lines,
-    mute:kpState.mute, hint:kpState.hint, notes:kpState.notes, ctx:kpState.ctx, seq:kpState.seq};
+    mute:kpState.mute, hint:kpState.hint, notes:kpState.notes, ctx:kpState.ctx, seq:kpState.seq,
+    recent:kpState.recent};
   saveStateQuiet();
 }
 function kpNextId(){ kpState.seq=(kpState.seq||0)+1; return 'kp'+kpState.seq; }
@@ -12351,6 +12353,149 @@ function kpTidy(t){
   t=kpList(t); if(!t) return '';
   if(!/[。！？…～」』")]$/.test(t)) t+='。';
   return t;
+}
+/* ================= 最近使用记录 / 叙述入口 / 段落结构（防重复用） =================
+   连点「再来一段」不能老是同一批句子、同一种开头、同一批意象。所以每次生成都记一笔：
+   开头类型 / 段落结构 / 句式签名 / 用过的整句 / 用过的意象，接下来几段里这些都会被降权。 */
+var KP_RECENT_MAX={open:9,struct:10,imag:36,mat:150,sig:40};
+function kpRec(){
+  if(!kpState.recent || typeof kpState.recent!=='object') kpState.recent={};
+  var r=kpState.recent;
+  ['open','struct','imag','mat','sig'].forEach(function(k){ if(!Array.isArray(r[k])) r[k]=[]; });
+  return r;
+}
+function kpRecHas(k,v){ return kpHasIn(kpRec()[k],v); }
+function kpRecPush(k,v){
+  if(v===undefined || v===null || v==='') return;
+  var r=kpRec(), a=r[k], max=KP_RECENT_MAX[k]||12, i=a.indexOf(v);
+  if(i>=0) a.splice(i,1);
+  a.push(v);
+  while(a.length>max) a.shift();
+}
+/* 句式签名：去掉标点、把数字归一，取前 6 个字 —— 同一句式的句子会撞在一起，用来防「连着几句一个结构」 */
+function kpSig(t){
+  var s=String(t||'').replace(/[，。！？、；：「」『』（）《》""'',.!?;:\-—…～\s]/g,'');
+  return s.replace(/[0-9０-９]+/g,'#').slice(0,6);
+}
+/* 一句话命中了哪几组核心意象（走廊 / 灯光 / 空气 / 寒意 / 声音 / 脚步…） */
+function kpImagKeys(t){
+  var out=[], s=String(t||''), i, j;
+  for(i=0;i<KP_IMAG.length;i++){
+    var ws=KP_IMAG[i][1];
+    for(j=0;j<ws.length;j++){ if(s.indexOf(ws[j])>=0){ out.push(KP_IMAG[i][0]); break; } }
+  }
+  return out;
+}
+/* 候选人「最近用过」的扣分：整句用过最重，句式其次，意象按命中数累加 */
+function kpRecentScore(o,rec){
+  var s=0, i, hit=0, mi=rec.mat.indexOf(o.t);
+  /* 用过的整句记得越近扣得越多 —— 同一个条件句的几个说法就能轮流上，不会老用第一句 */
+  if(mi>=0) s+=9+8*((mi+1)/(rec.mat.length||1));
+  if(kpHasIn(rec.sig,o.sig)) s+=5;
+  for(i=0;i<o.im.length;i++) if(kpHasIn(rec.imag,o.im[i])) hit++;
+  s+=hit*3;
+  if(hit>=2) s+=2;
+  return s;
+}
+/* 没有具体场景 / 分区时，{sub} 的兜底说法 */
+var KP_OPEN_SUB=['里面','那一头','边上','深处','后面','前面','拐角那边'];
+/* 把素材里的占位符填成这一次生成的实际条件（{sc} 场景 · {sub} 分区 · {t} 时间 · {wn}/{w}/{wt} 天气 · {q} 台词） */
+function kpFill(t,ctx){
+  var s=String(t==null?'':t);
+  if(s.indexOf('{')<0) return s;
+  var c=ctx||{};
+  s=s.split('{sc}').join(c.sc||'').split('{sub}').join(c.sub||'').split('{wt}').join(c.wt||'')
+     .split('{wn}').join(c.wn||'').split('{w}').join(c.w||'').split('{t}').join(c.t||'')
+     .split('{q}').join(c.q||'');
+  return s.replace(/^[，。、；：]+/,'').replace(/「」/g,'').replace(/，\s*，/g,'，')
+    .replace(/，\s*。/g,'。').replace(/\s{2,}/g,' ').replace(/[，、]\s*$/,'');
+}
+/* 这一次生成用到的实际条件（给占位符用） */
+function kpSlots(cond){
+  var sc=(cond.scene||[])[0]? kpFindScene(cond.scene[0]) : null;
+  var to=(cond.time||[])[0]? kpOptOf('time',cond.time[0]) : null;
+  var wo=(cond.weather||[])[0]? kpOptOf('weather',cond.weather[0]) : null;
+  var sub=(sc&&sc.subs&&sc.subs.length)? kpRandOne(sc.subs) : kpRandOne(KP_OPEN_SUB);
+  return {sc:sc? sc.n:'这里', sub:sub, t:to? to.n:'',
+    wn:wo? wo.n:'', w:wo? (KP_W_TXT[wo.v]||wo.n):'', wt:wo? (wo.n+'天'):'',
+    q:kpRandOne(KP_QUOTE)};
+}
+/* 换一个「叙述入口」：类型尽量不跟最近十几次重复，模板从这一类里随机抽一条 */
+function kpOpenPool(cond,type){
+  var list=KP_OPENERS[type]||[], out=[], i;
+  var needSc=!!((cond.scene||[])[0]), needT=!!((cond.time||[])[0]), needW=!!((cond.weather||[])[0]);
+  for(i=0;i<list.length;i++){
+    var s=list[i];
+    if(!needT && s.indexOf('{t}')>=0) continue;
+    if(!needW && (s.indexOf('{w}')>=0 || s.indexOf('{wn}')>=0 || s.indexOf('{wt}')>=0)) continue;
+    if(!needSc && s.indexOf('{sc}')>=0) continue;
+    out.push(s);
+  }
+  if(needSc){
+    out=out.filter(function(s){ return s.indexOf('{sc}')>=0; });
+    /* 场景名尽量别顶在句首，不然连着十几段都从「XX医院……」开始 */
+    var noLead=out.filter(function(s){ return s.indexOf('{sc}')!==0; });
+    if(noLead.length) out=noLead;
+  }
+  return out;
+}
+function kpPickOpener(cond,ctx){
+  var types=Object.keys(KP_OPENERS), rec=kpRec(), i;
+  /* 一句话里说了场景，开场就得把这个场景带上（结果必须仍然符合原始条件） */
+  if((cond.scene||[]).length)
+    types=types.filter(function(t){ return (KP_OPENERS[t]||[]).some(function(s){ return s.indexOf('{sc}')>=0; }); });
+  var pool=types.filter(function(t){ return !kpHasIn(rec.open,t) && kpOpenPool(cond,t).length; });
+  if(!pool.length) pool=types.filter(function(t){ return kpOpenPool(cond,t).length; });
+  if(!pool.length) return null;
+  var ty=kpRandOne(pool), ops=kpOpenPool(cond,ty);
+  if(!ops.length) return null;
+  var t=kpTidy(kpFill(kpRandOne(ops),ctx));
+  if(!t) return null;
+  return {t:t,type:ty};
+}
+/* 偏「口述」的维度：一段话里至少要有一句这一类，别整段都在写景 */
+var KP_SPOKEN_DIM=['fact','note','act','react','obs','talk','find'];
+/* 选一套段落结构（同时避开最近用过的几套），保证用户明确要求的维度一定在里面 */
+function kpFitPlan(seed,want){
+  var p=seed.slice(), i=0;
+  while(p.length>want) p.splice(1+Math.floor(Math.random()*(p.length-1)),1);
+  while(p.length<want){ p.push(seed[i%seed.length]); i++; }
+  return p;
+}
+function kpPickPlan(cands,want,cond){
+  if(want<1) return [];
+  var avail={}, i;
+  for(i=0;i<cands.length;i++){ var d=cands[i]&&cands[i].d; if(d) avail[d]=1; }
+  var force=[];
+  if((cond.mood||[]).length) force.push('mood');
+  if((cond.event||[]).length) force.push('event');
+  if((cond.object||[]).length) force.push('object');
+  (cond.focus||[]).forEach(function(f){ var d=KP_FOCUS2DIM[f]; if(d) force.push(d); });
+  if(avail.mine) force.push('mine');
+  /* 天气和时间各占一格：用户明确给了就得让它们出现 */
+  if(avail.env && ((cond.weather||[]).length || (cond.time||[]).length)) force.push('env');
+  var rec=kpRec();
+  var fresh=KP_PARAS.filter(function(p){ return !kpHasIn(rec.struct,p.join('>')); });
+  var pool=fresh.length? fresh : KP_PARAS;
+  var plan=kpFitPlan(kpRandOne(pool),want);
+  /* 明确要求的维度必须排进去：从第 2 句起的槽位里随机占（不占第一句，
+     免得「发现尸体」这种永远出现在开头）。位置互不重复，所以不会被彼此挤掉。 */
+  var need={};
+  force.forEach(function(d){ if(avail[d]) need[d]=(need[d]||0)+1; });
+  var pos=[], k, assigned={};
+  for(k=1;k<plan.length;k++) pos.push(k);
+  pos=kpShuffled(pos);
+  Object.keys(need).forEach(function(d){
+    for(var n=0;n<need[d] && pos.length;n++){ var at=pos.pop(); plan[at]=d; assigned[at]=1; }
+  });
+  /* 每一段至少留一句「口述句」（事实 / 动作 / 反应 / 观察…），别整段都在写景；
+     只在没被明确要求占掉的槽位里安排，不会把「发现尸体」这种挤掉。 */
+  var spoken=KP_SPOKEN_DIM.filter(function(d){ return avail[d]; });
+  if(!spoken.length) spoken=['fact'];
+  var free=[], hasSpoken=false;
+  for(k=1;k<plan.length;k++){ if(assigned[k]) continue; free.push(k); if(KP_SPOKEN_DIM.indexOf(plan[k])>=0) hasSpoken=true; }
+  if(!hasSpoken && free.length) plan[free[Math.floor(Math.random()*free.length)]]=kpRandOne(spoken);
+  return plan;
 }
 function kpUVal(e){ return Array.isArray(e)? e[0] : e; }
 function kpUDim(e,fb){ return Array.isArray(e)? (e[1]||fb) : fb; }
@@ -12648,25 +12793,58 @@ function kpMinePick(cond){
 /* 候选素材：按「用户明确要求 → 场景 → 通用 → 补充」排好序，系统补充永远排在最后 */
 function kpCands(cond,fo,dly){
   var c=[], sc=(cond.scene||[])[0]? kpFindScene(cond.scene[0]) : null;
-  function add(t,d){ if(t && kpTextOK(t,d,fo)) c.push({t:t,d:d}); }
-  /* ① 明确说了的氛围 / 事件 / 物体：先保证它们出现 */
-  (cond.mood||[]).forEach(function(m){ if(KP_MOOD_CLAUSE[m]) add(KP_MOOD_CLAUSE[m],'mood'); });
-  (cond.event||[]).forEach(function(v){ if(kpEvOK(v,fo) && KP_EVENT_CLAUSE[v]) add(KP_EVENT_CLAUSE[v],'event'); });
-  (cond.object||[]).forEach(function(v){ if(KP_OBJECT_CLAUSE[v]) add(KP_OBJECT_CLAUSE[v],'object'); });
+  var slots=kpSlots(cond);
+  function add(t,d,must){ t=kpFill(t,slots); if(t && kpTextOK(t,d,fo)) c.push({t:t,d:d,must:must?1:0}); }
+  /* ① 明确说了的氛围 / 事件 / 物体：先保证它们出现（标成 must，选句时一定排进去） */
+  (cond.mood||[]).forEach(function(m){
+    var arr=KP_MOOD_SAY[m]||(KP_MOOD_CLAUSE[m]? [KP_MOOD_CLAUSE[m]] : []);
+    arr.forEach(function(x){ add(x,'mood',1); });
+  });
+  (cond.event||[]).forEach(function(v){
+    if(!kpEvOK(v,fo)) return;
+    var arr=KP_EVENT_SAY[v]||(KP_EVENT_CLAUSE[v]? [KP_EVENT_CLAUSE[v]] : []);
+    arr.forEach(function(x){ add(x,'event',1); });
+  });
+  (cond.object||[]).forEach(function(v){
+    var arr=KP_OBJECT_SAY[v]||(KP_OBJECT_CLAUSE[v]? [KP_OBJECT_CLAUSE[v]] : []);
+    arr.forEach(function(x){ add(x,'object',1); });
+  });
+  /* ①.5 用户明确给了天气 / 时间：这一段里必须有，不然生成出来就不符合原始条件了 */
+  var wv=(cond.weather||[])[0], tv=(cond.time||[])[0];
+  if(wv && tv){
+    /* 两样都给：一句里同时带上，占一个位置就够 */
+    KP_WT_SAY.forEach(function(x){ add(x,'env',1); });
+  } else if(wv){
+    (KP_WEATHER_SAY[wv]||[]).forEach(function(x){ add(x,'env',1); });
+    kpShuffled(KP_UNIV.weather[wv]||[]).forEach(function(e){ add(kpUVal(e),'env',1); });
+  } else if(tv){
+    (KP_TIME_SAY[tv]||[]).forEach(function(x){ add(x,'env',1); });
+    kpShuffled(KP_UNIV.time[tv]||[]).forEach(function(e){ add(kpUVal(e),'env',1); });
+  }
   /* ② 我的素材 */
-  kpMinePick(cond).forEach(function(m){ add(m.t,'mine'); });
-  /* ③ 场景素材（用户点/说出来的场景，永远优先于通用素材） */
+  kpMinePick(cond).forEach(function(m){ add(m.t,'mine',1); });
+  /* ③ 场景素材（场景自身 + 场景加料），永远优先于通用素材 */
   var order=[];
   (cond.focus||[]).forEach(function(f){ var d=KP_FOCUS2DIM[f]; if(d && order.indexOf(d)<0) order.push(d); });
   KP_SDIM_ORDER.forEach(function(d){ if(order.indexOf(d)<0) order.push(d); });
   if(sc){
-    add(kpRandOne(sc.L.open||[]),'open');
+    /* 场景开场句：L.open 和加料里的 open 合起来抽，不然每个场景只有一句，连点就会重复 */
+    add(kpRandOne((sc.L.open||[]).concat((KP_SCENE_EXT[sc.v]||{}).open||[])),'open');
+    var ext=KP_SCENE_EXT[sc.v]||null, extra=[];
+    Object.keys(sc.L||{}).forEach(function(k2){ if(order.indexOf(k2)<0 && extra.indexOf(k2)<0) extra.push(k2); });
+    if(ext) Object.keys(ext).forEach(function(k2){ if(order.indexOf(k2)<0 && extra.indexOf(k2)<0) extra.push(k2); });
+    order=order.concat(extra);
     order.forEach(function(d){
-      kpShuffled(sc.L[d]||[]).forEach(function(x){ add(x,d); });
+      var arr=(sc.L[d]||[]).concat((ext&&ext[d])||[]);
+      kpShuffled(arr).forEach(function(x){ add(x,d); });
     });
   }
+  /* ③.5 口述句库：事实 / 动作 / 对话 / 观察 / 发现…任何场景都能铺，也是「像 KP 现场念的」那一批 */
+  Object.keys(KP_UNIV2).forEach(function(d){
+    kpShuffled(KP_UNIV2[d]||[]).forEach(function(x){ add(x,d); });
+  });
   /* ④ 天气 / 时间 / 氛围 / 光线 / 情绪的通用写法 */
-  var w=(cond.weather||[])[0], t=(cond.time||[])[0];
+  var w=wv, t=tv;
   if(w && KP_UNIV.weather[w]) kpShuffled(KP_UNIV.weather[w]).forEach(function(e){ add(kpUVal(e),kpUDim(e,'air')); });
   if(t && KP_UNIV.time[t]) kpShuffled(KP_UNIV.time[t]).forEach(function(e){ add(kpUVal(e),kpUDim(e,'air')); });
   (cond.mood||[]).forEach(function(m){ if(KP_UNIV.mood[m]) kpShuffled(KP_UNIV.mood[m]).forEach(function(e){ add(kpUVal(e),kpUDim(e,'air')); }); });
@@ -12691,20 +12869,114 @@ function kpCands(cond,fo,dly){
   });
   return c;
 }
-/* 组段：按顺序取，避免相邻同维度（句子不至于一句视觉一句视觉堆在一起） */
-function kpSelect(cands,want,keys,out){
-  var deferred=[], i, c, tx;
-  for(i=0;i<cands.length && out.length<want;i++){
-    c=cands[i]; if(!c.t) continue;
+/* 组段：按「段落结构」排句子 —— 每个槽位取该维度里最近没用过的一句；用户明确要求的条件一定排进去。
+   同时避开最近几段用过的整句 / 句式 / 意象，所以连点「再来一段」不会老是同一批句子。 */
+function kpSelect(cands,want,keys,out,plan){
+  var rec=kpRec(), i, c, tx, pool=[];
+  for(i=0;i<cands.length;i++){
+    c=cands[i]; if(!c || !c.t) continue;
     tx=kpTidy(c.t); if(!tx || keys[tx]) continue;
-    if(out.length && out[out.length-1].d===c.d){ deferred.push({t:tx,d:c.d}); continue; }
-    keys[tx]=1; out.push({t:tx,d:c.d});
+    if(!c.must && kpHasIn(rec.mat,tx)) continue;          /* 最近几段用过的整句不重复（用户明确要求的条件句除外，它必须出现） */
+    pool.push({t:tx,d:c.d||'air',must:c.must?1:0,idx:i,sig:kpSig(tx),im:kpImagKeys(tx)});
   }
-  for(i=0;i<deferred.length && out.length<want;i++){
-    c=deferred[i];
-    if(keys[c.t]) continue;
-    if(out.length && out[out.length-1].d===c.d) continue;
-    keys[c.t]=1; out.push({t:c.t,d:c.d});
+  var byDim={};
+  for(i=0;i<pool.length;i++){ var o=pool[i]; (byDim[o.d]||(byDim[o.d]=[])).push(o); }
+  var used={}, chosen=[];
+  function score(o){ return kpRecentScore(o,rec); }
+  function takeDim(d){
+    var q=byDim[d]||[], k, best=null, bs=Infinity;
+    for(k=0;k<q.length;k++){
+      var x=q[k]; if(used[x.t]) continue;
+      var sc=score(x);
+      if(sc<bs){ bs=sc; best=x; if(sc===0) break; }
+    }
+    return best;
+  }
+  function accept(o){
+    used[o.t]=1; keys[o.t]=1; chosen.push(o);
+    kpRecPush('mat',o.t); kpRecPush('sig',o.sig);
+    o.im.forEach(function(x){ kpRecPush('imag',x); });
+  }
+  /* ① 先按段落结构排槽位 */
+  (plan||[]).forEach(function(d){
+    if(chosen.length>=want) return;
+    var o=takeDim(d); if(o) accept(o);
+  });
+  /* ② 用户明确要求的条件（氛围 / 事件 / 物体 / 我的素材）：同一维度至少出现一句，插在中间而不是堆到末尾 */
+  var mustSeen={};
+  chosen.forEach(function(o){ if(o.must) mustSeen[o.d]=1; });
+  pool.filter(function(o){ return o.must && !used[o.t]; })
+    .sort(function(a,b){ return (score(a)-score(b))||(a.idx-b.idx); })
+    .forEach(function(o){
+    if(chosen.length>=want) return;
+    if(mustSeen[o.d]) return;
+    mustSeen[o.d]=1; used[o.t]=1; keys[o.t]=1;
+    var at=chosen.length? 1+Math.floor(Math.random()*chosen.length) : 0;
+    chosen.splice(at,0,o);
+    kpRecPush('mat',o.t); kpRecPush('sig',o.sig);
+    o.im.forEach(function(x){ kpRecPush('imag',x); });
+  });
+  /* ③ 还没排满就从剩下的候选里按「最近没用过」的顺序补，避免相邻同维度 */
+  var rest=pool.slice().sort(function(a,b){ return (b.must-a.must)||(score(a)-score(b))||(a.idx-b.idx); });
+  var deferred=[];
+  function spare(o){
+    /* 明确要求的维度已经有一句了，就不再补第二句（免得同一段里出现两次「发现尸体」） */
+    if(o.must && mustSeen[o.d]) return false;
+    return true;
+  }
+  for(i=0;i<rest.length && chosen.length<want;i++){
+    var o2=rest[i]; if(used[o2.t] || !spare(o2)) continue;
+    if(chosen.length && chosen[chosen.length-1].d===o2.d){ deferred.push(o2); continue; }
+    if(o2.must) mustSeen[o2.d]=1;
+    accept(o2);
+  }
+  for(i=0;i<deferred.length && chosen.length<want;i++){
+    var o3=deferred[i]; if(used[o3.t] || !spare(o3)) continue;
+    if(o3.must) mustSeen[o3.d]=1;
+    accept(o3);
+  }
+  chosen.forEach(function(o){ out.push({t:o.t,d:o.d}); });
+  return out;
+}
+/* 一次生成：先选「叙述入口」，再选「段落结构」，再按结构铺素材（开头 / 结构 / 维度 / 素材每次都会重挑） */
+function kpBuild(r,want,keys,cmode){
+  var cond=r.cond, out=[], i, op, t1;
+  if(cmode===undefined) cmode=kpCreatureMode(r);
+  if(cmode) kpState.creature=cmode;
+  if(cmode){
+    /* 怪物：只在有场景 / 时间 / 天气时给一句开场，其余全是它自己的素材维度 */
+    if(!r.delay.creature && kpFrameOf(cond)){
+      for(t1=0;t1<3 && !op;t1++){
+        var o1=kpPickOpener(cond,kpSlots(cond));
+        if(o1 && !keys[o1.t]) op=o1;
+      }
+      if(op){ out.push({t:op.t,d:'open'}); kpRecPush('open',op.type); }
+    }
+    var dims=kpCreatureDims(), cands=[];
+    if(r.delay.creature){
+      dims=['env','observe'];
+      kpShuffled((KP_UNIV.bank&&KP_UNIV.bank.delay)||[]).forEach(function(e){ cands.push({t:kpUVal(e),d:'delay'}); });
+    }
+    cands=cands.concat(kpCreatureCands(kpFindCreature(cmode),dims,r.forbidden));
+    var want2=want-out.length;
+    if(want2>0){
+      var plan2=kpPickPlan(cands,want2,cond);
+      kpRecPush('struct',plan2.join('>'));
+      kpSelect(cands,want2,keys,out,plan2);
+    }
+    return out;
+  }
+  for(t1=0;t1<4 && !op;t1++){
+    var o2=kpPickOpener(cond,kpSlots(cond));
+    if(o2 && !keys[o2.t]) op=o2;
+  }
+  if(op){ out.push({t:op.t,d:'open'}); kpRecPush('open',op.type); }
+  var cands2=kpCands(cond,r.forbidden,r.delay);
+  var want3=want-out.length;
+  if(want3>0){
+    var plan3=kpPickPlan(cands2,want3,cond);
+    kpRecPush('struct',plan3.join('>'));
+    kpSelect(cands2,want3,keys,out,plan3);
   }
   return out;
 }
@@ -12729,8 +13001,10 @@ function kpCreatureDims(){
 function kpCreatureCands(cr,dims,fo){
   var c=[];
   if(!cr) return c;
+  var ext=KP_CREATURE_EXT[cr.v]||null;
   dims.forEach(function(k){
-    kpShuffled((cr.c&&cr.c[k])||[]).forEach(function(x){
+    var arr=(cr.c&&cr.c[k]||[]).concat((ext&&ext[k])||[]);
+    kpShuffled(arr).forEach(function(x){
       if(kpTextOK(x,k,fo)) c.push({t:x,d:'c-'+k});
     });
   });
@@ -12750,22 +13024,6 @@ function kpCreatureMode(r){
   if(kpState.tab==='creature') return kpCreaturePick();
   return '';
 }
-function kpBuildCreature(r,want,keys){
-  var cr=kpFindCreature(kpCreaturePick());
-  if(!cr) return [];
-  var out=[], dims=kpCreatureDims(), cands=[];
-  if(r.delay.creature){
-    dims=['env','observe'];
-    kpShuffled((KP_UNIV.bank&&KP_UNIV.bank.delay)||[]).forEach(function(e){ cands.push({t:kpUVal(e),d:'delay'}); });
-  }
-  cands=cands.concat(kpCreatureCands(cr,dims,r.forbidden));
-  if(!r.delay.creature){
-    var frame=kpFrameOf(r.cond);
-    if(frame) out.push({t:frame,d:'open'});
-  }
-  kpSelect(cands,want,keys,out);
-  return out;
-}
 /* ================= 生成 / 撤销 / 继续 / 扩写 / 长度 ================= */
 function kpDegradeNote(r,got,want){
   var h=[];
@@ -12782,17 +13040,10 @@ function kpGen(){
   kpSync();
   var r=kpResolve();
   kpState.notes=r.notes||[];
-  var want=KP_LEN_N[kpState.length]||6, keys={}, out=[];
+  var want=KP_LEN_N[kpState.length]||6, keys={};
   var cmode=kpCreatureMode(r);
-  if(cmode){
-    kpState.creature=cmode;
-    out=kpBuildCreature(r,want,keys);
-  } else {
-    var frame=kpFrameOf(r.cond);
-    if(frame) out.push({t:frame,d:'open'});
-    kpSelect(kpCands(r.cond,r.forbidden,r.delay),want,keys,out);
-  }
-  kpState.ctx={cond:r.cond,forbidden:r.forbidden,delay:r.delay,used:keys,creature:cmode};
+  var out=kpBuild(r,want,keys,cmode);
+  kpState.ctx={cond:r.cond,forbidden:r.forbidden,delay:r.delay,used:keys,creature:cmode||''};
   kpState.lines=out.map(function(o){ return {i:kpNextId(),t:o.t,d:o.d,lock:false}; });
   if(cmode){
     var cr=kpFindCreature(cmode);
@@ -12823,10 +13074,12 @@ function kpAppend(n,mode){
     var prefer=cands.filter(function(c){ return !seen[c.d]; });
     if(prefer.length) cands=prefer;
   }
-  kpSelect(cands,n,keys,out);
+  var plan=kpPickPlan(cands,n,ctx.cond);
+  kpRecPush('struct',plan.join('>'));
+  kpSelect(cands,n,keys,out,plan);
   if(out.length<n){
     var k2={}; out.forEach(function(o){ k2[o.t]=1; });
-    kpSelect(cands,n-out.length,k2,out);
+    kpSelect(cands,n-out.length,k2,out,plan);
   }
   out.forEach(function(o){ kpState.lines.push({i:kpNextId(),t:o.t,d:o.d,lock:false}); });
   return out.length;
@@ -12856,7 +13109,7 @@ function kpAgain(){
   }
   var keys={}, out=[];
   locked.forEach(function(l){ keys[l.t]=1; });
-  kpSelect(kpCandsOfCtx(ctx),want-locked.length,keys,out);
+  out=kpBuild({cond:ctx.cond,forbidden:ctx.forbidden,delay:ctx.delay},want-locked.length,keys,ctx.creature||'');
   var it=0, res=[];
   kpState.lines.forEach(function(l){
     if(l.lock) res.push(l);
@@ -13019,14 +13272,14 @@ function kpResetAll(){
   kpState.tab='scene'; kpState.text=''; kpState.quick={}; kpState.adv={}; kpState.forbidden={};
   kpState.delay={}; kpState.restriction=''; kpState.length='mid'; kpState.showAdv=false;
   kpState.creature=''; kpState.cdim={}; kpState.mine=[]; kpState.draft=null;
-  kpState.mute={};
+  kpState.mute={}; kpState.recent=null;
   kpState.lines=[]; kpState.hint=''; kpState.notes=[]; kpState.ctx=null; kpState.seq=0;
 }
 function kpClear(){
   kpSync();
   kpState.text=''; kpState.quick={}; kpState.adv={}; kpState.forbidden={}; kpState.delay={};
   kpState.restriction=''; kpState.lines=[]; kpState.notes=[]; kpState.hint=''; kpState.ctx=null;
-  kpState.creature=''; kpState.cdim={}; kpState.mute={};
+  kpState.creature=''; kpState.cdim={}; kpState.mute={}; kpState.recent=null;
   kpSave(); xpRefresh();
 }
 
@@ -13217,6 +13470,2309 @@ function kpPaneHTML(){
   if(kpState.tab==='creature') return kpCreatureHTML();
   if(kpState.tab==='mine') return kpMineHTML();
   return kpSceneHTML();
+}
+
+/* ---------- KP正在瞎编！· 素材库（二）：叙述入口 + 段落结构 + 口述句库 + 场景 / 怪物加料 ----------
+   纯数据，启动时不跑任何计算（只做几次数组拼接）。全部离线可用，不联网、不调用任何 AI。
+   这一份补的是「同一条件连点二十次也不能重样」，所以重点在三件事：
+     ① 叙述入口库 KP_OPENERS —— 同一段开头可以走声音 / 视觉 / 气味 / 触觉 / 动作 / 反应 / 对话 /
+        事实 / 异常 / 天气时间 / 正常转异常 / 异常补环境 / 直接进事件 / 调查员观察 / 短句，共 15 类。
+     ② 段落结构库 KP_PARAS —— 一段话由哪几种叙述入口按什么顺序组成，连着生成会自动换结构。
+     ③ 口述句库 KP_UNIV2 —— 任何场景都能铺的短句：事实 / 动作 / 对话 / 观察 / 发现 / 感官 / 异常。
+        写法偏「KP 当场念出来的话」，尽量短、少形容词、不堆文学腔。
+   加素材只改这个文件；生成逻辑在 35-kp-desc.js。 */
+'use strict';
+
+/* ================= ① 叙述入口（开头结构库） ================= */
+var KP_OPEN_N={
+  sound:'声音切入', sight:'视觉切入', smell:'气味切入', touch:'触觉切入', act:'动作切入',
+  react:'NPC 反应切入', talk:'对话切入', fact:'环境事实切入', odd:'异常细节切入', sky:'天气时间切入',
+  turn:'正常转异常', odd2:'异常补环境', event:'直接进入事件', obs:'调查员观察切入', short:'简短事实切入'
+};
+/* 模板里的占位符：{sc} 场景名 · {sub} 场景分区 · {t} 时间名 · {wn} 天气名词 ·
+   {w} 天气描述短语（下着暴雨）· {wt} 天气+天（暴雨天）· {q} 一句台词（从 KP_QUOTE 里抽） */
+var KP_OPENERS={
+  sound:[
+    '先听见的是声音。{sub}那边响了一下，很轻。',
+    '{sc}里没有风，可{sc}深处一直有东西在响。',
+    '还没看见人，先听见了脚步——就一下，然后停了。',
+    '有声音从{sc}另一头过来，不快，也不慢。',
+    '{t}的{sc}，最先出声的是水。',
+    '有人在{sc}里敲了两下，像是在叫谁。',
+    '声音是从脚底下上来的，隔着好几层。',
+    '安静被一声轻响打断，之后又安静回去。',
+    '你们停在门口，先听了一会儿。里面只有滴水声。',
+    '{sc}里的回声比外面长，一点动静要绕一圈才回来。'
+  ],
+  sight:[
+    '{sc}就在前面。门开着，里面比外面还黑。',
+    '{sc}里该在的东西都在，就是位置不太对。',
+    '第一眼看到的是{sc}的轮廓，比记忆里矮一点。',
+    '光只够看清脚下一小块，别的都靠猜。',
+    '{sub}那边有什么东西垂下来，看着不像布。',
+    '一道影子从{sc}这头拉到那头，源头在看不见的地方。',
+    '前面那扇门半开着，缝里什么也没有。',
+    '地上一层灰，中间被踩出一条路。',
+    '{sc}里整整齐齐，整齐得像是有人收拾过。',
+    '有一样东西不该出现在这儿，你们一眼就看见了。'
+  ],
+  smell:[
+    '一进门就有味道。不是霉味，比霉味更闷。',
+    '{sc}里的空气不动，所有味道都压在一起。',
+    '有股味，说不清是什么，反正不新鲜。',
+    '铁锈味。这里不该有铁锈味。',
+    '味道是从{sub}那边过来的，越往里越重。',
+    '有人皱了一下眉，抬手在鼻子前面扇了扇。',
+    '{wt}，{sc}里闻起来像什么东西忘了收。',
+    '先闻到的是灰，然后才是别的。',
+    '这味道有点甜，甜得不该出现在这儿。',
+    '空气里那股味闻久了会恶心，但说不上来是什么。'
+  ],
+  touch:[
+    '手一扶上去，{sc}的墙是湿的。',
+    '踩下去软了一下，脚下不是平地。',
+    '门把手是凉的，凉得不像是这个季节。',
+    '有人伸手碰了一下，马上又缩回来。',
+    '衣服很快就贴在背上，这里潮得很。',
+    '地面有点黏，走起来有轻微的声响。',
+    '{sc}里的灰很厚，手一抹就是一层。',
+    '指尖碰到什么东西，凉的，而且是硬的。',
+    '空气贴在皮肤上，像蒙了一层湿毛巾。',
+    '有人把领口拉紧，还是有风从缝里钻进来。'
+  ],
+  act:[
+    '有人先走了一步，然后停下来等其他人。',
+    '走在前面的人抬手，示意大家先别出声。',
+    '有人把手电举高，往{sc}深处照过去。',
+    '队尾的人回头看了一眼来时的路。',
+    '有人蹲下去，用手背碰了碰地面。',
+    '几只手同时按在门上，门动了一下。',
+    '有人数了数人头，没说话。',
+    '走在最后的人把门带上，留了一道缝。',
+    '有人把手电换到另一只手，顺手在裤子上擦了擦手心。',
+    '所有人同时停住，谁也没有先开口。'
+  ],
+  react:[
+    '有人没出声地退了半步。',
+    '有人咽了口口水，那声音在安静里很清楚。',
+    '没人说话。有人看了别人一眼，又看回前面。',
+    '有人把手里的东西握紧了。',
+    '有人想说什么，张了张嘴，又闭上。',
+    '有人笑了一下，那笑没持续多久。',
+    '所有人的呼吸都放轻了。',
+    '有人把外套的拉链一直拉到最上面。',
+    '有人扶了一下墙，很快又把手收回去。',
+    '没人愿意走在最后一个。'
+  ],
+  talk:[
+    '「{q}。」有人压低声音说。',
+    '「{q}。」前面的人没回头。',
+    '有人小声问了一句：「{q}」没人接话。',
+    '「{q}。」他说完就停住了。',
+    '「{q}」——这一声太大了，所有人都看过去。',
+    '有人在后面说：「{q}」',
+    '「{q}。」有人终于开口。',
+    '「{q}」有人把这句话重复了一遍，声音比刚才小。'
+  ],
+  fact:[
+    '{sc}里该有的东西都在：桌子、椅子、一层灰。',
+    '门是从外面锁的。',
+    '墙上的钟停了，指针卡在同一个位置。',
+    '这里起码有好几年没人来过了。',
+    '地上一层灰，没有脚印。',
+    '窗户是关着的，玻璃没碎。',
+    '灯还能亮，只是不太稳。',
+    '从门口到{sc}另一头，一共不到二十步。',
+    '东西都摆得很整齐，没有翻动过的痕迹。',
+    '外面{w}，屋里听得清清楚楚。'
+  ],
+  odd:[
+    '有一件事不对：钟还在走，时间却不对。',
+    '门口那双鞋，刚才不在这儿。',
+    '有一扇门是从里面关着的。',
+    '{sc}里没有风，可桌上的纸自己在动。',
+    '刚才数过的东西，现在少了一件。',
+    '墙上的水渍看久了，像一张脸。',
+    '灯光闪了一下，就一下，之后一切如常。',
+    '地上有一串脚印，从中间开始，到中间结束。',
+    '有人在里面应了一声，可里面没有人。',
+    '影子的方向，和光源对不上。'
+  ],
+  sky:[
+    '{t}。外面{w}，{sc}就在前面。',
+    '外面{w}，{sc}里反而一点也听不到。',
+    '{wn}把外面的动静全盖住了，{sc}安静得有点过分。',
+    '这样的{t}，{sc}本来该是没有人的。',
+    '{t}，{wn}，{sc}。',
+    '又是个{wt}，{sc}里比外面还冷一点。',
+    '{t}的{wn}，走这一段路用了比平时更久的时间。',
+    '外面的{wn}和这里没关系。这里还是老样子。'
+  ],
+  turn:[
+    '一切都很正常，直到有一样东西不该动。',
+    '刚进来的时候什么也没有，往里走几步就不一样了。',
+    '看上去还是老样子，只是安静得不太对。',
+    '前面都很正常。也正因为太正常了，才让人觉得不对。',
+    '该做的都做了，按理说不会有事——可就是有事。',
+    '一开始没人注意，后来才发现那东西一直在。',
+    '几分钟之内什么都没发生。然后发生了。',
+    '一切照旧，除了少一个人。',
+    '东西都在原位，就是没有一样是热的。',
+    '很正常，正常得不像这里。'
+  ],
+  odd2:[
+    '那东西不动了，可周围的空气还在动。',
+    '声音停了，别的东西接了上来。',
+    '灯还是暗的，影子却比刚才多了一个。',
+    '它就停在那儿。周围的墙皮在慢慢掉灰。',
+    '动静没了，屋里的味道变了。',
+    '安静了几秒，外面的雨声听得清清楚楚。',
+    '那东西没再看你们，可谁也不敢动。',
+    '影子收回去了，地上留下一点湿。',
+    '一切回到原样，只有地上的灰乱了一小块。',
+    '门关上了，走廊里反而更静。'
+  ],
+  event:[
+    '事情发生在你们进{sc}之后不到一分钟。',
+    '还没站稳，{sub}那边就出了动静。',
+    '下一刻，所有人都听见了同一个声音。',
+    '有人先看见的。他抬手，指了指{sc}里面。',
+    '就在这个时候，灯灭了。',
+    '有人碰倒了什么，声音在{sc}里滚了一圈。',
+    '门在身后自己合上了。',
+    '有人喊了一声，声音很短。',
+    '前面那扇门，开了一条缝。',
+    '有人抓住了旁边人的胳膊。'
+  ],
+  obs:[
+    '有人注意到，墙角有一小片颜色和别处不一样。',
+    '手电扫过天花板的角落，那里有水痕。',
+    '仔细看的话，地上的灰里有几处被压平了。',
+    '有人蹲下来看了很久，什么也没说就站起来。',
+    '你们数了数门，比记忆里多一扇。',
+    '有人把手电照到自己脚下，确认地面没问题。',
+    '凑近看，那行字是用铅笔写的，写得很轻。',
+    '有人检查了门锁，锁是好的，是从里面锁的。',
+    '手电往外一拉，{sc}比想象中深。',
+    '有人抬头看了一会儿天花板，又低下头。'
+  ],
+  short:[
+    '里面没有人。',
+    '门没锁。',
+    '灯不亮，手电还够用。',
+    '这里比外面冷。',
+    '什么也没有。',
+    '气味不太对。',
+    '一共就这么多东西。',
+    '没有任何人回应。',
+    '前面只有一条路。',
+    '又安静下来了。'
+  ]
+};
+/* 对话切入用的短台词（{q}） */
+var KP_QUOTE=['别动','你听见了吗','往后退','别回头','谁在那儿','先别开灯','等一下','嘘','谁在那边',
+  '把门关上','跟上','别出声','有人在吗','这里不对','我们走','往这边','撑住','别过去','那是什么','我数过了',
+  '少一个','灯怎么灭了','站住','快点','安静','别松手','怎么了','你看那边','小心脚下','别碰它','我来','退回去',
+  '听','在下面','就在后面','别开','我看不见','谁在笑','再等一下','把灯给我','这儿有人来过','不对','回头',
+  '别说话','借个光','这边','我先','手给我','上来了','关门','有人吗','帮个忙','我没事','先出去','别乱动',
+  '安静点','你确定吗','我数到三','等等'];
+
+/* 天气描述短语（{w} / {wt} 用），键与 KP_OPTS.weather 的内部值一致 */
+var KP_W_TXT={clear:'天很晴',overcast:'天阴沉沉的',rain:'下着小雨',storm:'下着暴雨',fog:'起了大雾',
+  snow:'下着大雪',wind:'风很大'};
+
+/* ================= ② 段落结构（一段话按什么顺序铺开） =================
+   维度名与素材库一致：fact/note/act/talk/react/obs/find 是口述句，sight/sound/smell/temp/touch/light/air/
+   anomaly/super/trace/delay/event/object/mood/mine 是原素材维度。连着生成会自动换一种结构。 */
+var KP_PARAS=[
+  ['fact','sight','act','sound','react','note'],
+  ['sound','fact','obs','act','odd','react'],
+  ['sight','fact','touch','react','sound','note'],
+  ['act','fact','sight','smell','react','odd'],
+  ['react','fact','sound','sight','obs','note'],
+  ['obs','fact','sight','act','odd','react'],
+  ['fact','note','sight','sound','act','react'],
+  ['sight','obs','act','fact','react','odd'],
+  ['smell','fact','sight','act','react','note'],
+  ['touch','fact','act','sight','sound','react'],
+  ['act','react','fact','sight','odd','note'],
+  ['fact','act','obs','sound','react','sight'],
+  ['sound','act','fact','sight','note','react'],
+  ['sight','sound','smell','fact','react','act'],
+  ['fact','obs','act','react','odd','note'],
+  ['react','act','fact','sight','sound','obs'],
+  ['note','fact','act','sight','react','odd'],
+  ['obs','act','fact','sound','react','note'],
+  ['fact','sight','smell','act','react','odd'],
+  ['act','sight','fact','touch','react','note']
+];
+
+/* ================= ③ 意象词典（防重复用） =================
+   一条句子命中哪几个意象组，就记下来；接下来几段里这些意象都会被降权，
+   免得连着十几次都在写「走廊 / 灯光 / 空气 / 寒意 / 声音 / 脚步」。 */
+var KP_IMAG=[
+  ['corridor',['走廊','过道','楼道','通道','甬道']],
+  ['light',['灯光','灯管','灯泡','手电','烛火','光照','光柱','灯下','光束','亮着']],
+  ['air',['空气','气流','气息']],
+  ['cold',['冷','凉','寒意','寒气','冻','冰']],
+  ['sound',['声音','响声','声响','动静','回响','回声']],
+  ['step',['脚步','踏步','鞋跟']],
+  ['water',['水','雨','水滴','积水','湿','潮','渗']],
+  ['rain',['雨点','雨水','下雨','雨声','暴雨']],
+  ['shadow',['影子','影子似的','阴影','剪影']],
+  ['door',['门','门框','门轴','门板','门把手']],
+  ['window',['窗','玻璃','窗台','窗帘']],
+  ['wall',['墙','墙皮','墙壁','墙面']],
+  ['dust',['灰','灰尘','尘土','浮尘']],
+  ['smell',['味道','气味','味','闻']],
+  ['blood',['血','血迹','血味']],
+  ['body',['尸体','遗骸','尸首','死人']],
+  ['clock',['钟','表','指针','时间']],
+  ['mirror',['镜子','镜面']],
+  ['paper',['纸','书','本子','日记','字迹','记录','档案']],
+  ['cloth',['布','床单','衣服','窗帘','布条']],
+  ['hand',['手','手指','指节','掌心']],
+  ['eye',['眼睛','眼神','目光','盯','看']],
+  ['breath',['呼吸','喘','气息']],
+  ['insect',['虫','蟑螂','苍蝇','蚊']],
+  ['plant',['树','草','藤','叶','苔']],
+  ['metal',['铁','金属','锁','铁链','铁锈']],
+  ['wood',['木','木板','木阶','木屑','门轴']],
+  ['mud',['泥','土','坑','地面']],
+  ['smoke',['烟','雾','水汽']],
+  ['wind',['风','气流','穿堂风']],
+  ['fire',['火','烛','烧','炭']],
+  ['machine',['机器','电机','仪表','线路','电线','通风管']],
+  ['stair',['楼梯','台阶','梯子','木阶']],
+  ['bed',['床','床单','病床']],
+  ['chair',['椅','桌','柜','家具']],
+  ['bottle',['瓶','罐','药','针','器械']],
+  ['photo',['照片','相片','画像']],
+  ['foot',['脚印','足迹','鞋']],
+  ['wound',['伤','口子','抓痕','划痕']],
+  ['quiet',['安静','静','无声']]
+];
+
+/* ================= ④ 口述句库（任何场景都能铺，写法偏 KP 当场念） =================
+   每个键就是一个维度名。生成时按「场景素材 → 这批通用短句 → 天气时间氛围 → 系统补充」的次序匹配，
+   所以场景对得上就用场景的，对不上也不会没话说。 */
+var KP_UNIV2={
+  /* 环境事实：不渲染、只陈述，KP 最喜欢先给玩家一个清楚的前提 */
+  fact:['门是从外面锁上的。','窗户开着一条缝。','地上有一层灰，很匀。','这里比外面安静太多了。',
+    '东西都还在原来的位置。','桌上有一盏没点的灯。','墙上的钟不走了。','地上有拖过东西的痕迹。',
+    '墙角堆着几样用不上的东西。','屋子中间空出一块地方。','有人在这儿待过，时间不长。','地板踩上去会响。',
+    '天花板上有水渍。','这里一共两扇门。','门后有东西挡住了。','窗户是封死的。','空气不流通。',
+    '地上有几处被踩平的灰。','最后一个进来的人没有关门。','这里是这条路的尽头。','楼梯只通向上面。',
+    '墙上钉着一排钩子，什么也没挂。','桌上摆着两只杯子，一只倒了。','地上有几个脚印，是同一个人的。',
+    '这个地方最近有人整理过。','东西摆得很整齐。','有一块地面比别处干净。','门牌号被抠掉了。',
+    '这里能听见外面的声音，但听得不真切。','屋顶漏水，地上有接水的容器。','房间看上去比外面小。',
+    '窗台上积的灰比地上少。','墙上有一道很深的划痕。','有一条电线从上面垂下来。','灯绳被人拉得很短。',
+    '这里的家具是成套的，样式很旧。','地板上有一块木板颜色不一样。','东西不多，几件就数完了。',
+    '这里有股味道，但找不到来源。','门锁是新的。'],
+  /* 极短的事实句：用来把节奏打断，别让每句都在营造气氛 */
+  note:['没有人。','门没锁。','很安静。','灯还亮着。','这里很冷。','什么也没有。','都在原位。',
+    '没有人应声。','没有脚印。','还是老样子。','没有别的出口。','这一次没有响动。','没有人说话。',
+    '手电还有电。','没有人受伤。','外面的雨没停。','时间还早。','没有信号。','门还是关着的。',
+    '数清了。','只剩这些。','没有更多了。','安静下来了。','一切照旧。'],
+  /* 人物动作：让画面动起来，而不是一直描述环境 */
+  act:['有人先往里走了一步。','走在前面的人抬手让后面停下。','有人把手电举高了一点。',
+    '有人回头看了一眼来路。','有人蹲下来看地面。','有人伸手推了推门。','有人把手搭在门把上，没有立刻转。',
+    '有人把外套裹紧了些。','有人把手电换到另一只手。','有人拿出本子，写了两笔又收起来。',
+    '队尾的人把门带上，只留一道缝。','有人数了数人数。','有人踩到了什么，低头看了一眼。',
+    '有人往旁边让了一步。','有人伸手拦住后面的人。','有人贴着墙往前挪。','有人把灯举过头顶。',
+    '有人退回到门边。','有人按住同伴的肩膀。','有人把口袋里的东西摸了一遍。','有人脱下帽子擦了擦额头。',
+    '有人把鞋底在门槛上蹭了蹭。','有人蹲下去捡起一样东西。','有人把手电衔在嘴里，腾出手来。',
+    '有人比了个噤声的手势。','有人把门推开一半就停住了。','有人扶着栏杆下台阶。','有人从包里掏出绳子。',
+    '有人把外套脱下来搭在肩上。','有人伸手抹了一把脸上的雨。','有人蹲下检查地上的痕迹。',
+    '有人抬头看了看天花板。','有人把水壶递过去。','有人把灯关掉又打开。','有人退后半步给同伴让路。',
+    '有人把手电照向声音来的方向。'],
+  /* 对话：直接给 KP 可以念的台词，不用自己编 */
+  talk:['「{q}」前面的人没有回头。','「{q}。」有人压着嗓子说。','「{q}。」有人重复了一遍，声音更小。',
+    '有人小声问：「{q}」没人回答。','「{q}」——声音在空屋子里绕了一圈。','「{q}。」说完他自己先愣了一下。',
+    '后面有人说：「{q}」','「{q}。」这句话说得有点大声。','「{q}」有人只说了一半。',
+    '有人开口又停住，最后只说了两个字：「{q}」','「{q}」有人一边说一边往后退。','「{q}。」前面的人终于回答。',
+    '「{q}」——没有人接这句话。','有人低声说了句「{q}」，然后继续走。','「{q}」说这话的时候他在看别处。',
+    '有人忽然说：「{q}」所有人都停下来。','「{q}。」他说完，把手电往前一送。','「{q}」有人问，然后自己摇了摇头。',
+    '「{q}」声音是从队伍最后传来的。','有人对着门说了一句：「{q}」'],
+  /* 人物反应：不写心理，只写看得见的反应 */
+  react:['有人退了半步。','有人咽了口口水。','有人把手里的东西握紧了。','有人下意识地放轻了脚步。',
+    '有人看了同伴一眼，又看回前面。','有人张了张嘴，什么也没说出来。','有人把呼吸放得很轻。',
+    '有人摇头。','有人点头，又马上停住。','有人把肩膀缩了一下。','有人把帽子往下压了压。',
+    '有人笑了一声，很快收住。','有人把手插进兜里，又拿出来。','有人往人多的那一侧靠了靠。',
+    '有人盯着那个方向没有移开视线。','有人舔了舔嘴唇。','有人揉了揉眼睛。','有人咬着牙没出声。',
+    '有人抬手擦了一下脸。','有人把背靠到墙上。','有人往门口那边挪了半步。','有人清了清嗓子，又没说话。',
+    '有人低下头看自己的鞋。','有人抬头看天花板。','有人把灯往同伴那边送了过去。',
+    '有人拍了拍前面那人的背。','有人小声骂了一句。','有人深深吸了一口气。','有人把外套的扣子扣上。',
+    '有人站在原地没动。'],
+  /* 调查员观察：把「发现了什么」交给玩家，而不是直接给结论 */
+  obs:['有人发现墙角那块颜色和别处不一样。','手电扫过天花板，那里有水痕。','地上的灰里有几处被压平了。',
+    '有人凑近看那行字，是用铅笔写的，很轻。','门锁是好的，是从里面锁上的。','这里的脚印只有进去的，没有出来的。',
+    '有人数了数门，比刚才多一扇。','窗台上有一枚不太明显的指印。','地上有一小块玻璃，边缘是新的。',
+    '有人蹲下来量了量，那道划痕差不多到人的胸口。','手电的光往里一照，比想象中深。','墙上挂的东西，有一件歪了。',
+    '有人检查了脚下的地面，踩上去很实。','桌子上的灰被擦掉了一小块。','地上的水迹还没有干。',
+    '有人注意到，那把椅子是朝门口的。','门背后有指甲刮过的痕迹。','有人抬头看了很久，最后什么也没说。',
+    '手电照到角落，那里堆着一小堆东西。','有人伸手试了试那根绳子，很结实。','地上的脚印停在墙边，就断了。',
+    '有人发现有一块墙皮是新补的。','窗外的雨点打在玻璃上，一条一条往下走。','有人把手电贴着墙照，看到了后面的接缝。',
+    '桌上那本书翻开着，压着一支笔。','有人注意到，门是往外开的。','地上的灰里有什么东西被拖过去的痕迹。',
+    '有人趴下去看了看底下。','手电的光抖了一下，又稳住了。','有人发现这里的地面比外面低一点。',
+    '墙上钉着的钩子有一根是弯的。','有人注意到，进来的门被人从外面带上了。'],
+  /* 突然发现：需要给玩家一个「等一下」的瞬间 */
+  find:['有人忽然发现，人数不对。','有人抬手示意，所有人停下来。','有人先看见了，指了一下。',
+    '有人低头，看见脚下不是地板。','有人把灯照过去，那里有东西。','有人忽然想起来，门本来是关着的。',
+    '有人发现自己的手电照不到底。','有人回头，发现门已经关上了。','有人发现刚才那盏灯不见了。',
+    '有人愣了一下，才反应过来少了一样东西。','有人发现地上的脚印多了一串。','有人吸了吸鼻子，味道变了。',
+    '有人发现自己的表停了。','有人摸了一下口袋，东西不在了。','有人发现墙上多了几个字。',
+    '有人忽然意识到，刚才那个声音不是别人发出来的。','有人发现门缝里有光。','有人发现自己的鞋上沾了东西。',
+    '有人发现那扇窗不是关着的，是开着的。','有人低头看的时候，那样东西动了一下。',
+    '有人发现同伴没有跟上来。','有人忽然发现，这里的门牌号不对。','有人发现角落里有个人形。',
+    '有人发现桌上有第二只杯子，刚才没有。','有人发现头顶的灯换了一盏。','有人发现脚下有水。'],
+  /* 视觉（通用） */
+  sight:['墙上有一道很长的裂痕。','地上散落着几样零碎的东西。','门半开着，里面什么也看不见。',
+    '有一样东西摆在正中央，很显眼。','这里的东西旧得看不出年份。','角落堆着一些叫不上名字的杂物。',
+    '天花板有一块塌了下来。','地上有水，反着光。','墙上的漆掉了一大片。','有一扇窗户被木板钉住了。',
+    '门框上挂着一小截绳子。','地面中间空出一块。','远处有一盏灯还亮着。','有两个袋子靠在墙边。',
+    '桌子上的东西摆得很整齐。','墙上贴着一张已经看不出内容的纸。','地上有一个圆形的印子。','一角堆着几件衣服。',
+    '走廊很长，看不到头。','头顶的灯只剩一盏还亮。','有一排同样的门，都关着。','地上有一滩深色的东西。',
+    '墙上有钉过的痕迹，钉子已经拔掉了。','有根绳子从上面垂下来。','窗玻璃上有一道裂纹。',
+    '地上有几个鞋印，方向不一样。','有个柜子门开着。','这里的东西上落着一层薄灰。','门牌上的字被刮掉了。',
+    '有一条长长的影子横在地上。'],
+  /* 声音（通用） */
+  sound:['安静里能听见自己的呼吸。','有水滴在响，间隔不太均匀。','远处传来一声闷响。',
+    '风从缝里进来，带一点哨音。','头顶有很轻的动静。','某个地方有东西在轻轻碰着。','外面的声音隔了一层，闷闷的。',
+    '有一阵响动，很快就停了。','脚步声在空屋子里显得特别大。','有东西滚动了一下，停住了。',
+    '很轻的一声，像是什么裂开了。','金属碰了一下，之后是安静。','有人听见了一声，很短。','响声从另一头传过来，越来越近。',
+    '四周很静，静得不像是这种地方。','有一种持续的、说不清楚的低响。','有个声音重复了三遍，然后就没了。',
+    '地面下传来轻轻的一下。','有东西擦过墙面。','风把某个东西吹得来回碰。','远处有汽笛声，和这里没什么关系。',
+    '有一个声音，听不出方向。','什么东西落在地上，然后不动了。','很响的一声，所有人都听见了。',
+    '有人在里面说话，听不清内容。','滴水声和心跳声叠在了一起。','有一声很长的、慢慢低下去的声音。',
+    '动静停了，可耳朵里还有回响。','有东西在墙里面动。','外面的雨声盖住了别的声音。'],
+  /* 气味（通用） */
+  smell:['一股潮味，像东西放了很久。','有铁锈味，从墙里出来的。','空气里有灰的味道。','有一股甜甜的味，不正常。',
+    '闻起来有点呛。','有烟味，很淡。','有一点油味。','这里有一股说不清的味道，但不难闻。',
+    '有腐烂的味道，被别的东西盖着一半。','空气里有水汽的味道。','闻起来像是有人刚离开。',
+    '有一股酸味。','味道是新的，不是陈的。','有股土腥味。','有点咸。','有烧过东西的味道。',
+    '有一股很重的味道，闷得慌。','有肥皂的味道，淡淡的。','有一股纸放久了的气味。','味道贴在鼻子里，走两步还在。',
+    '有股味道从下面上来。','闻着像很久没开过窗。','有一股铁和血混在一起的味道。','味道忽有忽无，说不准在哪儿。'],
+  /* 温度（通用） */
+  temp:['这里比外面冷。','温度一下子就下去了。','呼出来的气能看见。','指尖很快就凉了。',
+    '有一块地方明显更冷。','墙把冷气一点点放出来。','空气凉得贴在皮肤上。','这里反而有点暖。',
+    '越往里走越冷。','地面的凉从鞋底上来。','有一阵冷风从某个方向过来。','站着不动会发抖。',
+    '水汽让冷变得更重。','衣服很快就潮了，更冷。','暖意只有一小块，走两步就没了。','这里的温度不对，太平均了。',
+    '靠近墙的那一侧更冷。','待久了会觉得膝盖发僵。','空气很干，喉咙发紧。','有一瞬间热了一下，又冷回去。',
+    '冷得不像是这个季节。','温度低得让人不敢深呼吸。','呼出来的气很快就散开。','这里的冷是从地底下上来的。'],
+  /* 触觉（通用） */
+  touch:['门把手是凉的。','墙上有一层薄薄的水。','地面踩上去有点软。','灰很厚，手一抹就是一层。',
+    '指尖碰到的东西是硬的。','有东西黏在鞋底。','衣服贴在背上。','摸上去很粗糙。','表面有一层滑腻的东西。',
+    '手上沾了一层灰。','扶手比看上去更凉。','脚下的地面有一处不平。','有一根线拉在脚边。','空气潮得能拧出水。',
+    '手腕碰到了什么东西。','指尖有点麻。','有水滴在手上。','这里的东西表面都很干净，干净得反常。',
+    '扶着墙走会打滑。','有一样东西摸上去比周围暖。','手上有一道浅口子，刚才没注意。','踩下去响了一声。',
+    '这里的灰是干的。','手心里全是汗。'],
+  /* 光线（通用） */
+  light:['灯只剩一盏还亮着。','手电的光不够用。','光只够照到脚下一小块。','有一束光从上面漏下来。',
+    '灯光不是很稳。','黑暗把远处的细节都抹掉了。','光柱里有浮尘在动。','灯在闪，但没有灭。','有一处比别处亮。',
+    '光扫过去的时候，有东西动了一下。','灯光是黄的，看东西有点偏色。','窗户那边有一点天光。','影子被拉得很长。',
+    '光是斜着进来的。','能看到的地方就这么多。','灯灭了一下又亮起来。','光被什么东西挡了一下。','有一片区域照不到。',
+    '手电往远处照，光就散了。','很暗，但还看得见路。','亮的地方和暗的地方分得很清。','灯光下看东西都像蒙了一层。'],
+  /* 氛围（通用） */
+  air:['这里安静得不正常。','空气不动。','有种说不出来的闷。','总觉得有人跟着，但回头什么也没有。',
+    '这个安静是被压出来的。','所有人都下意识放轻了脚步。','气氛一下子紧了。','谁也不想先开口。',
+    '有一种说不上来的不对劲。','外面的声音像隔了一层水。','这里的安静是有人维持的。','空气里有什么东西压着。',
+    '每个人都听见了自己的心跳。','越安静越让人不舒服。','有一个瞬间，所有人都停了下来。',
+    '这里的时间像是停住的。','进来了就显得突兀。','不太像没人住的样子。','一切都很正常，正常得不对劲。',
+    '有什么在慢慢收紧。','这里安静得能听见血在耳朵里跑。','空气有点闷，闷得慌。','谁都没有先动。','呼吸声比平时清楚。'],
+  /* 异常（通用） */
+  anomaly:['钟走得不对。','地上多了一串脚印。','镜子里比房间里多一点东西。','影子比人先动了一下。',
+    '刚才还在的东西，现在不在原位。','有一扇门自己开了。','灯亮着，开关是关的。','水往反方向流。',
+    '有一样东西的位置变了。','纸上的字多了一行。','有人听见了自己名字，但没有人叫他。','照片上少了一个人。',
+    '数过的东西少了一件。','墙上的水渍变了形状。','地上的时间对不上。','门上的锁是自己扣上的。',
+    '有一件东西一直是热的。','有人在里面应了一声。','脚步声停了，可没有人站着不动。','钟表走快了。',
+    '有两样东西被摆在完全一样的位置。','窗外的东西和刚才不一样了。','有一处的灰是新的。','有人发现了第二个自己。',
+    '地上的印子是自己出现的。','影子留在了墙上。','刚才关掉的东西又亮了。','房间里多了一点味道。',
+    '有一处光线照过来，可那儿没有光源。','东西都在，就是少了一件。'],
+  /* 超自然（通用，只在用户要超自然感时用） */
+  super:['有一种很低的嗡鸣，不属于任何机器。','有什么东西在看着你们，而且不着急。','空气在某个位置变得很稠。',
+    '有一个瞬间，所有人同时听见了同一个声音。','这个地方的安静是被人安排好的。','有东西在几个方向同时存在。',
+    '光走到一半就停住了。','有一句话直接出现在脑子里，而不是耳朵里。','走进去以后，时间对不上了。',
+    '有什么东西在慢慢靠近，可是没有一点声音。','空间在这个点上不太对。','影子站起来了。',
+    '有一个很旧的、不属于这里的东西在动。','这里被什么东西标记过。','某种东西正在数你们的人数。',
+    '有一只看不见的手把门推上了。','气味是从另一个方向来的。','声音出现了两次，第二次更近。',
+    '有东西一直在，只是刚才没注意。','这个房间记得之前来过的人。','有什么东西在模仿声音。','空气的温度在一个点上突然没了。'],
+  /* 禁止怪物时的替代素材：只给痕迹，不给实体 */
+  trace:['空气在某个位置忽然低了一截，那里什么也没有。','灯光走到那一小段就变暗，走过去又亮起来。',
+    '那扇门一直开着，没人碰过。','地上的灰里有一串痕迹，到墙边就断了。','所有人都觉得这里好像少了一个人的呼吸。',
+    '手表的秒针停了两秒，又自己走了起来。','有什么东西过去了，但没有留下东西。','地上有一片水，是新的，可没有人带水进来。',
+    '空气里有一处不动的地方。','墙上的影子在没人动的时候晃了一下。','有东西从这儿过去，灰被压出一条路。',
+    '有一处的温度不对。','门轴轻轻地响了一下。','有东西碰过桌面，灰被抹掉一块。','脚印只有半只，剩下的没有了。',
+    '光被什么东西挡住了一瞬间。','某个方向的安静比别处更重。','有东西在很近的地方，但看不见。',
+    '墙上的痕迹是新的，还带着一点湿。','这里有一处不属于你们的气味。','什么东西碰了一下你们的行李。','地上的灰被吹开了一条线。'],
+  /* 延迟：东西在，但这一段不露面 */
+  delay:['有什么东西就在附近，但它没有露面。','它还没有出现，可你已经知道它在。','周围的一切都在说明，这里不止你们几个。',
+    '有东西在暗处等，等得很安静。','它没有动，但你知道方向。','你们走进去的时候，有东西让开了。',
+    '它就在你们中间，只是没露面。','有什么东西跟在后面，但一直没出现。','有一处黑暗比别处更厚。',
+    '你们没有看见它，它却看见你们了。','有东西在呼吸，但离得很远。','它一直在，只是还没打算出来。',
+    '往前再走一段，就会碰上。','它没有拦路，也没有跟上来。','有东西从这一侧过去了。',
+    '你们进来的时候，它往后退了一点。','有什么东西在数你们的脚步。','它等着你们先动。'],
+  /* 转场 */
+  move:['再往里去，就得靠手电和记忆了。','声音从另一侧传过来，方向很清楚。','要继续走，只能穿过那一片什么都看不见的地方。',
+    '路在这一段变窄了。','只能顺着原路退回去。','前面还有一段没走完。','从这里开始，地面往下走。',
+    '得绕过这一堆东西才能继续。','门在身后，前面还有一扇。','再走几步就是拐角。','要上去只能走这道楼梯。',
+    '这条路通到另一头。','再往里就没有灯了。','这一层走到底还有一间。','外面和这里只隔了一道墙。',
+    '前面那个口子就是出口。','要过去必须先爬上去。','两边都是墙，只有一条路。','从这里开始听不见外面的声音了。','走到这儿，路分成了两条。'],
+  /* 悬念 */
+  hook:['就在这时，身后很近的地方也响了一声。','有那么一瞬间，你确定自己数错了人数。','这声音听上去，和刚才那个一模一样。',
+    '前面那盏灯，是刚才没有的。','你忽然想起来，门本来是锁着的。','有什么东西刚才一直在看着你们。',
+    '这个声音这次更近了一点。','你们听见的那个节奏，和脚步是一样的。','手电照到的地方，刚才还没有东西。',
+    '有人低声说了一句，但没人听清。','就在你们准备走的时候，另一边响了。','这一次不是声音，是味道。',
+    '刚才那道影子，比人高。','有人发现自己手里的东西不见了。','有一个数字不对，但没人说出来。','有人回头，发现队伍短了。',
+    '那个动静停下来，然后又开始了。','所有人同时看向同一个方向。','前面那扇门，刚才不是关着的。','有人在很近的地方叹了口气。'],
+  /* 收尾 */
+  end:['这里能做的都做完了，剩下的只能等它自己发生。','谁也没有说出那句大家都想到的话。','你们退出来的时候，门还是开着的。',
+    '没有人愿意再朝那个方向看一眼。','手电终于撑不住，光弱了下去。','这一次算是过去了，但没有结束。',
+    '所有人都往外走，没有人跑。','门在身后合上，动静很轻。','没有人回头确认。','外面的空气一下子变正常了。',
+    '你们谁也没有先开口。','这地方还是老样子，像没人来过。','走出去以后，才发现衣服全湿了。','没有人讨论刚才看见的东西。',
+    '这一段路走得比来时快。','有人把门锁上，把钥匙收好。','这次什么都没留下。','等你们回头的时候，灯已经灭了。','没有人愿意最后一个走。','这一夜还长。']
+};
+
+/* ================= ⑤ 场景加料 =================
+   已经有点场景素材的 12 个场景，在这里补「口述体」的句子（事实 / 动作 / 对话 / 观察）。
+   生成逻辑会把这里的句子接在原场景素材后面，场景越具体，抽到的句子越贴。 */
+var KP_SCENE_EXT={
+  hospital:{
+    sight:['走廊两侧的病房门都开着，里面空着。','护士站的台面上摊着一本登记簿，笔还在。',
+      '有几张病床被推到了走廊中间。','天花板上一排灯管，只剩中间那根还是白的。'],
+    sound:['走廊很长，脚步声要过一会儿才跟上来。','有一间病房里的帘子在动。','水管在墙里响，一阵一阵的。',
+      '楼上有人推了一下什么，很轻。'],
+    fact:['这里停电已经很久了。','地上有水，是从天花板漏下来的。','值班室的门是从外面锁的。',
+      '楼层指示牌上写着三层，可楼梯只到二层。'],
+    act:['有人推开一扇病房门，探头看了一眼。','有人用手电照了照地上的水。','有人扶着床沿走过去。',
+      '走在前面的人停下来，比了个手势。'],
+    talk:['「这是几楼？」有人小声问。','「先别碰。」有人按住同伴的手。','「登记本上还有字。」有人压着嗓子说。',
+      '「那边有声音。」有人指了一下走廊尽头。'],
+    obs:['有人注意到，病床上的床单是新换的。','手电扫过护士站，柜子里还留着几盒药。',
+      '有人发现地上的水印不是从窗那边来的。','有人数了数病房，比楼层指示牌上少两间。'],
+    find:['有人忽然发现，其中一张床上有躺过的痕迹。','有人低头看见，自己的鞋印是这一层唯一的新印子。',
+      '有人发现走廊尽头那扇门上写着名字。','有人发现墙上的日历翻到了今年。'],
+    smell:['消毒水味还在，底下压着另一股味道。','有一间病房的味道明显不一样。','空气里有铁锈味，很淡。',
+      '味道是从楼梯下面上来的。'],
+    touch:['床栏是凉的，而且是干的。','墙上的漆一碰就掉。','地面很滑。','有人摸到门框上有一道缺口。'],
+    air:['整层楼安静得不像医院。','空调早就停了，空气一动不动。','没有风，却有一处地方比别处凉。',
+      '这里安静得能听见输液管里的水滴。'],
+    anomaly:['登记本上的日期是今年，字迹还没干。','走廊尽头的灯，会在有人走近时亮起来。','病房里的水杯是满的。',
+      '广播在没人按的情况下响了一下。']
+  },
+  house:{
+    sight:['客厅的家具都盖着白布。','楼梯上有一级台阶是断的。','墙上挂着几张相框，都是空的。','窗帘拉得很严。'],
+    sound:['楼上有东西轻轻碰了一下。','门轴响了一声，随后安静。','外面的风从缝里进来，带着一点呜声。'],
+    fact:['这栋房子很久没人住了。','电是通的，只有一个房间的灯能亮。','所有的钟都停着。','前门是从里面锁的。'],
+    act:['有人掀开一块白布。','有人扶着栏杆上楼梯。','有人把窗户推开一条缝。','有人在门边站了一会儿。'],
+    talk:['「有人吗？」有人喊了一声。','「别上楼。」后面的人说。','「这屋子比外面冷。」有人搓了搓手。'],
+    obs:['有人注意到，地上的灰只有一条被人走过的痕迹。','有人发现餐桌上摆着四套餐具。',
+      '有人看见壁炉里还有一点灰是温的。','有人检查了相框，背面写着日期。']
+  },
+  church:{
+    sight:['长椅上落着灰，只有中间几排是干净的。','彩窗碎了一角，地上有彩色玻璃渣。','圣坛上点着两根蜡烛。','墙上挂着一幅褪色的画。'],
+    sound:['堂里有回声，说话要等一下才听清。','风穿过破窗，带出很低的声音。','有人在后面走动，脚步很轻。'],
+    fact:['门是开着的，没有人管。','这里能坐几十个人。','蜡烛是新换的。','地上有一排跪用的垫子。'],
+    act:['有人走到圣坛前停下来。','有人拉了拉长椅，看它会不会动。','有人把帽子摘下来拿在手里。'],
+    talk:['「这儿有人住。」有人压低声音。','「别用灯。」前面的人说。','「那幅画上的人少了。」有人指了一下。'],
+    obs:['有人发现，蜡烛烧了一半，烛油还是软的。','有人注意到，长椅下面有一块布。',
+      '有人看见墙上有一行新刻的字。','有人数了数，彩窗正好十二扇。']
+  },
+  forest:{
+    sight:['树干上有一道道平行的划痕。','地上有一条被人踩出来的小路。','前面有一段路被倒下的树挡着。','树叶上全是水。'],
+    sound:['林子里的响动总比风慢半拍。','远处有树枝断了。','有鸟叫了一声就不叫了。','脚下踩断枯枝的声音很响。'],
+    fact:['这里看不到天。','路只有一条。','地上的土是软的。','没有风，树也在动。'],
+    act:['有人折了一根树枝拿在手里。','有人停下来听。','有人回头看了看走过的路。','有人把外套的帽子戴上。'],
+    talk:['「走这边。」前面的人指了一下。','「地图上不是这样。」有人低声说。','「别散开。」有人喊。'],
+    obs:['有人发现，那些划痕的高度正好在胸口。','有人注意到，地上的脚印是新的。',
+      '有人看见树上挂着一小片布。','有人发现指南针不指北。']
+  },
+  port:{
+    sight:['码头上的货箱堆得很高。','有几条船靠在一起，桅杆互相碰着。','雾把远处全盖住了。','地上有一摊一摊的水。'],
+    sound:['缆绳绷紧了又松开。','船壳互相挤压，发出闷响。','有铁链在某个方向拖过甲板。','浪拍在堤上，一下一下。'],
+    fact:['雾很大，看不清船名。','这里没有灯。','栈道是木头搭的，踩上去会响。','有一艘船没有系缆。'],
+    act:['有人踩着栈道往船边走。','有人扶了一下缆绳。','有人把手电往雾里照。','有人蹲下看栈道上留下的水印。'],
+    talk:['「哪条船？」有人问。','「别上船。」有人拉住他。','「这边有人。」有人低声说。'],
+    obs:['有人发现，栈道上的水印是一条直线的。','有人注意到，有一艘船的甲板是干的。',
+      '有人看见船头挂着一盏没点的灯。','有人发现水里浮着什么东西。']
+  },
+  school:{
+    sight:['储物柜一扇扇半开着，里面是空的。','黑板上留着一句没写完的话。','前排有一把椅子是倒着的。','走廊很长，两边全是教室。'],
+    sound:['有椅子被挪动的声音。','操场上的秋千在响。','广播喇叭里有电流声。','脚步声在走廊里来回弹。'],
+    fact:['学校早就放学了。','走廊的灯只有一盏还亮。','每间教室的门都是开着的。','墙上的奖状还在。'],
+    act:['有人走进一间教室，看了看讲台。','有人推开一扇储物柜的门。','有人把椅子扶起来，又放下。'],
+    talk:['「哪间教室？」有人小声问。','「别动那个柜子。」有人说。','「你听见了吗？」有人停下来。'],
+    obs:['有人发现，黑板上的字被人擦掉了一半。','有人注意到，讲台上放着一本点名册。',
+      '有人看见课桌上刻着名字。','有人数了数，有一间教室的灯是开的。']
+  },
+  hotel:{
+    sight:['前台后面那排钟停在不同时间上。','地毯被踩出一条深色的路。','电梯门停在半开的位置。','走廊两边全是门。'],
+    sound:['有推车的轮子滚过去。','水管在墙里响。','某个房间里有电视的杂音。','有人在很远的地方关门。'],
+    fact:['这层楼没有客人。','房卡还插在门上的取电口里。','走廊尽头有一扇门是双开的。','服务员的车停在走廊中间。'],
+    act:['有人拿起前台的一本登记簿。','有人试着按了按电梯。','有人推开一扇房门。','有人蹲下来看地毯上的印子。'],
+    talk:['「几号房？」有人问。','「别进去。」有人说。','「登记簿上都是同一个名字。」有人翻着看。'],
+    obs:['有人发现，登记簿上每一页的签名都一样。','有人注意到，有一个房间的门是虚掩的。',
+      '有人看见地毯上有一段被拖过的痕迹。','有人发现电梯的按键上有个数字被抠掉了。']
+  },
+  basement:{
+    sight:['墙上的水印画出一片片深色的痕迹。','角落里堆着箱子，看不出用途。','地面中间有一圈发白的印子。','上面有横梁，压得很低。'],
+    sound:['水滴落进积水里，声音很大。','头顶有脚步，可头顶没有房间。','有东西在墙上擦过。','木阶在脚下叫。'],
+    fact:['这里的空气不流通。','积水没到脚踝。','门只有一扇，在身后。','墙是砖的，摸上去全是水。'],
+    act:['有人把手电咬在嘴里，腾出两只手。','有人踩进水里，停下来听回声。','有人扶着墙往下走。'],
+    talk:['「下面是哪儿？」有人问。','「别关门。」后面的人说。','「水比刚才深了。」有人低声说。'],
+    obs:['有人发现，墙上有一个手印，比自己的大。','有人注意到，水面上浮着一层灰。',
+      '有人看见地上的脚印到这里就没了。','有人发现有一扇门在箱子后面。']
+  },
+  cemetery:{
+    sight:['碑石一排排立着，都背对着来时的方向。','地上有一块土的颜色比周围深。','碑前堆着枯花。','远处的围墙有一段塌了。'],
+    sound:['风穿过碑林，声音很长。','土层底下有一声闷响。','有东西在草丛里动。','脚步声在土上很闷。'],
+    fact:['这里没有虫鸣。','新翻的土上没有脚印。','有一块碑倒着。','围墙有一道缺口。'],
+    act:['有人蹲下来看碑上的字。','有人用手电照新坟。','有人绕过倒下的碑走过去。'],
+    talk:['「哪一块？」有人问。','「别踩上去。」有人说。','「这个日期不对。」有人低声说。'],
+    obs:['有人发现，碑上的字被雨水填满了。','有人注意到，有一块碑前没有花。',
+      '有人看见土上有一道浅浅的痕。','有人发现守墓人的屋子亮着灯。']
+  },
+  lab:{
+    sight:['一排排架子从这头排到那头。','台面上摆着各种器械。','有几个瓶子还立着。','墙边有一台很大的机器。'],
+    sound:['有仪器在响，很规律。','某个地方一直在滴。','通风管里有风声。','开关被人拨了一下。'],
+    fact:['这里的电是通的。','地上画着一条白线。','有一扇门写着「冷库」。','台面上的东西摆得很整齐。'],
+    act:['有人拿起台子上的一本记录。','有人推了推那扇厚门。','有人把手电往架子深处照。','有人蹲下来看地上的白线。'],
+    talk:['「这些是干什么用的？」有人问。','「别碰。」有人说。','「记录停在上个月。」有人翻着看。'],
+    obs:['有人发现，记录本的最后一页是空白的。','有人注意到，有一个瓶子是热的。',
+      '有人看见地上的白线通向冷库。','有人发现架子上少了一个位置。']
+  },
+  town:{
+    sight:['主街两边都是关着门的铺子。','路中间有一辆车停着。','招牌上的字掉了一半。','路灯一盏隔一盏。'],
+    sound:['风把招牌吹得晃。','远处有狗叫了两声。','有扇门在来回拍。','整条街没有别的声音。'],
+    fact:['镇上的店全关着。','街上没有一个人。','车是停在路中间的。','公告栏上贴着一张旧报纸。'],
+    act:['有人走到车边看了一眼。','有人推了推铺子的门。','有人招呼大家跟上来。','有人把地图摊在车头上。'],
+    talk:['「人都去哪儿了？」有人问。','「别分开走。」有人说。','「这儿住不了人。」有人低声说。'],
+    obs:['有人发现，公告栏上的报纸比别的都新。','有人注意到，铺子的门是从里面锁的。',
+      '有人看见地上有一只鞋。','有人发现有一个窗口亮着。']
+  },
+  train:{
+    sight:['车厢里一排排空座。','行李架上有几个箱子还放着。','窗外一片黑，什么也看不见。','过道尽头是通往下一节的门。'],
+    sound:['车轮压过铁轨，很规律。','有门被推动的声音。','某节车厢里有铃声。','车厢连接处在响。'],
+    fact:['这节车厢只有你们。','灯隔一盏亮一盏。','窗户关得很严。','座位上有人的东西还放着。'],
+    act:['有人扶着座椅往前走。','有人拉开一扇车厢门。','有人把窗帘拉上。','有人坐下来喘了口气。'],
+    talk:['「下一节看看。」有人说。','「别过去。」有人说。','「这趟车没有列车员。」有人低声说。'],
+    obs:['有人发现，行李架上的箱子写着别人的名字。','有人注意到，地上有一道拖过的痕。',
+      '有人看见车窗玻璃上写着字。','有人发现座位上的东西还是热的。']
+  }
+};
+
+/* ================= ⑥ 新场景 =================
+   后加的 4 个常用场景（自带完整 L，跟原 12 个一样用）。要再加场景，照着写一条、push 进数组即可。 */
+var KP_SCENES_EXT=[
+  {v:'apartment', n:'公寓', w:['公寓','住宅楼','居民楼','楼房','出租屋','单元楼','筒子楼','宿舍楼'],
+   subs:['楼道','客厅','卧室','厨房','天台'],
+   L:{
+     open:['楼道里的声控灯是坏的，只能靠手电。'],
+     sight:['门口堆着几双鞋，其中一双摆得很整齐。','客厅的窗帘拉了一半，外面什么也看不见。','厨房水槽里放着没洗的碗。','卧室的床铺是掀开的。'],
+     sound:['楼道里有门关上的声音。','楼上有人在拖东西。','冰箱响了一下，又安静了。','水管在墙里咕噜响。'],
+     smell:['屋里有股烟味，还有一点饭菜的味道。','厨房的味道最重。'],
+     temp:['屋里比楼道暖，暖得有点闷。','有一面墙是凉的。'],
+     touch:['沙发坐下去陷得很深。','门把手上有一层油。'],
+     light:['对面楼的灯照进来一格一格的。','卧室只有床头一盏灯。'],
+     air:['这户人家像是刚出去没多久。','太整齐了，不像有人住。'],
+     react:['有人站在门口没有往里走。','有人低头看了看那几双鞋。'],
+     anomaly:['电视是开着的，没有声音。']
+   }},
+  {v:'factory', n:'废弃工厂', w:['工厂','厂房','车间','车间里','纺织厂','机械厂','矿场','作坊'],
+   subs:['车间','仓库','锅炉房','流水线','配电间'],
+   L:{
+     open:['厂房很高，光从破掉的顶棚漏下来。'],
+     sight:['流水线停在原地，上面还有没做完的东西。','墙上挂着一张排班表。','地上散着零件。','有一台机器比别的都大。'],
+     sound:['铁皮被风吹得响。','有金属互相碰的声音。','脚步在厂房里有很长的回音。','某处传出持续的嗡嗡声。'],
+     smell:['机油味很重。','有一股焦糊味。'],
+     temp:['厂房里比外面冷，风直着进来。','靠近锅炉房那边有点热。'],
+     touch:['机器外壳是凉的。','扶手上一层油。'],
+     light:['高处的窗户只剩几块玻璃。','安全出口的灯还亮着，是绿的。'],
+     air:['这里每一个声音都会绕一圈才回来。','这么大一个地方，什么都没有。'],
+     react:['有人把袖子往上撸了一下。','有人绕着机器走了一圈。'],
+     anomaly:['配电箱上所有的开关都是合上的。']
+   }},
+  {v:'library', n:'图书馆', w:['图书馆','阅览室','书库','档案室','藏书楼','图书室'],
+   subs:['书架区','阅览室','期刊室','书库','地下室'],
+   L:{
+     open:['书架一直排到底，中间的过道很窄。'],
+     sight:['有一排书被抽出来一半，没有放回去。','阅览室的桌子都空着。','地上有一本翻开的书。','窗户上蒙着一层灰。'],
+     sound:['很安静，翻书的声音都很清楚。','有书页被风吹动的声音。','远处有人在挪椅子。','脚步在书架之间传得很远。'],
+     smell:['纸和灰的味道很重。','有一点霉味，从书库里出来的。'],
+     temp:['图书馆比外面凉，越往里越凉。','空气很干。'],
+     touch:['书脊上全是灰。','桌面很滑。'],
+     light:['灯只开了一半。','有一排书架的灯是灭的。'],
+     air:['这里安静得让人不敢咳嗽。','没有人，但像是刚有人离开。'],
+     react:['有人把书放回原处。','有人压低声音说话。'],
+     anomaly:['有一本书放在桌上，正翻到中间。']
+   }},
+  {v:'subway', n:'地铁站', w:['地铁','地铁站','地下铁','车站','站台','隧道'],
+   subs:['站台','通道','检票口','隧道','值班室'],
+   L:{
+     open:['站台上的灯一排排亮着，没有人。'],
+     sight:['指示牌上有一半的字不亮了。','地上画着等车的黄线。','通道拐了好几个弯。','检票口的栏杆是放下的。'],
+     sound:['有很远的车声，但是一直没到。','通风口一直有风声。','头顶有脚步，那是街上。','广播里只有一点电流声。'],
+     smell:['地下的味道，潮而且闷。','有一点橡胶烧过的味道。'],
+     temp:['地底下比地面暖，闷得人发困。','有风从隧道里来。'],
+     touch:['扶手上有水汽。','地面踩上去有点滑。'],
+     light:['灯是白的，看人脸上没颜色。','隧道里全是黑的。'],
+     air:['这里空得能听见自己走路。','一个人也没有的站台，比满是人的更难受。'],
+     react:['有人去看时刻表。','有人站在黄线后面没有动。'],
+     anomaly:['时刻表上所有的车都写着同一个时间。']
+   }}
+];
+
+/* ================= ⑦ 怪物加料（原有 9 只，每维再补 2 条） =================
+   原来每维 2 条，连点几次「再来一段」就会重样；这里给每维补到 4 条。 */
+var KP_CREATURE_EXT={
+  deepone:{
+    first:['水里先冒出两个眼泡，然后才是整张脸。','它从岸边直接趟上来，水只到腰。'],
+    look:['手掌上有蹼，指头之间连着一层膜。','眼睛很大，不会眨。'],
+    act:['它走得很慢，每只脚都踩实了才换。','它歪着头看人，脖子转的角度不太对。'],
+    sound:['喉咙里有水泡破开的声音。','它说话，但听不出词。'],
+    smell:['身上是河底和海腥混在一起的味。','靠近了有一股冷腥味。'],
+    temp:['它走过的地方，地面又湿又凉。','它的皮肤比空气冷。'],
+    touch:['皮肤湿而且滑，像鱼肚子。','碰一下是凉的，很结实。'],
+    env:['上岸以后，水一直在往下滴。','它待过的地方，一会儿就湿了一片。'],
+    near:['它停在两三步外，不靠近也不走。','它和人保持着一样的高度看过来。'],
+    tell:['它忽然把重心放低了。','它不眨眼了，肩膀收起来。'],
+    battle:['它扑上来的时候一点声音也没有。','爪子扫过来，带着风声。'],
+    hurt:['它受伤的地方渗出的是深色的水。','被划开一道口子，它只是低头看了一眼。'],
+    die:['它倒下之前朝水里爬了两步。','它没有出声，只是慢慢弯下去。'],
+    vanish:['它退回水里，水面很快就平了。','一转身，岸边只剩一滩水。'],
+    observe:['近距离看，它脖子两侧有几道鳃一样的缝。','它的眼睛不看脸，只看手。']
+  },
+  ghoul:{
+    first:['它是四肢着地从墙那边爬过来的。','它从坑边站起来，比蹲着时高很多。'],
+    look:['脸像是被拉长了，没有嘴唇。','爪子很长，指甲是黑的。'],
+    act:['它用两条腿和两条手臂一起走。','它低头闻了闻地面。'],
+    sound:['它呼吸的声音像在笑。','喉咙里有很低的哼声。'],
+    smell:['身上是土和旧肉的味道。','一股腐味跟着它走。'],
+    temp:['它身上是暖的，比这里暖。','它碰过的地方留一点热。'],
+    touch:['皮很粗糙，像砂纸。','爪子是硬的。'],
+    env:['它来的方向有土被翻开。','它蹲过的地方被压出印子。'],
+    near:['它离得很近，闻了闻你们。','它绕着走了一圈，没有碰人。'],
+    tell:['它把重心移到了后腿。','它张了张嘴，牙全露出来。'],
+    battle:['它先扑最近的那个。','它用爪子横扫，然后立刻退开。'],
+    hurt:['它受伤后叫了一声，声音更像人。','它低头看伤口，然后继续靠过来。'],
+    die:['它蜷起来，像是要睡。','它倒下时爪子还在抓地。'],
+    vanish:['它钻回土里，坑边只剩一堆新土。','一转眼就退进黑暗，比刚才快得多。'],
+    observe:['它一直盯着人的手和包。','它避开灯照的方向。']
+  },
+  migo:{
+    first:['头顶先有膜翅的声音，然后它才落下来。','它是从上面下来的。'],
+    look:['翅很薄，一扇一扇。','身体像螃蟹和虫拼在一起。'],
+    act:['它用两只前肢做手势。','它悬在半空，不动。'],
+    sound:['翅的声音像有人在抖塑料布。','它发出短促的咔嗒声。'],
+    smell:['有一股很浓的菌味。','闻着像发霉的孢子。'],
+    temp:['它待的地方比别处冷。','靠近了有风。'],
+    touch:['外壳是硬的，一碰会响。','翅膀很薄，很凉。'],
+    env:['它落过的地方有一层白粉。','翅膀带下来很多灰。'],
+    near:['它停在你们头上看你们。','它落下一点，又升上去。'],
+    tell:['它的翅忽然停住了。','前肢抬到一个固定的位置。'],
+    battle:['它动了，翅的声音一下子变大。','它从上面切下来。'],
+    hurt:['被打中时它掉了一小截东西下来。','它退到高处，翅声变急。'],
+    die:['它掉在地上，翅还在动。','它不动了，翅慢慢停住。'],
+    vanish:['它升上去，撞开一块屋瓦走了。','翅声很快变远，一会儿就没了。'],
+    observe:['它身上有很多小孔。','它一直在看你们手里的东西。']
+  },
+  shoggoth:{
+    first:['地上那一堆东西开始动了。','它是从通道深处整个涌出来的。'],
+    look:['表面有许多眼睛，一个个睁开又闭上。','它是一团黑的，看不出头尾。'],
+    act:['它整个向前推，像一堵墙。','它伸出一部分，试了试空间。'],
+    sound:['它出声的时候像水在泥里翻。','有一阵低沉的响从它里面出来。'],
+    smell:['一股很重的油味。','闻起来像滚热的沥青。'],
+    temp:['它经过以后，地面是烫的。','靠近它，热得让人想后退。'],
+    touch:['碰到会粘住，很难甩开。','表面又软又重。'],
+    env:['它爬过的地方留着一层黑的。','墙上的东西被它带走了一半。'],
+    near:['它把一部分伸过来，又收回去。','它逼近时，整个房间的声音都小了。'],
+    tell:['它停下来，表面浮起许多眼睛。','它开始变得很平。'],
+    battle:['它直接压过来，没有躲。','它用一部分卷住最近的东西。'],
+    hurt:['被打中的地方陷下去，很快又合上。','被切开的断面里全是眼睛。'],
+    die:['它慢慢摊开，摊成一片。','它不动了，表面还在冒泡。'],
+    vanish:['它退回通道深处，声音一路远去。','它散开，从几个缝里走了。'],
+    observe:['那些眼睛看的方向不一样。','它身上粘着这里没有的东西。']
+  },
+  nightgaunt:{
+    first:['有东西从上面竖着落下来，一点声音也没有。','它滑过来，一点声音都没有，光在它身上不反。'],
+    look:['没有脸，头上什么也没有。','尾巴上带着倒钩。','翅膀很薄，黑得看不出边。'],
+    act:['它贴在墙上不动。','它用尾巴试探着靠近。'],
+    sound:['它没有声音，只是把空气推开一点。','掠过时只听见很轻的风。'],
+    smell:['没有味道。','空气在它经过的时候变冷。'],
+    temp:['它贴近的时候，温度往下掉。','它碰过的地方是凉的。'],
+    touch:['手是凉的，很光滑。','钩子划过去，像麻了一下。'],
+    env:['它经过以后，灯暗了一瞬。','它的影子比其他东西淡。'],
+    near:['它悬在背后，不出声。','它一直保持着同一个距离。'],
+    tell:['它把尾巴举起来了。','它贴得更低，翅膀收拢。'],
+    battle:['它直直地抓过来，没有预兆。','它扑上来，动作比看上去快得多。'],
+    hurt:['被打中时它只是转了个方向。','它退开，翅膀扇了两下。'],
+    die:['它落到地上，铺开了一大片。','它散了，一点声音都没有。'],
+    vanish:['它升进黑里，看不见了。','它从视野里消失，但风声还在。'],
+    observe:['它没有脸，但你知道它在看谁。','它的动作里没有一点多余的。']
+  }
+};
+
+KP_CREATURE_EXT.serpent={
+  first:['它从帘子后面侧身探出来。','它进来的时候先伸的是头。'],
+  look:['皮肤上有一层细鳞。','头是人的，眼睛不像。','信子一进一出。'],
+  act:['它站得很直，双手垂着不动。','它慢慢地转过头来。'],
+  sound:['它说话时带着嘶声。','有细碎的摩擦声跟着它。'],
+  smell:['一股麝香一样的味道。','闻着有点腥。'],
+  temp:['它身上是凉的。','它经过时，空气冷了一点。'],
+  touch:['鳞是干的，一片压着一片。','皮肤很硬。'],
+  env:['它走过的地面留着一道浅浅的痕。','它待过的地方有股味道。'],
+  near:['它和人保持着正好一步的距离。','它把头低下来看你们。'],
+  tell:['信子探出来的次数变多了。','它的一只手慢慢抬起来。'],
+  battle:['它出手很快，看不出用力。','它先退半步，再往前压。'],
+  hurt:['它受伤的地方渗出很少的东西。','它低头看了一眼伤口，没有出声。'],
+  die:['它慢慢坐到地上，头垂下来。','它倒下时身体还在动。'],
+  vanish:['它退回帘子后面，脚步很轻。','它绕过墙角就不见了。'],
+  observe:['它的手指比人多一节。','它的眼睛一直没眨。']
+};
+KP_CREATURE_EXT.hound={
+  first:['空气里先出现一个角，然后才是一只狗。','它是从一个不该有角的地方出来的。'],
+  look:['头是扁的，向前伸。','每一个脚印都比前一个更像人。'],
+  act:['它沿着墙走，不停下来。','它转了一圈，方向一直在变。'],
+  sound:['它叫的声音很远。','有很低的摩擦声，像沙子在拖。'],
+  smell:['有一股很淡的硫味。','接近的时候空气里有股烧过头的味道。'],
+  temp:['它到的地方温度会掉。','地上是凉的。'],
+  touch:['碰到会很刺，像针。','它的表面不听手使。'],
+  env:['它经过以后，角落里的角变多了。','它站着的地方，地面有一点扭。'],
+  near:['它已经绕过一半，还没走。','它在你侧面，不进也不退。'],
+  tell:['它的头压得更低了。','它停下来，整个身体对着你们。'],
+  battle:['它一步就跨到了面前。','它贴着墙过来，速度不合常理。'],
+  hurt:['被打中后它没有退，只是变了个方向。','它分开，又并回一起。'],
+  die:['它慢慢地退回那个角里。','它像是被抹掉了。'],
+  vanish:['它退进墙角，先没了后腿。','它从另一个角度消失了。'],
+  observe:['它走的路线没有一条是直的。','你很难记住它刚才站在哪儿。']
+};
+KP_CREATURE_EXT.ghost={
+  first:['光里多了一个人形的暗块。','玻璃上先有一个人影。'],
+  look:['看不清脸，只能看见衣服的轮廓。','它是淡的，像隔着水看。','边缘一直在动。'],
+  act:['它停在原地，不动。','它慢慢地抬起手。'],
+  sound:['有一点很轻的声音，像有人在很远的地方说话。','你听见自己的名字。'],
+  smell:['没有味道。','空气里有一点很旧的味道。'],
+  temp:['它经过的地方很冷。','靠近时，呼吸变得困难。'],
+  touch:['碰不到，手直接过去了。','像穿过一层冷水。'],
+  env:['它出现以后，灯变暗了。','它待过的地方，玻璃上留下雾。'],
+  near:['它离得很近，你能看见轮廓在动。','它一直在同一个位置。'],
+  tell:['它开始往这边移动，很慢。','它的手停在半空。'],
+  battle:['它没有扑，只是靠得更近。','周围的东西开始自己动。'],
+  hurt:['伤不到它，它只是抖了一下。','被击中的地方散开，又聚回来。'],
+  die:['它慢慢变淡。','它的轮廓散成雾。'],
+  vanish:['它就那样不见了，没有动静。','光一正常，它就不在了。'],
+  observe:['它的姿势一直没有变过。','它身上那件衣服是很旧的样式。']
+};
+KP_CREATURE_EXT.nameless={
+  first:['你们先注意到的是它挡住的那一块。','它是从什么也没有的地方开始有的。'],
+  look:['看不出它有几条边。','看一眼就要移开，不然会很累。','它不像站着，也不像躺下。'],
+  act:['它动的时候，周围的东西都跟着动。','它的一部分伸过来了。'],
+  sound:['有一种声音，听不清来自哪个方向。','声音像是从你们中间出来的。'],
+  smell:['有味道，但说不清是哪种。','空气变得很浓。'],
+  temp:['它那一侧明显更冷。','温度在一个点上没有了。'],
+  touch:['碰到的东西不软也不硬。','手放在上面没有感觉。'],
+  env:['它在的时候，影子都不太对。','它靠近以后，别的响声都停了。'],
+  near:['它已经比刚才更近了。','它就在那个位置，可你说不出有多远。'],
+  tell:['它的一部分开始变长。','所有声音同时低了下去。'],
+  battle:['它没有动，但你们已经在往后退。','它接触到的东西会跟着变。'],
+  hurt:['打上去没有反应。','它好像并没有被伤到。'],
+  die:['它没有死，只是慢慢不再存在。','它收回去，收进原来的地方。'],
+  vanish:['它不见了，地上什么也没留下。','一切恢复原状，只是少了一小段时间。'],
+  observe:['你不能同时看清它的两边。','看它的时候，会觉得时间有点对不上。']
+};
+
+/* ================= ⑧ 新怪物 =================
+   每只都是自己的素材（外貌 / 动作 / 声音 / 气味 / 环境影响 / 异常），不套同一套恐怖模板。 */
+var KP_CREATURES_EXT=[
+  {v:'byakhee', n:'拜亚基', w:['拜亚基','Byakhee','byakhee','拜亚奇','巨翅怪'],
+   c:{
+     first:['先是翅膀的声音，很大，然后它落在屋顶上。','它是从天上斜着插下来的。'],
+     look:['翅很大，身体却瘦得看得见骨。','头像是秃鹫和别的东西拼的。','两只后腿反着弯。','毛很少，皮是灰的。'],
+     act:['它收翅的时候很慢，像是在听。','它侧着头，一只眼睛对着你们。','它用后腿跳了一步。','它低头整理自己的翅。'],
+     sound:['翅扇起来的声音像有人在拍床单。','它喉咙里有很低的、断续的响。','它叫的时候，声音是两层叠在一起的。','落在屋顶上以后，它就安静了。'],
+     smell:['有一股很重的腥味。','闻着像羽毛烧过。','味道是干的，不潮。','靠近了会闻到一点铁味。'],
+     temp:['它落过的地方，瓦是凉的。','靠近它，会觉得风变大了。','翅扇起来带的风是冷的。','它站立的地方，地面是凉的。'],
+     touch:['羽毛很硬，扎手。','骨头一样的腿，摸着很轻。','翅膜又薄又韧。','碰一下，它整只都收紧了。'],
+     env:['它落下以后，屋顶的灰被吹开一片。','它走动的时候，瓦一片一片在响。','它停在哪个方向，哪边就没有鸟叫。','它飞过以后，风要过一会儿才停。'],
+     near:['它在屋顶上，一直没动。','它从上面看着你们，没有下来。','它换了个位置，更靠近门口。','它悬了一会儿，又升高一点。'],
+     tell:['它的翅慢慢张开了一半。','它把头低下来对着你们。','它不再整理羽毛了。','它的后腿收起了一点。'],
+     battle:['它几乎是垂直地扑下来的。','它贴着地面掠过，翅尖扫到人。','它用两只后腿抓，用喙啄。','它扑下来又立刻升上去。'],
+     hurt:['被打中后，它掉下几根羽毛。','它翻了个身，又稳住了。','它退到高处，翅膀扇得更快。','它受伤的地方是干的。'],
+     die:['它掉下来，翅摊在地上，还在轻微地动。','它落地以后就不动了，头歪着。','它的翅慢慢合拢，像收伞。','它趴在瓦上，一点声音也没有了。'],
+     vanish:['它忽然升空，声音很快就远了。','它飞进黑里，只剩翅声。','它越过屋脊，再没出现。','风一停，它就已经不在了。'],
+     observe:['它的翅展比一个成年人张开双手还宽。','它看东西只用一只眼睛。','它的腿上有旧伤。','它一直在听，而不是在看。']
+   }},
+  {v:'starvampire', n:'空鬼', w:['空鬼','星之吸血鬼','Star Vampire','star vampire','星之精'],
+   c:{
+     first:['空气里出现一片涟漪，然后有东西在动。','它一直是隐形的，直到有东西溅到它身上。'],
+     look:['看不见整体，只能看见被溅到的那一部分。','形状像一只很大的、会飞的软体东西。','表面的突起会动。','轮廓是靠水渍看出来的。'],
+     act:['它悬在半空，慢慢转过来。','它伸出一部分，试探着往前。','它在原地蠕动了很久。','它绕着房间转了一圈。'],
+     sound:['它发出很大的、低沉的响声。','有一种像有人在笑，又像喉咙响的声音。','它贴近的时候，声音从四面八方来。','它的声音一直没有停过。'],
+     smell:['空气里有股很重的铁味。','闻着像血腥味，但找不到来源。','有一股湿冷的气味。','味道随着它的移动在换位置。'],
+     temp:['它经过的地方很冷。','有风，但没有来源。','靠近处的地面是凉的。','空气变重了。'],
+     touch:['碰不到，只感觉一片黏。','有东西擦过头顶。','像被一只湿的手按住。','它的表面又软又重。'],
+     env:['它动过的地方，墙上的灰被带走一条。','它待过的地方留下一片水渍。','桌子上的东西被扫到了地上。','地上的水印正在变。'],
+     near:['声音在头顶停住了。','有一片湿的东西正在靠近。','它已经贴到背后了。','你能听见它的声音，却看不见它。'],
+     tell:['声音忽然变低。','空气往一个方向收紧。','有东西绕到了侧面。','它的声音停了一拍。'],
+     battle:['它整个压下来。','有东西卷住了最近的人。','它贴住就不松，一直在吸。','它贴着地扫过来。'],
+     hurt:['被溅到的地方喷出一片红。','它发出很响的一声，退开了。','被打中的部位现出一小段轮廓。','它表面的东西掉了不少下来。'],
+     die:['它的声音慢慢低下去，最后没了。','地上留下一大片红的。','它落在地上，轮廓慢慢显出来。','它不动了，声音还在响了一小会儿。'],
+     vanish:['声音很快变远，一会儿就没了。','它走了，只留下满地的痕迹。','它离开的时候，空气一下子响起来。','响声过去，什么也看不见了。'],
+     observe:['只有溅到东西的地方才看得见它。','它的声音和动作对不上。','它一直在绕，像在挑人。','它停过的地方，墙上全是水。']
+   }},
+  {v:'moonbeast', n:'月兽', w:['月兽','Moon-Beast','moon beast','月之兽','白月兽'],
+   c:{
+     first:['它是被人牵着出来的。','它从舱口慢慢爬上来，身体很白。'],
+     look:['身体很胖，皮肤是白的，像没晒过太阳。','脸上没有眼睛，只有许多触手。','手比人的大得多。','它的皮肤上有很多褶皱。'],
+     act:['它用触手摸索着往前走。','它停下来，把触手都伸直了。','它坐在那里，不动。','它用手扶着墙。'],
+     sound:['它发出很低的、像唱歌一样的声音。','有黏腻的摩擦声。','它说话的时候声音很慢。','它一直在轻轻哼。'],
+     smell:['有一股很闷的甜味。','闻着像放久了的果子。','味道很淡，但一直有。','靠近了有点想呕。'],
+     temp:['它身上是凉的。','它待过的地方又湿又凉。','它的温度比周围的人低。','靠近它，空气变重。'],
+     touch:['皮肤很滑，摸着像湿的皮。','触手是软的，很有力。','碰到的地方会留下黏液。','它的手很凉。'],
+     env:['它坐过的地方留下一层湿印。','它经过以后，地上的灰被抹开。','它待的地方，气味一直散不掉。','它碰过的东西都是湿的。'],
+     near:['它把触手伸过来，很慢。','它停在一步外，触手还在动。','它对着你们的方向，但没有眼睛。','它靠得更近了。'],
+     tell:['所有触手同时竖起来。','它不哼了。','它把手抬到胸口。','它的身体往前倾。'],
+     battle:['它用触手直接卷过来。','它动作不快，但够得到的地方全在动。','它一手抓住就不松。','它往前压，把旁边的东西全推开。'],
+     hurt:['受伤时它发出一声很长的低音。','它退开，触手收成一团。','伤口流出的是清的水。','它没有叫，只是往后退。'],
+     die:['它慢慢坐下去，触手垂着。','它趴在原地不动了。','它的哼声停下来。','它扁下去，像泄了气。'],
+     vanish:['它被人拉走了，一路留下湿印。','它退回舱口，很快就看不见了。','它爬回水里，声音也没了。','它被抬走的时候还在动。'],
+     observe:['它没有眼睛，但对声音很敏感。','它的手一直在摸索。','它的触手数不清。','它听得懂人说话。']
+   }}
+];
+KP_CREATURES=KP_CREATURES.concat(KP_CREATURES_EXT);
+KP_NEG[0].w=KP_NEG[0].w.concat(['拜亚基','拜亚奇','空鬼','星之吸血鬼','月兽']);
+
+/* ================= ⑨ 明确条件句的多个说法 =================
+   用户明确说了氛围 / 事件 / 物体，这些话每一段都必须出现 —— 但只有一句就必然重样。
+   这里给每条条件配几个说法，生成时在最近没用过的说法里挑一个，条件不丢、句子也不重复。 */
+var KP_MOOD_SAY={
+  oppressive:['压得人胸口发闷，说不出为什么。','这里闷得厉害，像有什么按着不让人喘气。','空气像块湿布，压在脸上。','待久了会觉得喘不上气。'],
+  eerie:['凉气不是从外面来的，是从骨头里往外冒。','这里让人从里往外发冷。','说不上哪里渗人，就是不想多待。','站在这里，后颈一直不放松。'],
+  tense:['每个人都绷着，谁都不肯先把气松掉。','气氛绷得很紧，一句话就能点着。','所有人都在等，等一个说不清的信号。','谁都听得见自己的心跳。'],
+  uneasy:['后颈一直提醒你别回头。','没什么不对，可就是让人心里发毛。','有一种说不清的慌，压着不让散。','总觉得背后有人，回头又什么都没有。'],
+  silent:['静得能听见自己的心跳。','这里一点声音都没有，连风都没有。','安静到能听见血在耳朵里跑。','安静得让人不敢大声呼吸。'],
+  weird:['什么都正常，可合起来就是不对。','每一样单看都对，放在一起就不对。','你说不出哪里不对，但就是不对。','一切都对得上，除了感觉。'],
+  cold:['冷得吸气的时候喉咙发疼。','凉气顺着裤腿往上爬。','这里的冷是往骨头里钻的。','站着不动就开始发抖。'],
+  loud:['响动围在四周，逼得人不敢出声。','吵得人下意识想提高嗓门。','到处都是声音，分不清哪一个是该听的。','声音从几个方向一起压过来。'],
+  damp:['潮湿贴在皮肤上，怎么擦都擦不掉。','衣服很快就潮了，贴在身上。','这里的湿气像一层膜。','墙壁湿得能按下手印。'],
+  reek:['那股臭味像是活的，跟着人走。','闻一下就想呕，只能改用嘴呼吸。','味道盖过了别的气味。','臭味黏在鼻子里，走两步还在。'],
+  holy:['这里的安静带着一种被要求过的规矩。','这地方的庄重让人不敢随便说话。','进来以后，人会不自觉放轻脚步。','这里的肃穆是摆出来的。'],
+  warm:['暖意只有很小一块，走两步就没了。','这里比外面暖，暖得有点闷。','有一小片地方是温的。','这点温度撑不了多久。'],
+  calm:['表面平静得像什么都没发生过。','这里安静得没有道理。','一切都太平了，平得不真实。','越是平静，越让人不敢松手。'],
+  bloody:['血的味道盖过了其他一切。','空气里全是血的味。','这里到处都不干净。','血的痕迹到处都是。']
+};
+var KP_EVENT_SAY={
+  body:['前面地上躺着一个人，一动不动。','有人先看见了，抬手指过去，那里躺着一具尸体。','地上那具尸体已经不是刚死的样子了。','他们找到了要找的人，只是人已经死了。','尸体就在那里，谁也没想到会是在这个地方。'],
+  steps:['脚步声又响起来了，不快，也不慢。','有脚步从后面跟上来，一步一步。','脚步声停在门口，没有再往前。','有人在外面走，一圈一圈地绕。','那串脚步一直保持着同样的间隔。'],
+  lightsout:['灯灭了。','灯闪了两下，彻底黑了。','有人关掉灯，屋子里立刻什么也看不见。','灯自己熄了。','光一下子就没了，谁都没有碰开关。'],
+  door:['门自己动了一下，然后停住。','门被推开了，门口没有人。','门慢慢合上，没有响声。','有人在门那边动了动把手。','门开了条缝，然后不动了。'],
+  missing:['有人数了人数，发现少了一个。','回头的时候，队伍里少了一个人。','少了一个，没有人看见他是什么时候不见的。','有人喊了一声，没有人应。','原来站在最后的那个人不在了。'],
+  meet:['它就在那里，没有躲，也没有走。','那东西看见你们了，没有动。','它站在路中间，好像在等。','它就停在前面，离得不算远。','双方都没动，就这么对着。'],
+  chase:['下一秒，所有人都开始跑。','有人先跑，剩下的跟着跑。','那东西追了上来，一步比一步近。','所有人同时转身往外跑。','跑起来之后，谁都顾不上回头。'],
+  blood:['墙上留着一道拖拽过的血迹。','地上有一片血，已经半干。','血从门里一直滴到走廊。','有一道血痕，方向是往里。','血迹停在墙边就断了。'],
+  scream:['一声尖叫从深处传来，然后断了。','有人叫了一声，声音很短。','尖叫响了一半就停了。','那一声叫完之后，再没有别的动静。','有人在很远的地方喊，喊的不是你们的名字。'],
+  knock:['有人敲门。这个地方不应该有人在。','门被敲了三下，很轻。','有人在门外敲，敲得有规律。','敲门声停下来，等了一会儿，又响了。','有人在外面敲窗。'],
+  broadcast:['电话响了，听筒里没有人说话。','收音机自己开了，只有杂音。','喇叭里传出一段听不清的话。','有人拿起听筒，那头什么都没有。','广播响了一声就停了。'],
+  halluc:['眼前的东西晃了一下，像从来没存在过。','有人揉了揉眼睛，刚才那个东西不在了。','看到的东西和记忆对不上。','有人指了一下，那里什么也没有。','刚才明明看见的东西，现在没有了。']
+};
+var KP_OBJECT_SAY={
+  candle:['蜡烛的火苗一直歪向没有风的一侧。','蜡烛烧到一半，烛油还是软的。','烛火很小，人一动影子就跟着晃。'],
+  torch:['手电的光柱尽头，永远差一点看不见。','手电忽然暗了一下，又亮回来。','手电照到的地方，光就散了。'],
+  photo:['照片上有一个人，被人用指甲抠掉了脸。','照片是新的，可上面的景早就没了。','照片背面写着一个已经不用的地址。'],
+  diary:['日记停在半句话上，笔迹越写越用力。','日记最后几页被撕掉了。','日记里夹着一张纸，上面只有日期。'],
+  mirror:['镜子里的房间，比眼前的房间多一样东西。','镜面上有一层雾，像刚有人对着它呼吸。','镜子是干净的，别的地方都是灰。'],
+  doll:['那个玩偶的朝向，和刚才不一样了。','玩偶的眼睛是新换的。','玩偶的衣服上有一块洗不掉的印子。'],
+  clock:['钟还在走，可指针的方向不对。','钟停了，停在同一个时间上。','钟走得比刚才快。'],
+  phone:['电话线断着，听筒里却还有一点呼吸声。','电话响了一下就断，没有第二次。','听筒是热的。'],
+  key:['那把钥匙上刻着一个不在附近的地址。','钥匙上沾着一层新油。','钥匙只有一把，锁却有两把。']
+};
+
+/* 再补一批「带场景名」的叙述入口：一句话里说了场景时，开场要把场景带上，
+   每个类型都得有几条能用的，连着生成才不会老是同一个开头。 */
+var KP_OPENERS_2={
+  smell:['{sc}里那股味，一进门就贴上来。','{sc}里的味道比外面重。','一进{sc}就闻见了，说不上是什么。'],
+  touch:['{sc}的门框摸上去有一层灰。','{sc}里的地面踩上去不太踏实。','{sc}的墙是潮的，手一抹就下来一层。'],
+  act:['有人先把手电往{sc}里送了一下。','有人在{sc}门口停住，没有马上进去。','有人把{sc}的门推到最大。'],
+  odd:['{sc}里有一件事不对：门是从里面关着的。','{sc}里该响的东西，一个也没响。','{sc}里少了一样本该在的东西。'],
+  obs:['有人站在{sc}门口，先看了一圈。','手电贴着{sc}的墙扫过去。','有人低头看了看{sc}的地面。'],
+  talk:['「{q}。」有人在{sc}门口说。','「{q}」——这句话在{sc}里传得很远。','有人在{sc}里说了一句：「{q}」'],
+  react:['有人在{sc}外面站住了。','看到{sc}的样子，有人退了半步。','有人没有跟着进{sc}，站在门口。'],
+  turn:['{sc}看上去很正常，正常得不太对。','刚进{sc}的时候什么也没有，走了几步就不一样了。','{sc}里一切照旧，除了少一个人。'],
+  odd2:['{sc}里的动静停了，可周围还在动。','{sc}里安静了几秒，然后有别的东西接上。','{sc}里的影子，比刚才多了一个。'],
+  fact:['{sc}里能数得出来的东西就这几件。','{sc}的门是从外面锁上的。','进来之前，{sc}里没有一点声音。'],
+  short:['{sc}里没有人。','{sc}的门没锁。','{sc}里比外面冷。'],
+  sight:['{sc}的窗户是开着的。','{sc}里有一样东西摆在正中间。'],
+  sound:['{sc}的另一头还有别的声音。','{sc}里滴水的声音很清楚。'],
+  sky:['{t}。{sc}就在前面，外面{w}。','这样的{wt}，{sc}里比外面还闷。'],
+  event:['你们刚进{sc}，事情就发生了。','{sc}的门在身后合上了。'],
+  odd2b:[]
+};
+delete KP_OPENERS_2.odd2b;
+Object.keys(KP_OPENERS_2).forEach(function(k){ KP_OPENERS[k]=KP_OPENERS[k].concat(KP_OPENERS_2[k]); });
+
+/* ================= ⑩ 天气 / 时间的说法 =================
+   用户明确给了天气或时间，那一段里就得有它 —— 但只有固定一句又会重样，所以每种天气 / 时间多写几种。
+   生成时会强制留一个位置给它们（维度 env），在最近没用过的说法里挑。 */
+var KP_WEATHER_SAY={
+  storm:['雨点砸在窗上，一下一下。','外面的雨没停，反而更密了。','雨水顺着墙往下流，地上已经积了一小片。',
+    '雷声从很远的地方滚过来。','雨大得听不见别的动静。','有风把雨吹进来，门口湿了一片。'],
+  rain:['雨很小，但一直没停。','外面下着细雨，落在哪儿都不响。','雨把地面泡得发亮。',
+    '水从屋檐往下滴，滴得很匀。','雨丝斜着飘进来一点。','这种雨下久了，衣服会一点点湿透。'],
+  fog:['雾把五步以外的东西都收走了。','雾里什么都在动，只有脚下是实的。','对面的东西只剩一个大概的轮廓。',
+    '雾贴着地面在走。','头发很快就潮了。','雾把声音也闷住了。'],
+  snow:['雪还在下，地上已经白了一层。','雪把脚印一层层盖掉。','踩下去是一声闷响。',
+    '雪花落在脸上，很快就化了。','雪光把夜里的东西照得发灰。','雪压得树枝往下弯。'],
+  clear:['天很晴，星星亮得有点刺眼。','没有云，月亮看得清清楚楚。','空气很干，一点水汽都没有。',
+    '天色干净得反常。','光把东西照得太清楚了。','这么好的天，和这里不太搭。'],
+  overcast:['云压得很低。','天光像蒙了一层灰布。','一整天都见不到太阳。',
+    '阴天里分不出是白天还是傍晚。','天灰得让人提不起精神。','云在慢慢走，一点风都没有。'],
+  wind:['风把门板撞得一下一下响。','风从背后吹过来，把衣服按在身上。','风声一直没停过。',
+    '风把地上的东西吹得直滚。','有风从缝里灌进来，带着哨音。','站着都能被风吹得一晃。']
+};
+var KP_TIME_SAY={
+  night:['夜里的一切都比白天响。','这个时候不该有人在外面走。','夜色把远处的细节都抹掉了。','这个点，正常人都在睡觉。'],
+  midnight:['这是一天里最不该醒着的时候。','午夜没有风，空气像是停住的。','这个钟点，连声音都懒得出来。','夜最深的时候，什么都慢下来了。'],
+  dawn:['天边刚翻出一点灰白，别的还是黑的。','这个钟点属于早起的鸟，和没睡的人。','天快亮了，可地上还是看不清。','清晨的空气很凉，也很静。'],
+  day:['白天有白天的坏处：什么都看得见。','日光把东西照得太清楚，连灰都不肯藏。','大白天的，这里的安静更不合常理。','太阳底下，什么细节都躲不掉。'],
+  dusk:['天色一点点沉下去，影子先变长，再变糊。','黄昏只维持了一会儿，就整体变冷了。','天快黑了，东西开始看不清。','这个时候的光最会骗人。']
+};
+
+/* 天气 / 时间 / 事件 / 氛围 / 物体：再多写几种说法（这几类是「用户明确要求、每段必须有」的，
+   只有几句话就必然重样，所以要多）。 */
+var KP_WEATHER_SAY_2={
+  storm:['雨没停过，声音一直压在头顶。','地上到处是水，走一步溅一下。','窗户被风推得响。',
+    '雨把外面的灯照成一片糊的。','有雨水从上面渗下来，滴在肩膀上。','雷声过了，雨更大了。'],
+  rain:['外面还是小雨，一点没变。','雨声很匀，听久了会犯困。','地上一直是湿的，鞋底沾着水。',
+    '雨把窗户糊了一层。','雨不大，但衣服已经有点潮了。','雨点落在铁皮上，声音很轻。'],
+  fog:['雾把远处全吃掉了。','前面看不清，只能一步一步试。','雾里有东西在动，但看不出是什么。',
+    '雾让所有的距离都变远了。','雾里的灯只剩一团黄。','雾贴在脸上，凉而且湿。'],
+  snow:['雪一直没有停。','地上已经看不出原来的样子了。','踩过的脚印很快就没了。',
+    '雪让四周变得特别安静。','雪落在肩上，一层一层。','雪把远处的轮廓抹平了。'],
+  clear:['天上一片云都没有。','星星亮得不正常。','月光很足，地上能看清影子。',
+    '空气干燥，喉咙有点紧。','这种天气里出的事，最不好解释。','天太干净了，干净得反常。'],
+  overcast:['天很低，压着头顶。','一直不见太阳，也分不出几点。','阴天的光让颜色都变灰了。',
+    '云慢得几乎不动。','没有风，天却一直是灰的。','这种天气里，什么都显得旧。'],
+  wind:['风一直刮着，没停过。','有东西被风推着在地上跑。','风把话都吹散了。',
+    '风从领口灌进去。','窗户在风里一直响。','风里带着一点外面的味道。']
+};
+var KP_TIME_SAY_2={
+  night:['这个点本来不会有人。','夜里看不远，只能靠听。','夜把声音放大了。','过了这个点，事情都不太正常。','夜里的冷比白天更实在。'],
+  midnight:['过了午夜，什么都该停了。','午夜这段时间最难熬。','这个时间，连狗都不叫。','夜到最深处，人反而最清醒。'],
+  dawn:['天在一点一点亮起来。','这个时候最冷。','再撑一会儿天就亮了。','早上的空气里有股湿味。'],
+  day:['大白天看得太清楚，反而不好。','日头下面什么都藏不住。','白天来这种地方，感觉更不对。','亮着的时候，反而更让人心里没底。'],
+  dusk:['天在往下沉。','影子先变长，然后什么都看不清了。','这个时候最容易被看错。','天黑前的这一段最不好走。']
+};
+KP_WEATHER_SAY_2 && Object.keys(KP_WEATHER_SAY_2).forEach(function(k){ KP_WEATHER_SAY[k]=KP_WEATHER_SAY[k].concat(KP_WEATHER_SAY_2[k]); });
+KP_TIME_SAY_2 && Object.keys(KP_TIME_SAY_2).forEach(function(k){ KP_TIME_SAY[k]=KP_TIME_SAY[k].concat(KP_TIME_SAY_2[k]); });
+var KP_EVENT_SAY_2={
+  body:['人已经死了，死了一段时间了。','尸体就在你们正前方，谁都没有先过去。','地上躺着一具尸体，姿势不太自然。',
+    '那是一具尸体，看得出来刚死不久。','有人先看见的，地上那具尸体就在前面。'],
+  steps:['那串脚步又近了一点。','有人在外面来回走。','脚步停在门外，没有进来。','有脚步从楼上下来。','脚步在同一个地方来回踏。'],
+  lightsout:['光一下子没了。','有人把灯关了。','灯泡响了一声就灭了。','黑下来之后，谁都看不见谁。','灯灭了，只剩手电。'],
+  door:['门口站着一个影子，然后不见了。','门开着，刚才不是。','有人把门推开了，却没有进来。','门在动，慢慢地。','门被人从外面拉开了。'],
+  missing:['有人回头一看，少了一个。','队伍里少了一个人，没有人发现是什么时候。','有个位置空了。','喊了一声，没有人应。','数来数去，就是少一个。'],
+  meet:['它站在那儿，看着你们。','那东西没有走，也没有靠近。','它就在前面，一动没动。','它转过身，对着你们。','双方对着站着，谁都没动。'],
+  chase:['那东西动了，所有人转身就跑。','追上来的时候，谁都没有准备。','跑出去以后，后面的声音一直没停。','有人在跑的时候摔了一跤。','跑起来以后，队形就散了。'],
+  blood:['地上有血，拖出很长一道。','血还是湿的。','有一道血从门里拖出来。','墙上的血迹是新蹭的。','血在门槛上停住了。'],
+  scream:['有人叫了一声，然后什么都没有了。','尖叫只响了一半。','有人在深处喊，声音闷在里面。','那一声很尖，很短。','有人叫了名字，但没叫完。'],
+  knock:['有人在敲门。','门被敲了三下。','敲窗的声音很轻，但一直在。','有人在外面敲门，敲得很耐心。','敲门声停了一会儿，又开始了。'],
+  broadcast:['电话响了，没有人说话。','收音机自己开了。','喇叭里传出一阵杂音。','有人接了电话，那头是空的。','广播响了两声就停了。'],
+  halluc:['有人指着那边，可那里什么都没有。','眼前的东西闪了一下。','有人揉了揉眼睛，那样东西不见了。','刚才明明看见了，现在没有了。','有两个人看见了不同的东西。']
+};
+var KP_MOOD_SAY_2={
+  oppressive:['压得人不敢大声说话。','这里闷得像盖着一层东西。','呼吸都不顺畅。','越待越觉得胸口发紧。'],
+  eerie:['从里往外发凉。','这里让人不想多留。','光是站在这里就觉得渗人。','说不上来，但后颈一直不放松。'],
+  tense:['空气绷得很紧。','谁都不肯先动。','一句话就能点着。','所有人都在等。'],
+  uneasy:['后颈一直在提醒你。','心里发毛，可什么也没有。','有一种说不出的慌。','越安静越让人坐不住。'],
+  silent:['一点声音都没有。','静到能听见自己咽口水。','安静得不像有人来过。','这里连风都没有。'],
+  weird:['单看都对，合起来就不对。','你说不出哪里不对。','一切正常，除了感觉。','每一样东西都摆在它不该在的地方。'],
+  cold:['冷得手指发僵。','凉气从鞋底往上走。','这里比外面低好多度。','待一会儿就得搓手。'],
+  loud:['声音从几个方向一起过来。','吵得听不清人说话。','这里的动静一点没停过。','太响了，反而让人不敢出声。'],
+  damp:['湿气贴在皮肤上。','衣服潮了，贴在身上很不舒服。','这里的墙一直是湿的。','走两步鞋就湿了。'],
+  reek:['这味道跟着人走。','闻一下就想呕。','味道把别的气味全盖住了。','这里臭得待不住。'],
+  holy:['这里的人会不自觉放轻脚步。','庄重得让人不敢乱说话。','规矩感很重。','进来就觉得不该随便动东西。'],
+  warm:['有一小块地方是暖的。','这点温度不太对。','暖意很快就没了。','在这里，暖是件怪事。'],
+  calm:['太安静了，安静得可疑。','这里平静得不像发生过什么。','一切都很正常。','正常得让人不敢松手。'],
+  bloody:['到处都不干净。','血味很重。','这里刚出过事。','地上墙上都有。']
+};
+KP_MOOD_SAY_2 && Object.keys(KP_MOOD_SAY_2).forEach(function(k){ KP_MOOD_SAY[k]=KP_MOOD_SAY[k].concat(KP_MOOD_SAY_2[k]); });
+KP_EVENT_SAY_2 && Object.keys(KP_EVENT_SAY_2).forEach(function(k){ KP_EVENT_SAY[k]=KP_EVENT_SAY[k].concat(KP_EVENT_SAY_2[k]); });
+var KP_OBJECT_SAY_2={
+  candle:['蜡烛已经烧到底了，火还在。','有人吹了一下，火苗歪向另一边。','蜡烛的蜡油流了一桌。'],
+  torch:['手电的电池快没了，光在变弱。','有人换了新电池，光又亮起来。','手电摔了一下，还是不灭。'],
+  photo:['照片上的人比现在年轻。','照片是从别的地方墙上揭下来的。','照片背后有一行小字。'],
+  diary:['日记里的字越到后面越乱。','日记中间缺了几页。','日记最后一页只写了日期。'],
+  mirror:['镜子上有裂纹，正好穿过人影。','有人站在镜子前，看了很久。','镜子里的人比实际晚了半拍。'],
+  doll:['玩偶上有一层灰，只有脸是干净的。','玩偶被重新摆过了。','玩偶的手上缠着线。'],
+  clock:['钟的后面是空的。','钟摆还在动，声音很轻。','钟的时间对得上，可日期不对。'],
+  phone:['听筒拎起来没有声音，也没有忙音。','电话线被剪断了，断口很新。','电话旁边的本子上记着一串号码。'],
+  key:['钥匙插进锁里，转不动。','钥匙上有两道新的划痕。','钥匙放在桌上，像是有人刚放下的。']
+};
+KP_OBJECT_SAY_2 && Object.keys(KP_OBJECT_SAY_2).forEach(function(k){ KP_OBJECT_SAY[k]=KP_OBJECT_SAY[k].concat(KP_OBJECT_SAY_2[k]); });
+/* 每个氛围 / 物体至少有一种说法里带上它自己的名字，这样「当前条件」里的词在结果里一定看得见 */
+var KP_MOOD_NAME={oppressive:'这里压抑得让人不敢大声说话。',eerie:'这地方阴森得不像话。',
+  tense:'所有人都很紧张，谁都不肯先动。',uneasy:'心里一直不安，说不上为什么。',
+  silent:'这里寂静得能听见自己的呼吸。',weird:'太诡异了，单看每样都对。',
+  cold:'这里寒冷得手指发僵。',loud:'太嘈杂了，听不清人说话。',
+  damp:'这里潮湿得墙都在出水。',reek:'腐臭的味道从下面上来了。',
+  holy:'这里的气氛很神圣，人不自觉放轻脚步。',warm:'有一小块地方是温暖的。',
+  calm:'这里平静得没有道理。',bloody:'太血腥了，到处都不干净。'};
+Object.keys(KP_MOOD_NAME).forEach(function(k){ if(KP_MOOD_SAY[k]) KP_MOOD_SAY[k].unshift(KP_MOOD_NAME[k]); });
+/* 新怪物的「初次出现」也补够（其余维度已经在 c 里写足了 4 条） */
+KP_CREATURE_EXT.byakhee={first:['翅膀的声音先到，然后才有影子从上面压下来。','它是从很高的地方直接落下来的。']};
+KP_CREATURE_EXT.starvampire={first:['空气里先有一处不对劲，然后那是声音。','有东西在动，可它前面什么都没有。']};
+KP_CREATURE_EXT.moonbeast={first:['它是被人带上来的，抬的时候还在动。','舱口先伸出来一只手，然后是整个身体。']};
+
+/* ================= ⑪ 口述句库（第二批） =================
+   跟 KP_UNIV2 同构，加载完直接并进去。写法继续偏「KP 当场念」，短句、少形容词。 */
+var KP_UNIV3={
+  fact:['这里只有一条路能出去。','地板是新铺的，和别处不一样。','窗户外面看不见任何东西。','东西都蒙着一层薄灰。',
+    '地上的痕迹是最近留下的。','这扇门只能用钥匙开。','这里比刚才那间小一半。','桌子上的灰被人擦过。',
+    '有一根绳子从上面垂到地上。','墙角的灰堆得很厚。','房间里的东西摆得很对称。','地上有一条干掉的痕。',
+    '天花板的颜色和墙不一样。','有一盏灯是新的。','这里从来没有装过门。','外面的光和这里对不上。',
+    '地上的水是人带进来的。','柜子是空的，抽屉都拉开了。','有一个箱子被人挪过位置。','墙上写着日期，被人划掉了。',
+    '屋里的味道是从地板下面上来的。','这里的东西可以全部装进一辆车。','有一扇窗只能从里面打开。','地上的脚印只有一个方向。',
+    '这里的木头都是旧的，只有一块是新的。'],
+  note:['没有回音。','没有人跟上来。','很干净。','有点脏。','还有一个。','灯还能用。','门开着。','都正常。',
+    '没有动静。','就这样。','没人拦。','有一盏。','数完了。','很轻。','是湿的。','没锁。','还在。','走完了。',
+    '就这些。','没差。','什么都没有。','看清楚了。','不急。','快到了。','到手了。'],
+  act:['有人把灯往前送了一寸。','有人停下来重新系了鞋带。','有人把地图折起来收好。','有人敲了敲门框。',
+    '有人把窗帘掀开一条缝。','有人把门顶住，让后面的人先过。','有人蹲下来看桌底。','有人把杯子拿起来又放下。',
+    '有人伸手抹了一下墙。','有人把灯照向自己的手。','有人往后挪了一步，让出位置。','有人接过灯，换了只手。',
+    '有人把口袋翻了一遍。','有人抽出一样东西握在手里。','有人低声数了三下。','有人把耳朵贴到门上。',
+    '有人放轻脚步往边上绕。','有人扶住门框探身进去。','有人把地上的东西踢开。','有人站在原地听了很久。',
+    '有人抬手把大家拦在后面。','有人把绳头系在门把上。','有人把水倒在手心里擦了擦脸。','有人把灯关掉试了一秒。',
+    '有人压低身体往里看。','有人把门轻轻合上。','有人从包里拿出吃的分了一圈。','有人把袖口拉下来盖住手。',
+    '有人把手搭在前面人的肩上。','有人回头数了一遍人数。'],
+  talk:['「{q}」这个人说得很轻。','「{q}。」有人对着门说。','「{q}」——后面的人重复了一次。',
+    '有人问：「{q}」没有人接。','「{q}。」有人一边说一边看别处。','「{q}」有人说，然后自己笑了。',
+    '「{q}。」这一句说得很慢。','有人说了句「{q}」，然后停住。','「{q}」——没有人愿意先动。',
+    '有人小声说：「{q}」这句话让所有人都停了。','「{q}。」他说话的时候在看门口。','「{q}」有人把这两个字咬得很重。',
+    '「{q}。」有人说完就把灯举了起来。','有人从后面说了一句「{q}」。'],
+  react:['有人往门口看了一眼。','有人把脚往后收。','有人抿了抿嘴。','有人把灯往下压。','有人抬手挡住光。',
+    '有人把重心换到另一只脚。','有人咽了一下。','有人把手背到身后。','有人舔了一下嘴唇。','有人往人多的那边靠。',
+    '有人抬手擦了擦额头。','有人咬着牙没出声。','有人摇完头又停住。','有人把手插进口袋。','有人盯着地面不动。',
+    '有人轻轻呼出一口气。','有人把领子立起来。','有人挠了挠后颈。','有人把肩膀绷紧。','有人往后退到墙边。',
+    '有人看向同伴，同伴摇了摇头。','有人抬手示意别说话。','有人把眼闭上又睁开。','有人低头看了看自己的手。',
+    '有人忽然干咳了一声。','有人站得笔直，一动没动。','有人把灯递给旁边的人。','有人小声说了点什么，没人听清。',
+    '有人下意识往后退了半步。','有人把身上的灰拍掉。'],
+  obs:['有人发现门框上有新的划痕。','地上的灰被踩出一条窄路。','有人看见墙角有一小片干掉的印子。',
+    '手电照过去，天花板上有一块颜色不同。','有人注意到桌上少了一把椅子。','墙上的钉子还在，挂的东西没了。',
+    '有人发现窗户外面有东西挡着。','地上的水是往一边流的。','有人注意到灯座的灰比别处少。',
+    '有人看见门后贴着一张纸。','地上的纸是折过的，后来被展开了。','有人发现地上有几根头发。',
+    '有人看见门槛上有磨损的痕迹。','窗户上的灰被人擦过一小块。','有人注意到柜子后面的墙颜色更深。',
+    '有人发现地上有一小撮灰是新的。','有人看见那里有压过的痕迹。','手电扫过角落，那里堆着一小堆东西。',
+    '有人发现墙上有一处补过的洞。','有人注意到地板的接缝对不齐。','有人看见灯绳上面有一段是新的。',
+    '有人发现有一段地面比别处干。','有人注意到房门只能往一个方向开。','有人看见地上有一小片碎的东西。',
+    '有人发现有一件东西被人摆正过。','有人注意到这里的灰是分区扫的。','有人看见窗台上有几个指印。',
+    '有人发现有一根线从桌上垂到地上。'],
+  find:['有人忽然停住，抬手让大家别动。','有人发现队伍里少了一个人。','有人低头，看见脚下有东西。',
+    '有人吸了口气，闻到了别的味道。','有人发现灯照不到底。','有人忽然想起门本来是锁着的。',
+    '有人摸口袋，发现东西不在了。','有人发现墙上的字多了一行。','有人看见自己的影子不对。',
+    '有人忽然听见有人在叫他的名字。','有人发现地上的脚印多了一双。','有人回头，发现门已经合上了。',
+    '有人发现有人在看他。','有人低头，发现自己踩在了什么东西上。','有人发现前面的路断了。',
+    '有人忽然明白过来，刚才那一声是什么。','有人发现屋里多了一张椅子。','有人发现手电的光变弱了。',
+    '有人发现窗户不知道什么时候开了。'],
+  sight:['墙上有一排钉子，只剩下钉子。','地上有一摊深色的东西，已经干了。','角落里放着一把倒下的椅子。',
+    '门后面挂着一件外套。','这里的东西都是同一年的样式。','地上散着几张纸，边角发黄。',
+    '窗户上钉着几块木板。','桌上放着一个盖着的东西。','头顶的灯只剩一半还亮。','墙上的画歪了。',
+    '地上有一圈灰，中间是干净的。','角落里堆着几个空箱子。','有一扇门要比别的门厚。',
+    '地面上有一道很长的刮痕。','窗台外面什么也看不见。','有两把椅子面对面摆着。',
+    '墙上的水印很高，几乎到顶。','灯罩里全是死的虫子。','地上有一段湿的脚印。','靠墙摆着一排同样的东西。'],
+  sound:['有东西在远处一下一下地响。','很轻的一声，像是有人在试门。','有一个声音重复了三次。',
+    '有水流的声音，但看不见水。','头顶有很轻的摩擦声。','外面有车经过，很快就远了。',
+    '房间里有很低的嗡嗡声。','有东西掉了，没有人捡。','有节奏的响声一直没变。',
+    '有几声脚步，然后全停了。','有一声叹气，找不到是谁。','风吹过某个缝，声音像口哨。',
+    '有人听见了，可抬起头什么都没有。','有金属碰撞的声音，很轻。','动静从下面传上来。'],
+  smell:['有股旧东西的味道。','空气里有一点酸味。','有一股潮气，像是刚开过门。','有一股很淡的化学味。',
+    '闻起来像很久没通风。','有油和铁混在一起的味道。','有一股纸张发霉的味道。','有烟味，但看不到烟。',
+    '味道从角落里出来的。','有股甜味，很淡。','空气里有股说不上来的味。','有新刷过漆的味道。'],
+  temp:['这里比刚才那间凉。','有风，但不大。','手放在墙上会觉得冰。','越往里走越冷。',
+    '地面是凉的。','呼出来的气看得见。','有一处地方明显更冷。','温度一直在往下掉。','站久了会发抖。',
+    '这里反而有点暖。','靠近门的那一侧更冷。','空气又干又冷。'],
+  touch:['地面有一处是软的。','扶手上一层灰。','东西表面很滑。','踩上去会响。','这里的东西都是凉的。',
+    '碰一下就会留下印子。','鞋底粘上了什么。','空气潮得贴在皮肤上。','有一根线拉在脚边。','手心里全是汗。',
+    '衣服已经潮了。','指尖能感觉到风。'],
+  light:['光只够看一小块。','灯一闪一闪的。','有光从上面漏下来。','这里比外面暗。','有一个死角照不到。',
+    '手电的光越来越弱。','灯光下什么都发黄。','影子被拉得很长。','有一盏灯是坏的。','光晃了一下，然后稳住了。',
+    '亮的地方很亮，暗的地方很黑。','灯光照不到地面。'],
+  air:['这里安静得反常。','没人愿意先动。','动作都变轻了。','气氛慢慢沉下来。','所有人都在听。',
+    '这里安静得能听见呼吸。','有什么在慢慢收紧。','安静比声音更难受。','大家都在等一个信号。','这里不太对劲，说不上来。',
+    '空气像是不动。','谁都没有开口。'],
+  anomaly:['有一件东西的位置变了。','地上多了一串印子。','钟走得比刚才快。','灯亮着，开关是关的。',
+    '有人听见了两次同样的声音。','刚才关上的门现在是开的。','有一点东西是热的。','照片上的人少了一个。',
+    '数过的东西少了一件。','水往反方向流。','影子留在墙上没有跟过来。','有东西在重复你们说过的话。',
+    '时间对不上。','有人看见了第二个自己。','门上的锁自己扣上了。'],
+  super:['有东西在看着你们，而且不着急。','空间在这个点上不太对。','有一种声音不属于任何机器。',
+    '有什么东西在数人数。','这里的安静是被人安排的。','有东西同时出现在两个方向。','光走到一半就停住了。',
+    '有什么东西在模仿声音。','这个地方记得来过的人。','有一处温度忽然没有了。'],
+  trace:['地上有一串痕，到墙边就断了。','有一处的灰被压过。','空气里有一小块地方更冷。','门轴自己响了一下。',
+    '有一个脚印只有半只。','光被什么东西挡了一瞬间。','这里有一处不属于你们的气味。','有东西碰过桌上的东西。',
+    '墙上的痕迹还是湿的。','某个方向的安静更重。'],
+  delay:['它还没露面。','有东西在附近，一直没动。','你们走进去的时候，有东西让开了。','有一处黑暗比别处厚。',
+    '它一直在，只是没打算出来。','有什么在数你们的脚步。','再走一段就会碰上。','它等你们先动。'],
+  move:['往里去就得靠手电了。','前面还有一段。','这里开始路变窄。','得绕过这一堆东西。','只能顺着原路回去。',
+    '再走几步就是拐角。','要上去只能走这道楼梯。','两边都是墙，就这一条路。','从这里开始听不见外面了。','前面那个口子就是出口。'],
+  hook:['就在这时，后面也响了一声。','你确定自己数错了一个。','这个声音和刚才一模一样。','前面那盏灯，刚才没有。',
+    '有人发现自己手里的东西不见了。','那个动静停下来，又开始了。','所有人同时看向同一个方向。','有人在很近的地方叹了口气。',
+    '你忽然想起，门本来是锁着的。','有一道影子比人高。'],
+  end:['剩下的只能等它自己发生。','没有人说出那句大家都想到的话。','门还是开着的。','没有人愿意再看那个方向。',
+    '这一次算是过去了。','手电快撑不住了。','所有人都往外走，没有人跑。','没有人回头确认。','外面听起来正常了。','这一夜还长。']
+};
+Object.keys(KP_UNIV3).forEach(function(k){
+  if(KP_UNIV2[k]) KP_UNIV2[k]=KP_UNIV2[k].concat(KP_UNIV3[k]); else KP_UNIV2[k]=KP_UNIV3[k].slice();
+});
+
+/* 天气 + 时间一起给的时候，用一句同时带这两样的说法（占一个位置就够，省下的位置留给别的句子） */
+var KP_WT_SAY=[
+  '外面{w}，这样的{t}里，谁都没说话。',
+  '外面{w}，{t}本来就该是安静的。',
+  '{t}，外面{w}，这里一点都听不到。',
+  '外面{w}，{t}显得比平时长。',
+  '外面{w}，这样的{t}里，出什么事都不好解释。',
+  '{t}，外面{w}，谁都不想走在最后。',
+  '外面{w}，{t}里，时间过得不太一样。',
+  '{t}，外面{w}，所有人都把声音压得很低。',
+  '外面{w}，这样的{t}，什么都不太清楚。',
+  '外面{w}，{t}里，谁都不愿意先开口。',
+  '{t}，外面{w}，这里的一切都慢了下来。',
+  '外面{w}，这样的{t}里，人的胆子会变小。',
+  '{t}，外面{w}，这里的动静反而更明显。',
+  '外面{w}，{t}里谁都睡不踏实。'
+];
+
+/* 再补一批「天气 + 时间」合成句与「发现尸体」的说法（这两类每段都要有，得多备几句才不重样） */
+KP_WT_SAY=KP_WT_SAY.concat([
+  '{t}，外面{w}，所有人都在等一个信号。',
+  '外面{w}，{t}里，谁都不想多待。',
+  '{t}，外面{w}，气氛一点点沉下来。',
+  '外面{w}，这样的{t}里，谁也没打算回头。',
+  '{t}，外面{w}，安静得让人不敢大声呼吸。',
+  '外面{w}，{t}里，最不该来的就是这个时间。',
+  '{t}，外面{w}，每一点动静都被放大了。',
+  '外面{w}，{t}里，人容易想多。',
+  '{t}，外面{w}，这里反倒比外面更闷。',
+  '外面{w}，{t}里，什么事都可能发生。',
+  '{t}，外面{w}，谁都没有先动。',
+  '外面{w}，{t}里，路比白天难走得多。'
+]);
+KP_EVENT_SAY.body=KP_EVENT_SAY.body.concat([
+  '地上那个人已经不动了。','有人已经死了，而且死得不太体面。',
+  '尸体就在门里面，谁都看见了。','前面躺着的那位，已经没有呼吸了。',
+  '有人先找到的，是一具已经凉了的尸体。','那具尸体离你们只有几步。'
+]);
+KP_EVENT_SAY.body=KP_EVENT_SAY.body.concat([
+  '地上的人躺着，已经不动了。','一看就知道，人已经死了。','地上躺着一具尸体。',
+  '有人把手按在脖子侧面，摇头说人已经死了。','检查过了，已经没有脉搏，人已经死了。','尸体是凉的。',
+  '尸体上的衣服有挣扎过的痕迹。','尸体旁边，地上有拖过的印子。','这人身上的东西都还在，说明死得很急，尸体也没被翻过。',
+  '谁都没有先靠近那具尸体，只远远看了一圈。','有人蹲下去看了一眼，站起来说：死了。','死的时间不长，尸体还没硬。',
+  '尸体旁边的家具被撞翻过，现场打过斗。','尸体旁边留着一件不属于他的东西。','有人认出尸体是谁，但什么都没说。',
+  '有人先拍了照，才敢靠近那具尸体。','尸体的眼睛还睁着。','尸体手边的地上有写了一半的字。',
+  '尸体脖子上的痕迹很明显。','尸体旁边有一道血，已经干了。'
+]);
+var KP_EVENT_SAY_3={
+  steps:['有人数了数，脚步不止一双。','脚步在门口停了一下，又走开了。','那声音是穿鞋的，不是赤脚。',
+    '脚步一直在楼上，没有下来。','有脚步绕着这里转了一圈。','脚步一停，别的动静也没了。',
+    '有人跟着走两步，那边也走两步。','脚步很急，像是赶时间。'],
+  lightsout:['一黑，谁都没敢动。','有人马上打开了手电。','灯灭得很整齐，像是有人一块儿拉的。',
+    '黑里有人喊了一声，没有回应。','摸黑走两步就撞上了东西。','备用的灯只有一支。',
+    '再亮起来的时候，少了一样东西。','黑下来那一下，有东西动过。'],
+  door:['门是虚掩的，刚才还关着。','有人去拉门，门比想象中重。','门后面什么都没有。',
+    '锁是好的，可门开着。','门被顶住了，从里面。','关门的声音在整栋楼里回了一遍。',
+    '门框上有新的划痕。','门口的地上有一双鞋印。'],
+  missing:['刚才还在的人，现在不在队里了。','有人喊了几声，只有回音。','清点了一遍，就是少一个。',
+    '东西还在，人没了。','有人记得他最后是站在门口的。','没有人看见他什么时候走的。',
+    '顺着来路往回看，什么也没有。','少的那个人，手电还留在地上。'],
+  meet:['它没有动，头慢慢转过来。','你和它之间只有几步。','它身上没有能看清的细节。',
+    '有人在它面前停住了，动不了。','它比想象中安静。','它开始往这边走，不快。',
+    '没有人先动手。','它停下来，像是在等什么。'],
+  chase:['后面追的声音越来越近。','跑过拐角的时候，有人回头看了一眼。','有人把东西扔了才跑得快。',
+    '楼里跑不起来，到处都是挡路的。','门关上以后，外面撞了一下。','跑了三条街才敢停。',
+    '有人腿软，被架着跑。','跑散了，后来才在路口聚齐。'],
+  blood:['血是一路拖进去的。','地上这一摊已经半干。','血迹的尽头是墙。',
+    '墙上有一个手印，是血按上去的。','血的方向是从里往外。','有人顺着血迹走了一段，又折回来。',
+    '血旁边的脚印是新的。','这里的血不像只有一个人。'],
+  scream:['那一声听着不像人喊的。','叫声是从楼上下来的。','叫完以后，整栋楼都静了。',
+    '有人在喊名字，没人应。','叫声很近，可找不到人。','有人跟着喊了一声，对面没有反应。',
+    '第一声很响，后面就没了。','所有人都往声音那边看。'],
+  knock:['敲的是窗户，不是门。','敲门的节奏一直没变。','有人去开门，门外是空的。',
+    '敲门声从楼下换到了楼上。','没有人去开，声音就自己停了。','敲门的人没有报名字。',
+    '一停一走，像是在试探。','门缝下面有影子过来。'],
+  broadcast:['收音机里的声音不像人说的。','电话拿起来有三声杂音。','喇叭响了一下就断了。',
+    '有人接起来，喂了两声。','收音机换台也没有用。','广播里的报时和表对不上。',
+    '有一句话重复了三遍。','电停了，电话里还有声音。'],
+  halluc:['有人说看见有人站在门口，别人什么都没看见。','东西刚才在这儿，现在不在了。','两个人说的不一样。',
+    '有人看见的是背影，看不出是谁。','照片上多出来一个人。','有人坚持说他听见了，可那时候没有声音。',
+    '一起看的时候什么都没有。','转身再看，那个位置是空的。']
+};
+KP_EVENT_SAY_3 && Object.keys(KP_EVENT_SAY_3).forEach(function(k){
+  KP_EVENT_SAY[k]=KP_EVENT_SAY[k].concat(KP_EVENT_SAY_3[k]);
+});
+
+/* ================= ⑬ 「天气 + 时间」合成句（大幅扩充） =================
+   env 这一类在「用户同时说了天气和时间」时每段必定出现，原来的库只有 26 条、开头基本只有
+   「外面下着暴雨…」和「深夜，外面下着暴雨…」两种，连点十几次必然看出重样。
+   下面这批按叙述入口分开写：时间先行 / 天气先行 / 短句堆叠 / 动作先行 / 对话先行 / 观察先行 /
+   效果先行 / 时间流逝，天气一律只用 {w}{wn}{wt} 占位符，所以七种天气都读得通。 */
+KP_WT_SAY=KP_WT_SAY.concat([
+  /* --- 时间先行 --- */
+  '{t}。外面{w}。',
+  '{t}，外面{w}。',
+  '{t}了，外面{w}，谁也不想多待。',
+  '{t}，外面{w}，这个时候路上不会有人。',
+  '{t}，外面{w}，附近一个人都没有。',
+  '现在是{t}，外面{w}。',
+  '{t}，外面{w}，屋里屋外是两回事。',
+  '{t}，外面{w}，你们是唯一还醒着的。',
+  '{t}，外面{w}，这一趟来得不巧。',
+  '{t}，外面{w}，离最近的镇子还有很远。',
+  '{t}，外面{w}，没有人会碰巧路过。',
+  '{t}，外面{w}，从这儿出去还有一段路。',
+  '{t}，外面{w}，回去的路不好认。',
+  '{t}，外面{w}，什么事都得自己扛。',
+  '{t}，外面{w}，别指望有人来。',
+  '{t}，外面{w}，这个时候出什么事都没人知道。',
+  '{t}，外面{w}，谁都不想当最后一个。',
+  '{t}，外面{w}，把门带上吧。',
+  /* --- 天气先行 --- */
+  '外面{w}，{t}，屋里屋外都安静。',
+  '外面{w}，{t}，事情挑了个最坏的时候。',
+  '外面{w}，{t}，偏偏就是这个点。',
+  '外面{w}，{t}，这一片就剩你们有灯。',
+  '外面{w}，{t}，什么都得等天亮再说。',
+  '外面{w}，{t}，动静比平时传得远。',
+  '外面{w}，{t}，来的时候没这么难走。',
+  '外面{w}，{t}，谁都没带够东西。',
+  '外面{w}，{t}，说话的声音都压得很低。',
+  '外面{w}，{t}，这里的事没人知道。',
+  '外面{w}，{t}，谁也不打算解释。',
+  '外面{w}，{t}，先把眼前的事弄完。',
+  '外面{w}，{t}，这时候最不适合出门。',
+  '外面{w}，{t}，你们是最后一批进来的。',
+  '外面{w}，{t}，门得留着。',
+  '外面{w}，{t}，屋里的人都没动。',
+  '外面{w}，{t}，手电只能照到前面一点。',
+  '外面{w}，{t}，谁也说不准要待多久。',
+  '外面{w}，{t}，这一带没有人住。',
+  '外面{w}，{t}，最近的灯在很远的地方。',
+  '外面{w}，{t}，你们就是这里唯一的光。',
+  '外面{w}，{t}，门里门外都不太对。',
+  '外面{w}，{t}，东西都收好了再动。',
+  '外面{w}，{t}，谁先开口谁就输了。',
+  /* --- 短句堆叠 --- */
+  '{t}。外面{w}。屋里是另一回事。',
+  '{t}。外面{w}。手电还亮着。',
+  '{t}。外面{w}。门没关。',
+  '{t}。外面{w}。表还在走。',
+  '{t}。外面{w}。没人接话。',
+  '{t}。外面{w}。没有人该在这儿。',
+  '{t}。外面{w}。屋里没人动。',
+  '{t}。外面{w}。灯还亮着。',
+  '{t}。外面{w}。门口有人。',
+  '{t}。外面{w}。屋里比外面还闷。',
+  /* --- 动作先行 --- */
+  '有人看了一眼表：{t}。外面{w}。',
+  '有人把领子拉紧。{t}，外面{w}。',
+  '有人守在门口。{t}，外面{w}。',
+  '有人拿手电往门口扫了一圈。外面{w}，{t}。',
+  '有人回头问了一句，没有人答。外面{w}，{t}。',
+  '有人把门拉开一条缝。外面{w}，{t}。',
+  '有人侧着头听了听。外面{w}，{t}，别的什么都没有。',
+  '有人把东西收好，准备走。{t}，外面{w}。',
+  '有人站在原地没动。{t}，外面{w}。',
+  '有人先走过去看了。外面{w}，{t}。',
+  '有人把耳朵贴在门上。外面{w}，{t}。',
+  '有人数了一遍人头。{t}，外面{w}。',
+  '有人把手电换了个角度。外面{w}，{t}。',
+  '有人把地图摊在膝盖上。{t}，外面{w}。',
+  /* --- 对话先行 --- */
+  '「{q}」有人压着嗓子说。{t}，外面{w}。',
+  '「{q}」没有人回答。{t}，外面{w}。',
+  '「{q}」说完，周围只剩下外面的动静。外面{w}，{t}。',
+  '「{q}」有人问。回答是：外面{w}，{t}。',
+  '「{q}」这句话没人接。外面{w}，{t}。',
+  '「{q}」有人喊了一声。外面{w}，{t}，还是没有人应。',
+  /* --- 观察先行 --- */
+  '从门口往外看，外面{w}，{t}。',
+  '窗户外面{w}，{t}，看不见别的。',
+  '外面{w}，{t}，站在这里就能感觉到。',
+  '不用看表也知道是{t}。外面{w}。',
+  '从窗户能看出来，外面{w}，{t}。',
+  '站在门口听了一会儿。外面{w}，{t}。',
+  /* --- 效果先行 --- */
+  '外面{w}，{t}，说话得凑近一点。',
+  '外面{w}，{t}，声音传得比白天清楚。',
+  '外面{w}，{t}，出去一趟不容易。',
+  '外面{w}，{t}，进门的人身上带着外面的味道。',
+  '外面{w}，{t}，门一开就灌进来一股。',
+  '外面{w}，{t}，待在这儿反而踏实一点。',
+  '外面{w}，{t}，这一晚还长。',
+  '外面{w}，{t}，天亮之前都得在这儿。',
+  '外面{w}，{t}，头发梢都是湿的。',
+  '外面{w}，{t}，脚印留不住。',
+  /* --- 时间流逝 --- */
+  '{t}，外面{w}，时间过得比想象中慢。',
+  '{t}，外面{w}，说不上已经过了多久。',
+  '{t}，外面{w}，表针的声音都听得见。',
+  '{t}，外面{w}，再等下去天就亮了。',
+  '{t}，外面{w}，这个点最熬人。',
+  '{t}，外面{w}，谁都清楚现在几点。',
+  '{t}，外面{w}，谁都不提要走的事。',
+  '{t}，外面{w}，东西都在各自手上。',
+  '{t}，外面{w}，没有人往门口看。',
+  '{t}，外面{w}，说话之前都要停一下。',
+  '{t}，外面{w}，你们几个离得比刚才近。',
+  '{t}，外面{w}，手电的光圈缩得很小。',
+  /* --- 收束 --- */
+  '{t}，外面{w}，路只剩一条。',
+  '{t}，外面{w}，前面就到地方了。',
+  '{t}，外面{w}，还有一半没走。',
+  '{t}，外面{w}，总算走到这一步。',
+  '{t}，外面{w}，先看看这地方再说。',
+  '{t}，外面{w}，别散了队。'
+]);
+
+/* ================= ⑭ 氛围 / 物体 / 天气 / 时间的必出句再加料 =================
+   这几类也是「用户说了就每段必有」，只有十句上下照样会连着重样。 */
+var KP_MOOD_SAY_3={
+  oppressive:['胸口像压着东西。','这里待久了会喘不上气。','没来由地想往外走。','越往里走越闷。',
+    '话到嘴边又咽回去了。','这里不让人放松。'],
+  eerie:['越看越不像有人住的地方。','站在这里后背就没松过。','说不清哪儿不对，可就是难受。',
+    '有人不自觉往同伴那边靠。','这里让人不想久留。','从骨头缝里往外凉。'],
+  tense:['谁都不愿意先动。','一句话就能点着。','所有人都在等一个信号。','手都放在了最顺手的位置。',
+    '呼吸都放轻了。','再往前一步就是麻烦。'],
+  uneasy:['心里一直有个东西放不下。','总觉得后面有人。','越安静越坐不住。','说不上来在怕什么。',
+    '有人反复看同一个方向。','后颈一直不放松。'],
+  silent:['静到能听见自己的心跳。','一点声响都没有。','这里连风都没有。','说话声显得特别大。',
+    '安静得像被什么东西按住了。','谁都不想第一个开口。'],
+  weird:['每样东西都摆得刚刚好，好得不像真的。','单看都对，合起来就不对。','说不上哪里不对，可就是不对。',
+    '和刚才比，有什么变了。','一切正常，除了感觉。','这里不该是这个样子。'],
+  cold:['冷得手指不听使唤。','凉气从鞋底往上走。','待一会儿就得搓手。','呼出来的气看得见。',
+    '这里比外面低好几度。','手电都握不稳。'],
+  loud:['几处声音一起过来。','吵得听不清人说话。','动静一直没停。','太响了，反而不敢出声。',
+    '有人在喊，可听不清喊什么。','声音从各个方向过来。'],
+  damp:['湿气贴在皮肤上。','衣服潮了，很不舒服。','墙一直在出水。','走两步鞋就湿了。',
+    '纸一碰就软。','这里的味道被湿气压住了。'],
+  reek:['这味道跟着人走。','闻一下就想呕。','别的气味全被盖住了。','待不住，得快点走。',
+    '有人在袖子上蹭了一下鼻子。','味道是从下面上来的。'],
+  holy:['人不自觉放轻脚步。','没人敢乱动这里的东西。','规矩感很重。','说话都用不着压低声音，本来就低。',
+    '这里安静得庄重。','连咳嗽都忍住了。'],
+  warm:['有一小块地方是暖的。','这点温度不太对。','暖意很快就散了。','在这里，暖反而是件怪事。',
+    '有人把手贴上去试了试。','比别处高一点，就一点。'],
+  calm:['平静得没有道理。','一切都正常。','平静得让人不敢松手。','什么动静都没有，反而不对。',
+    '这里像是没发生过任何事。','越平静越要小心。'],
+  bloody:['到处都不干净。','血味很重。','这里刚出过事。','地上墙上都有。',
+    '踩上去是黏的。','有人先退了一步。']
+};
+KP_MOOD_SAY_3 && Object.keys(KP_MOOD_SAY_3).forEach(function(k){
+  KP_MOOD_SAY[k]=KP_MOOD_SAY[k].concat(KP_MOOD_SAY_3[k]);
+});
+var KP_OBJECT_SAY_3={
+  candle:['蜡烛是刚点上不久的。','烛芯很长，没人剪。','烛台底下压着一张纸。'],
+  torch:['手电的镜片上有一道划痕。','照出去的光是散的。','有人把它递给旁边的人。'],
+  photo:['照片背面写着日期和一个名字。','照片上的人都不看镜头。','这张照片拍的是现在这个地方。'],
+  diary:['日记写到一半停了。','有几页是撕掉的。','最后一页的字很潦草。'],
+  mirror:['镜子上有一层雾，像刚有人对着它呼吸过。','镜子的角度对着门。','有人伸手擦了一块，又停下。'],
+  doll:['玩偶的眼睛是后配的。','玩偶的衣服和这里的年代对不上。','摆的位置正对着门口。'],
+  clock:['钟停了，指针的位置有讲究。','钟摆在动，可没有声音。','有人对了一下表，差得不多。'],
+  phone:['话筒是热的。','电话簿翻在某一页。','线是新的。'],
+  key:['钥匙串上有三把，只有一把是新的。','钥匙上刻了编号。','有人试了两次才打开。']
+};
+KP_OBJECT_SAY_3 && Object.keys(KP_OBJECT_SAY_3).forEach(function(k){
+  KP_OBJECT_SAY[k]=KP_OBJECT_SAY[k].concat(KP_OBJECT_SAY_3[k]);
+});
+var KP_WEATHER_SAY_3={
+  storm:['雨把窗户打得直响。','出门两分钟就会湿透。','地上的水已经没到鞋面。','雨点密得看不清对面。',
+    '有地方开始漏水了。','雨里夹着风，方向一直在变。','这种雨不会很快停。','雷声离得比刚才近了。'],
+  rain:['雨一直没停，也不大。','屋檐下滴得很有规律。','衣服上一层潮气。','雨把路上的痕迹冲淡了。',
+    '雨声一直在，像背景。','不打伞走一会儿也湿。','雨落在水里，一圈一圈。'],
+  fog:['雾里看不清五步以外。','雾比刚才更厚了。','灯在雾里只剩一团。','走两步就得回头确认方向。',
+    '雾里有东西在动，看不出是什么。','雾贴在脸上，凉的。','雾把声音闷住了。'],
+  snow:['雪把地面铺平了。','脚印很快就没了。','雪光把夜照得发灰。','踩下去咯吱一声。',
+    '雪落在肩上，一层一层。','雪把远处的轮廓全抹了。','这种雪下久了会封路。'],
+  clear:['天上没有云。','月光很足，影子很清。','空气干得喉咙发紧。','星星亮得不正常。',
+    '这种天气里出的事最难解释。','天干净得反常。','远处看得太清楚了。'],
+  overcast:['云压得很低。','一整天没见太阳。','分不出是几点了。','阴天的光让颜色都发灰。',
+    '云几乎不动。','这种天里什么都显得旧。'],
+  wind:['风一直没停。','有东西被吹得在地上滚。','风把话都吹散了。','风从领口灌进去。',
+    '门窗在风里一直响。','风里带着外面的味道。','风把帽子吹掉了。']
+};
+KP_WEATHER_SAY_3 && Object.keys(KP_WEATHER_SAY_3).forEach(function(k){
+  KP_WEATHER_SAY[k]=KP_WEATHER_SAY[k].concat(KP_WEATHER_SAY_3[k]);
+});
+var KP_TIME_SAY_3={
+  night:['这个时候本来不该有人。','夜里看不远，只能靠听。','夜把声音放大了。','过了这个点，事情都不太正常。',
+    '夜里的冷比白天实在。','这个点还醒着的都不是正常人。','天黑之后，路就不好认了。','夜里出的事，白天才有说法。'],
+  midnight:['午夜这段时间最难熬。','这个时间连狗都不叫。','夜到最深处，人反而最清醒。','过了午夜，什么都该停了。',
+    '这个时候犯困最要命。','午夜之后的决定，白天多半会后悔。','表针走得很清楚。','这个时候出事，谁都赶不过来。'],
+  dawn:['天在一点一点亮。','这个时候最冷。','再撑一会儿天就亮了。','早上的空气里有股湿味。',
+    '天边先亮，地上还是黑的。','这个时候回来的，多半一夜没睡。','鸟开始叫了。','天亮前后最没人。'],
+  day:['白天看得太清楚，反而不好。','日头底下什么都藏不住。','白天来这种地方感觉更不对。','亮着的时候反而更没底。',
+    '大白天的，这里安静得不合常理。','这个时候人来人往，反而不方便。','阳光只照到门口一小块。','白天也有白天看不见的东西。'],
+  dusk:['天在往下沉。','影子先变长，然后什么都看不清。','这个时候最容易看错。','天黑前这一段最不好走。',
+    '光线一会儿一变。','再晚一点就得靠手电了。','这个时候最没人愿意出门。','黄昏只维持了一会儿。']
+};
+KP_TIME_SAY_3 && Object.keys(KP_TIME_SAY_3).forEach(function(k){
+  KP_TIME_SAY[k]=KP_TIME_SAY[k].concat(KP_TIME_SAY_3[k]);
+});
+
+/* ================= ⑮ 口述句库（第三批，KP_UNIV4） =================
+   和 KP_UNIV2 / KP_UNIV3 同构，加载完直接并进去。这批继续往「KP 当场念」的方向写：
+   句子短、不用形容词堆气氛、不追求文学感，重点是玩家能听懂、KP 不用改口。 */
+var KP_UNIV4={
+  /* 环境事实：先把前提说清楚 */
+  fact:['屋里的东西都还在原位。','这里没有第二个出口。','门只能从里面锁。','窗户都关着。',
+    '地上有一层灰。','有一样东西是新放进来的。','这里的钟停了。','东西摆得很整齐，不像临时走的。',
+    '桌上还有半杯水。','墙上有日历，翻在某一页。','灯泡是新的。','有一把椅子是倒着的。',
+    '门牌被拆掉了。','柜子上着锁。','地上有拖过东西的痕。','这里的味道和外面不一样。',
+    '楼梯是木头的。','有一扇门被钉死了。','窗户外面是墙。','手电照过去都是空房间。',
+    '这里的家具比外面旧。','有一块地板是松的。','墙角堆着几个箱子。','墙上有重新刷过的痕。',
+    '这里的电话线被剪了。','天花板上有一块水渍。','有两级台阶是断的。','屋里一点都不通风。',
+    '东西上落着一样的灰。','只有门口这一块是干净的。','这里的东西搬空了。','墙上挂着一张图。',
+    '地板上有四道划痕，像搬过床。','桌上有几个杯子，只有一个用过。','这间屋子比外面冷。',
+    '窗户是从里面封的。','这里有股石灰味。','门都开着。','这条路到这儿就断了。',
+    '这里没有电。','墙角有一根断绳。','有一处墙面被凿开过。','这里的锁都是好的。',
+    '地上有一只鞋。','有东西被烧过。','窗台的灰中间空了一块。','这里少了一样本来就该有的东西。',
+    '屋里的钟和表对不上。','门口的地垫是反的。'],
+  /* 极短事实句：打断节奏用的 */
+  note:['门是好的。','锁没被撬。','地上是干的。','灯还是热的。','水还是温的。','脚印只有一个方向。',
+    '没有风。','纸是新的。','字是最近写的。','东西是齐的。','窗户没碎。','血是干的。','绳子断了。',
+    '钥匙不在。','电话不通。','电断了。','门是从外面锁的。','这间是空的。','没有血迹。',
+    '灰上有手印。','桌上是干净的。','杯子是空的。','衣服还在。','鞋印是新的。','窗是开的。',
+    '门后没人。','楼上没动静。','东西没动过。','时间是准的。','这里刚有人来过。'],
+  /* 人物动作：把描写从景物挪到人身上 */
+  act:['有人把门推开一半。','有人数了一遍人数。','有人把手电递给旁边的人。','有人蹲下去看地上的东西。',
+    '有人把地图铺开。','有人关掉手电听了一下。','有人把外套脱了。','有人往前走了两步，又停下。',
+    '有人回头看了一眼来路。','有人扶着墙走。','有人把口袋翻了一遍。','有人先把手擦干净。',
+    '有人用袖子捂住口鼻。','有人抬脚试了试地板。','有人把手按在门上。','有人把灯举高。',
+    '有人在门口守着。','有人把绳子拿出来。','有人把相机收起来。','有人把门口的箱子挪开。',
+    '有人扶起一把椅子。','有人把桌上的东西拨到一边。','有人戴上手套。','有人把怀表合上。',
+    '有人把窗户推开一条缝。','有人靠在门框上等。','有人蹲下来系鞋带。','有人把鞋底的泥刮了刮。',
+    '有人拍了拍身上的灰。','有人把水壶递过去。','有人看了同伴一眼。','有人退到队伍后面。',
+    '有人把手放在腰侧。','有人把门重新带上。','有人把箱子搬到门口。','有人伸手试了试温度。',
+    '有人把窗帘拉开。','有人拿手电照了照天花板。','有人把东西装回包里。','有人在门口擦鞋。',
+    '有人把绳子在手上绕了两圈。','有人先把楼梯踩了一遍。','有人用笔在本子上记了两行。',
+    '有人把纸折好收起来。','有人站在原地，等别人先走。','有人把袖口放下来。','有人把烟捏灭了。',
+    '有人把插销拉开。','有人把包放在椅子上。'],
+  /* 人物反应 */
+  react:['有人停了一下才继续走。','有人回头看了一眼，没说话。','有人咽了口口水。','有人把呼吸放轻。',
+    '有人小声骂了一句。','有人往后退了半步。','有人抓住旁边人的袖子。','有人抬手示意大家停下。',
+    '有人摇了摇头。','有人点头，但没出声。','有人把手指放在嘴唇上。','有人看了同伴一眼。',
+    '有人把灯关了又开。','有人退到墙边。','几个人同时看向同一个方向。','有人先笑了，笑到一半停住。',
+    '有人低头看自己的鞋。','有人把手插回口袋。','有人站直了，吸一口气。','有人靠近了一点。',
+    '有人下意识摸了摸口袋。','有人捏紧了手里的东西。','有人用下巴指了指前面。','有人把门留了一条缝。',
+    '有人没有动，只是听。','有人把帽子摘了下来。','有人看了看表，又看了看别人。',
+    '有人把手放下，慢慢退开。','有人伸手拦了一下后面的人。','有人发出一个很短的声音。',
+    '所有人都在等别人先动。','有人忍不住笑了一下，又收住。','有人舔了舔嘴唇。','有人把肩膀松下来。',
+    '有人把灯往地上照。','有人往门口看了一眼。','有人吸了一口气才开口。','有人的手一直没离开门把。'],
+  /* 调查员观察：这是「调查员在干活」的句子 */
+  obs:['有人注意到门牌是新换的。','有人发现这里少了两个房间。','有人对了一下表，慢了五分钟。',
+    '有人看出地上的灰被人踩过。','有人发现这扇门是从里面锁的。','有人认出门是后来换的。',
+    '有人注意到天花和墙的颜色不一样。','有人发现窗台上的灰有缺口。','有人看出这条路最近有人走。',
+    '有人注意到有一盏灯还亮着。','有人认出墙上的字是最近写的。','有人发现柜子后面还有一道门。',
+    '有人注意到这扇门比别的宽。','有人发现地板上有水。','有人看出东西被人重新摆过。',
+    '有人注意到有一双鞋不属于这里。','有人发现钟的指针位置不对。','有人看出这张纸被折过很多次。',
+    '有人注意到墙上的画是歪的。','有人发现窗户是从外面封的。','有人认出这是同一批照片，地点不同。',
+    '有人看出外面下过雨，可屋里是干的。','有人注意到门口的脚印只有进去的。',
+    '有人发现桌上有两个杯子，只有一个有唇印。','有人认出字体和档案里的不一样。',
+    '有人看出锁是换过的。','有人注意到天花板上有一处修补。','有人发现绳子是新换的。',
+    '有人看出地上的痕是拖出来的。','有人注意到这间屋子没有窗。','有人发现书架是空的。',
+    '有人看出灰上有一排手指印。','有人注意到门是从里往外撞开的。','有人发现路面上有车辙。',
+    '有人看出这份记录不是一个人写的。','有人注意到这里所有的钟都停在同一时刻。',
+    '有人发现墙上有两层墙纸。','有人看出门口的灯是刚灭的。'],
+  /* 突然发现 */
+  find:['有人先看见了。','有人抬手指了指前面。','有人在这时候停了下来。','有人蹲下去，把东西捡了起来。',
+    '有人突然明白了什么。','有人把手电定在一个地方不动。','有人往旁边让了一步，让别人看。',
+    '有人看出那是什么，但没说。','有人把手里的东西递给别人看。','有人在最不起眼的地方找到了。',
+    '有人翻开一看，停住了。','有人把上面的东西全扒开。','有人喊了一声，让所有人过去。',
+    '有人在门后面发现的。','有人拿手电把角落照了一遍。','有人从灰里扒出东西。','有人发现地上有个洞。',
+    '有人摸到墙上一处不平。','有人在纸上发现了第二层字。','有人踩到什么，低头一看。',
+    '有人拉开门，愣住了。','有人往后一指，所有人都转过去。','有人把东西翻到正面。',
+    '有人先找到了入口。','有人发现了第三扇门。','有人看到那个东西在动。','有人在门缝里看见了光。',
+    '有人找到了开关。','有人看出这不是人留下的。'],
+  /* 视觉 */
+  sight:['天花板是黑的。','墙角堆着几个空箱子。','窗户上蒙着一层灰。','门口摆着一把椅子。',
+    '墙上挂着一面镜子。','走廊的灯只剩一盏。','地上散着几张纸。','桌子被推到墙边。','柜子的门开着一半。',
+    '墙上有一个钉过东西的痕。','地上有一摊水。','门口的地垫是歪的。','绳子从梁上垂下来。',
+    '门后面挂着一件衣服。','窗台上摆着一排瓶子。','墙上的画掉了一半。','地上有几个烟头。',
+    '有一块地板翘了起来。','楼梯上堆着东西。','墙上写着几个字。','角落里有一个布包。',
+    '天花板上有几个洞。','门框上有一道深痕。','地上有一条长长的痕。','柜顶上放着一个盒子。',
+    '窗玻璃上有一道裂缝。','墙上钉着一张纸。','地上有一只手套。','桌子底下有东西。',
+    '墙上有一片颜色不一样。','角落里堆着碎砖。','门口有一串湿脚印。','灯罩里积了虫子。',
+    '有一把伞靠在墙上。','地上有一圈灰。','墙上贴着告示。','桌上的灰被划开一道。','窗帘只拉了一半。'],
+  /* 声音 */
+  sound:['有东西在墙里响。','楼上有一下拖动的声音。','水管里有水在走。','风从缝里过来，带着哨音。',
+    '有东西掉了下来，很轻。','有人在楼上走路。','窗外有树枝刮玻璃。','很远的地方有人在敲。',
+    '电流声很小，但一直有。','有人在外墙边说话，听不清。','地板响了一声。','有东西在地上来回蹭。',
+    '钟表的声音突然清楚了。','有鸟从屋顶上飞走。','楼下的门响了一下。','有人在数数，声音很小。',
+    '有东西滚了两下就停了。','墙那边有人在挠。','有水滴一直落，很匀。','有车从远处经过。',
+    '有人在唱歌，调子不对。','有一声很短的响，然后就没了。','屋顶上有东西在走。','玻璃响了一下。',
+    '有东西在纸袋里动。','开关被按了一下。','有人在笑，笑了两声。','有脚步从水泥地上过去。',
+    '有东西被拖过门槛。','钟不走了。','有声音从电话里出来。','有东西在墙上抓了三下。'],
+  /* 气味 */
+  smell:['有股霉味。','这里有烟味，烟还没散。','有一点消毒水的味道。','有铁锈味。','有股腥味。',
+    '香皂的味道很新。','有东西烧糊了。','这里的味道像很久没人来过。','有酒味。','有纸张受潮的味道。',
+    '空气里有股甜味。','有一股湿土的味道。','有油漆味，是新的。','味道是从柜子里出来的。',
+    '有一点药味。','有血的味道。','这里有煤油味。','味道比刚才重了。','有从外面带进来的味道。',
+    '有动物的味道。','空气里有一点焦味。','有人闻到同一股味道，抬起头。','味道在门口最明显。',
+    '这里有一股咸味。'],
+  /* 温度 */
+  temp:['手贴在墙上，是凉的。','这里的空气比外面重。','水是凉的。','地面凉得隔着鞋也感觉得到。',
+    '有一点温度从下面上来。','有人呼出的气看得见。','这里很闷，但没有热气。','东西摸上去是冷的。',
+    '门把是凉的。','靠近里面有暖气。','墙角那块地方是热的。','有人把手放在脖后试了试。',
+    '这里的温度和外面差很多。','炉子还是温的。','风一停，就觉得暖了点。','衣服湿了以后更冷。',
+    '越往里越冷。','手电照不到的地方更凉。','有人搓了搓手。','杯子是温的。','这里比外面暖一点。',
+    '地面吸走了脚上的热气。','有人把袖口拉下来盖住手。'],
+  /* 触感 */
+  touch:['摸上去是湿的。','墙上有一处是软的。','地上是黏的。','扶手很滑。','门把上有一点油。',
+    '手一碰灰就下来了。','绳子是潮的。','纸上有一层膜。','有人在上面摸到一道坑。','桌面很糙。',
+    '布料很硬。','手指在灰上留下痕迹。','有一处是新的，摸得出来。','铁器上有颗粒。',
+    '地板踩上去是空的。','墙面掉粉。','鞋底踩到水。','这里的东西一推就动。','有人摸到了门上的划痕。'],
+  /* 光线 */
+  light:['手电的光只够照到前面一点。','光从门缝里过去。','墙上的影子先动。','有一盏灯在闪。',
+    '光把东西照得发白。','手电的光越来越暗。','有光照进来，但不是从门。','光停在半路就不走了。',
+    '有人把灯挡了一下。','灯亮着，但没有人。','有一处始终照不亮。','手电的光圈很小。',
+    '屋里的光是黄的。','车灯扫过墙面。','外面的光只到门口。','光一暗，影子就长。',
+    '有人把灯举到头顶。','灯下的灰看得最清楚。','有光从下面上来。','光晃了一下。',
+    '有人关掉灯又打开。','最亮的地方反而最不该亮。','灯管两头是黑的。'],
+  /* 空气 / 环境 */
+  air:['这里一点风都没有。','有风从下面上来。','空气里有股闷味。','有人在门口站了一会儿才进去。',
+    '这里的空气不流通。','有气流从门后面过来。','灰在光里浮着。','有人把面巾往上拉了拉。',
+    '空气很干。','有一股潮气贴在地上。','门口的空气比里面好。','有人先把窗推开透气。',
+    '空气一沉，声音就清楚了。','这里的气味散不出去。'],
+  /* 异常（还没到超自然） */
+  anomaly:['刚才明明是关着的。','有一样东西位置变了。','表慢了几分钟。','数了两遍，数不一样。',
+    '有一扇门自己开了一条缝。','刚才那声音没有了。','照片上多了一点东西。','有人在同一个地方绊了一下。',
+    '门口的脚印少了一个。','有一盏灯自己灭了。','刚才还在的东西不见了。','有一样东西是热的。',
+    '这里比刚才安静。','墙里的回音听着太慢。','原本两扇的门变成了三扇。','有东西被摆正了。',
+    '有一张纸翻了过来。','有人发现自己的东西在别人那儿。','钟走了，但没有声音。',
+    '门后面的东西换了位置。','有东西在跟着数人数。','有人看见的是两个，别人只看见一个。',
+    '地上的水印是新的，可没有人进来。','有一处灰上留着一只完整的手印。','开关是按下去的。'],
+  /* 超自然 */
+  super:['这里的东西不按常理动。','有东西从看不见的地方过去了。','影子比人先动。',
+    '有声音从没有人待的地方来。','有人觉得自己被看着。','有一处光不照。','东西在动，但没有风。',
+    '有人看见的东西没有影子。','这里的时间不对。','有东西穿过了关着的门。','有人听见了刚才没说的话。',
+    '墙上出现了不在上面的字。','有东西在模仿人的动作。','声音比人先到。','有人照镜子，镜子里慢一拍。',
+    '这里的绳子自己在动。'],
+  /* 怪物留下的痕迹（禁止怪物时用） */
+  trace:['地上有拖过的痕。','墙上有几道抓痕，很深。','有东西在这里停过很久，灰被压平了。',
+    '地上有一片黏的东西。','有一条水迹一直拖到门口。','墙角堆着骨头。','有东西被咬过。',
+    '门上有撞过的痕迹。','地上有一圈印子，像是围坐过。','有黏液挂在门框上。','东西上有一排牙印。',
+    '地上有湿的脚印，但不是人的。','有东西把铁皮撕开了。','墙上有一处被磨得发亮。',
+    '有羽毛落在灰上。','地上的痕迹到了墙边就断了。','有东西在这儿蜕过皮。','绳子上有断口，不是剪的。',
+    '有腥味从下面来。','有一滩东西，已经干了。','地上有四个爪印。','有东西钻过这道缝。',
+    '痕迹是从里面往外走的。'],
+  /* 「不要马上出现怪物」时用 */
+  delay:['眼下还什么都没有。','有动静，但还看不见是什么。','声音停在外面，没有进来。',
+    '有什么在动，距离还很远。','现在还能听见自己的脚步。','有东西在等，没有靠近。','先出现的只有味道。',
+    '这里暂时是静的。','有东西在别处，不在这一间。','动静隔着几层墙。','从声音上还听不出是什么。',
+    '有东西经过，没有停留。','这里还没有被找上。','外面的动静和里面没有关系。','有东西在更里面。'],
+  /* 转场 */
+  move:['你们继续往里走。','从这间出去，往左是另一个方向。','再往前就没有灯了。','沿着这条道一直走，到了尽头。',
+    '上了楼梯，气味更重。','从侧门绕过去，路近了点。','你们分成两组，一组留下。',
+    '往前走了大概十分钟。','从这儿下去就是地下。','绕过这一排房间，到了后面。','路越走越窄。',
+    '回头看了一眼，来路还在。','拐过去以后，地方大了。','从窗翻进去，落在里屋。',
+    '推开门，屋里比外面暗。','顺着声音过去，到了门口。','往后退了两步，重新选路。'],
+  /* 悬念 */
+  hook:['就在这时候，后面有了动静。','有人忽然停下来。','门外传来了声音。','灯闪了一下。',
+    '有人小声说了一句：听。','前面有什么东西动了一下。','有人抓住了旁边人的胳膊。',
+    '那声音又来了，这次更近。','所有人的目光都转向门口。','有人把手电关了。','不知道谁先退了一步。'],
+  /* 收尾 */
+  end:['这里暂时没有别的动静。','你们站在原地，等人先开口。','接下来做什么，得看你们。',
+    '现在先到这儿。','手电还亮着，路还在前面。','没有人说话，但都明白。','该决定下一步了。',
+    '屋里安静下来。','所有人都在等一个决定。','这一间看完了。','剩下的时间够你们再走一遍。']
+};
+KP_UNIV4 && Object.keys(KP_UNIV4).forEach(function(k){
+  if(!KP_UNIV2[k]) KP_UNIV2[k]=[];
+  KP_UNIV2[k]=KP_UNIV2[k].concat(KP_UNIV4[k]);
+});
+
+/* ================= ⑯ 场景素材再加料（第一批：医院 / 老宅 / 教堂 / 森林 / 港口 / 学校 / 酒店 / 地下室） =================
+   每个场景按 视觉 / 声音 / 气味 / 温度 / 触感 / 光线 / 空气 / 事实 / 动作 / 观察 十个维度各加几句。
+   这一层是「场景对得上」的专用素材，比通用句更像真的在那个地方。 */
+var KP_SCENE_EXT_2={
+  hospital:{
+    sight:['走廊的长椅上搭着几件没人拿走的衣服。','病房门牌全被摘了，只剩钉孔。','护士站的抽屉都拉开着。',
+      '有一间病房的窗帘拉得很严。','走廊尽头堆着几张折叠床。'],
+    sound:['楼上传来金属碰地的声音。','排风扇还在转。','某处有水一直滴。','有推车滚过走廊。',
+      '暖气管道里咕噜响了一声。'],
+    smell:['消毒水味里混着别的味道。','走廊尽头有药味。','有一间病房的味道比别处重。',
+      '空气里有铁锈味。','有股味道是从地下上来的。'],
+    temp:['走廊里比病房冷。','门把手是凉的。','有的房间还是温的。','地砖凉得站不住。','越往里越冷。'],
+    touch:['墙上有一处涂料是软的。','扶手上有一段是黏的。','床垫一按就陷下去。','门上有一层薄油。',
+      '床架一推就晃。'],
+    light:['走廊的应急灯只剩一盏。','手电照到病房墙上，白得刺眼。','有一间病房里还亮着。',
+      '光从百叶窗缝里切进来。','灯管一头是黑的。'],
+    air:['这里一点风都没有。','走廊两头都有风进来。','地下室的门一开，有股气上来。',
+      '空气里全是消毒水味。','窗关着，屋里很闷。'],
+    fact:['这一层只有一半病房有床。','病历本停在同一个日期。','护士站的登记表最后一行没写完。',
+      '楼梯间在走廊中间。','这栋楼有两部电梯，只有一部通。'],
+    act:['有人推开一扇病房的门。','有人翻了一下护士站的抽屉。','有人把手电贴在玻璃上往里照。',
+      '有人数了数病床。','有人把门牌摘下来看背面。'],
+    obs:['有人注意到墙上有一排挂钩。','有人发现地上的拖痕是从病房里出来的。',
+      '有人看出这间病房的床被人挪过。','有人注意到走廊的灯只有一半能亮。','有人发现登记表上的日期很近。']
+  },
+  house:{
+    sight:['家具上都盖着布。','楼梯的扶手断了一截。','墙上的照片被取走，留下印子。',
+      '客厅的钟停在某一点。','后门虚掩着。'],
+    sound:['楼上地板响了一声。','木板台阶踩上去会叫。','有链子拖地的声音。','门轴响得很长。',
+      '隔着墙像有人在说话。'],
+    smell:['整间都是霉味。','有木头受潮的味道。','楼上有人用过香水。','有煤油味。','灶台那边有味道。'],
+    temp:['屋里比外面暖一点。','靠窗的位置冷。','有一处一直是凉的。','楼梯口有穿堂风。','阁楼最冷。'],
+    touch:['布面上一层灰。','木头一按就出印子。','门把手很松。','地毯踩上去是硬的。','玻璃上一层油。'],
+    light:['窗帘只拉了一半。','屋里的光都从一侧进来。','有一盏小灯还亮着。','光在楼梯上断成两截。',
+      '手电照到的地方都是灰。'],
+    air:['屋里很闷。','二楼有风。','一楼到二楼有穿堂风。','灰尘在光里浮。','柴火味还没散。'],
+    fact:['东西都还在原来的位置。','三个房间里两个上了锁。','厨房的东西是新的。','后门是从里面插上的。',
+      '阁楼的梯子放了下来。'],
+    act:['有人把布掀开。','有人踩了踩台阶。','有人去开后门。','有人把照片翻过来看。','有人吹了一下桌上的灰。'],
+    obs:['有人发现灰上有脚印。','有人注意到桌上有一块被擦过。','有人看出楼梯被人修过。',
+      '有人发现少了一把椅子。','有人认出照片里的地方就是这里。']
+  },
+  church:{
+    sight:['长椅上落着灰。','讲台后面有一道门。','墙上的圣像被人转过去对着墙。','彩窗碎了一块。',
+      '烛台上还剩一截蜡。'],
+    sound:['屋顶上有鸽子。','长椅被碰了一下。','钟楼的钟响了一声。','有风从门缝里过。','有人踩到了碎玻璃。'],
+    smell:['有蜡味。','有香灰味。','木头受潮的味道。','地下有霉味。','空气里有股冷的石头味。'],
+    temp:['石头地面很凉。','讲台附近暖一点。','靠近门口的地方冷。','里面比外面低好几度。','手上很快就僵了。'],
+    touch:['长椅的木面很滑。','圣坛上的布是硬的。','门很重。','地砖上有一层粉。','栏杆是凉的。'],
+    light:['光从彩窗进来，落在地上是彩的。','里面很暗，只有门口亮。','蜡烛还剩一截。','有一盏长明灯还点着。',
+      '手电照到墙上都是画。'],
+    air:['空气很静。','有股香的味道。','风从正门进来。','这里闻起来很久没人来过。','灰在光里飘。'],
+    fact:['钟楼的门锁着。','诗班的谱子还摊在架上。','后排有一个跪凳是坏的。','地下室的入口在讲台侧后。',
+      '这里只有一扇门。'],
+    act:['有人把手电照向祭坛。','有人推开一扇侧门。','有人捡起地上的谱纸。','有人走上钟楼的台阶。',
+      '有人在最后一排坐下试了试。'],
+    obs:['有人发现最后一排有人坐过。','有人注意到蜡烛是新的。','有人看出圣像被故意转过去。',
+      '有人发现地砖有一块是松的。','有人认出谱子上有新的笔迹。']
+  },
+  forest:{
+    sight:['树之间的间距很匀。','地上有一条踩出来的路。','树皮上刻着记号。','前面有一块空地。',
+      '有一棵树的树冠是断的。'],
+    sound:['鸟突然都不叫了。','有东西从灌木里过去。','树枝断了一声。','远处有水声。','有东西在很高的地方。'],
+    smell:['湿土味很重。','有腐烂的味道。','有树脂味。','有烟味。','空气里都是树叶的味。'],
+    temp:['林子里比外面凉。','树荫下更冷。','有一块地方是暖的。','越往里越闷。','夜里更冷。'],
+    touch:['树皮是湿的。','苔藓很滑。','有一根藤很结实。','地上的叶子是软的。','有刺挂住衣服。'],
+    light:['光被树挡住，只剩斑。','前面有一块亮的地方。','天暗下来就看不清了。','手电只能照到几步。',
+      '树影在动，风其实不大。'],
+    air:['雾在低处。','有风从上面过。','空气很湿。','这里闻起来像刚下过雨。','呼吸能看见白气。'],
+    fact:['这条路是新踩出来的。','前面没有脚印了。','树上的记号每隔一段有一个。','这里有人生过火。',
+      '前面有一道沟。'],
+    act:['有人蹲下看地上的痕迹。','有人用手拨开灌木。','有人把记号记下来。','有人回头确认方向。',
+      '有人爬上树桩往远处看。'],
+    obs:['有人看出记号是同一把刀刻的。','有人发现鸟比刚才安静。','有人注意到有一根树枝是新折的。',
+      '有人发现地上的脚印有一双不是自己人的。','有人看出路是往同一个方向去的。']
+  },
+  port:{
+    sight:['码头上堆着集装箱。','有一条船一直没动。','仓库的门开着。','水面上的油光在晃。',
+      '缆绳拖在地上。'],
+    sound:['有铁链声。','水在拍岸。','船上的缆绳绷了一下。','有人在远处喊。','有汽笛声。'],
+    smell:['咸味很重。','有鱼腥味。','有柴油味。','有水草味。','有一股铁锈味。'],
+    temp:['海风很凉。','仓库里闷。','贴近水面更冷。','站在风口待不住。','货箱后面挡风。'],
+    touch:['栏杆是湿的。','缆绳很糙。','甲板上有油。','箱子上有盐粒。','铁皮一按就响。'],
+    light:['码头的灯只亮了两盏。','有船上的灯在动。','水面反光很碎。','仓库里只有门口亮。',
+      '探照灯扫过来又走了。'],
+    air:['风里带着水汽。','仓库里不通风。','有股柴油味。','雾贴着水面。','空气里有咸味。'],
+    fact:['有一间仓库没锁。','码头上没有人。','潮位比白天低。','有一堆箱子被搬空了。','最后一条船是昨天走的。'],
+    act:['有人沿着码头走。','有人拉了一下缆绳。','有人推开仓库的门。','有人把手电照向水面。',
+      '有人数了数停着的船。'],
+    obs:['有人发现有一条船的水线不对。','有人注意到地上有拖箱子的痕。','有人看出仓库的门是新撬的。',
+      '有人发现仓库里少了一整排货。','有人认出这条船不是这里的。']
+  },
+  school:{
+    sight:['走廊里贴着一排画。','教室的桌椅摆得很齐。','黑板上有没擦干净的字。','操场上还留着球。',
+      '储物柜有一格开着。'],
+    sound:['上下课的铃响了一下。','有人在操场上跑。','教室里有椅子被拖动。','广播里有杂音。','有球撞在墙上。'],
+    smell:['有粉笔味。','有食堂的味道。','木头和汗味混在一起。','有消毒水味。','教室里有股旧书味。'],
+    temp:['教室里比走廊暖。','靠近窗的地方冷。','楼梯间有风。','顶楼最热。','一楼的走廊最凉。'],
+    touch:['课桌上有刻痕。','黑板很滑。','铁柜是凉的。','门上有一层漆。','地板一踩就响。'],
+    light:['教室的灯亮着一半。','光从窗户进来排成一排。','走廊里很暗。','黑板反光，看不清字。','有一盏灯一直在闪。'],
+    air:['教室里有粉笔灰。','走廊里有风。','食堂那边有味道。','窗都关着，很闷。','灰在光柱里。'],
+    fact:['有一间教室锁着。','办公室的抽屉开着。','值日表停在某一天。','广播室在二楼尽头。','操场的门是从里面锁的。'],
+    act:['有人翻开一本作业本。','有人敲了敲储物柜。','有人站到讲台上往外看。','有人拉了一下广播室的线。',
+      '有人把黑板上的字擦掉一半。'],
+    obs:['有人发现黑板上的字是新的。','有人注意到有一格柜子是锁的。','有人看出操场上的东西没动过。',
+      '有人发现值日表上的名字被划了。','有人注意到教室里少了几张桌子。']
+  },
+  hotel:{
+    sight:['前台的钥匙格大部分是空的。','走廊铺着地毯。','有一间房门开着。','楼梯扶手是铜的。',
+      '墙上的镜框是歪的。'],
+    sound:['楼上有水声。','电梯停在某一层。','有人在走廊尽头说话。','地毯把脚步吸掉了。','有电话在响。'],
+    smell:['有香水味。','有烟味。','走廊里有霉味。','有酒味。','房间里有股潮味。'],
+    temp:['房间比走廊暖。','靠窗的地方冷。','电梯间有风。','被子里是凉的。','热水管那边是热的。'],
+    touch:['地毯很软。','扶手很滑。','门牌是金属的。','床单很硬。','窗台上有一层腻。'],
+    light:['走廊的壁灯隔一盏亮一盏。','房间里只有床头灯。','电梯的灯在闪。','窗帘缝里透进一条光。',
+      '镜子把光反射到墙上。'],
+    air:['走廊有股闷味。','房间的窗开着。','空气里有烟味。','浴室里有水汽。','地毯的味道很大。'],
+    fact:['前台登记本最后一行是空的。','有一间房从里面反锁。','电梯只能到四层。','后楼梯的门开着。',
+      '有一间房的门牌是新换的。'],
+    act:['有人按了电梯。','有人把钥匙插进锁里。','有人掀开床单。','有人拉开窗帘。','有人翻了一下前台的簿子。'],
+    obs:['有人发现走廊少了一个房间号。','有人注意到地毯上有一道拖痕。','有人看出登记本被人撕过一页。',
+      '有人发现有一间房的灯亮着但从里面锁了。','有人注意到钥匙格少了一把钥匙。']
+  },
+  basement:{
+    sight:['楼梯下面是黑的。','地上有排水沟。','管道沿着墙走。','屋顶很低。','有一盏灯泡挂在线上。'],
+    sound:['有水滴在铁皮上。','管子里有水在走。','上面有人在走路。','有东西在地上摩擦。','回声比想象中长。'],
+    smell:['有霉味。','有下水道的味。','有燃油味。','空气很闷。','有股铁锈味。'],
+    temp:['下面比上面冷。','靠近锅炉的地方热。','有风从通风口来。','墙上一直是凉的。','越往里越闷。'],
+    touch:['墙上是湿的。','管道是凉的。','地上一踩一脚水。','铁门很沉。','灰抹上去是腻的。'],
+    light:['手电只能照到一段。','灯泡晃来晃去。','有光从上面楼梯口漏下来。','灯照不到的地方更黑。',
+      '光在水面上动。'],
+    air:['空气不流通。','有股霉味。','有风从管道过来。','这里的味道散不出去。','呼吸有点费劲。'],
+    fact:['锅炉是凉的。','有一扇铁门锁着。','六级台阶是坏的。','通道只能一个人过。','这里只有一个出口。'],
+    act:['有人低头躲过管道。','有人把手电举高。','有人用脚试了试水。','有人拉了一下铁门的把手。',
+      '有人数了数台阶。'],
+    obs:['有人发现地上有拖东西的痕。','有人注意到有一盏灯泡是新换的。','有人看出排水沟里有东西。',
+      '有人发现管道上有一处是热的。','有人注意到墙上有记号。']
+  }
+};
+if(typeof KP_SCENE_EXT==='object'){
+  Object.keys(KP_SCENE_EXT_2).forEach(function(k){
+    if(!KP_SCENE_EXT[k]) KP_SCENE_EXT[k]={};
+    var s=KP_SCENE_EXT_2[k];
+    Object.keys(s).forEach(function(d){
+      if(!KP_SCENE_EXT[k][d]) KP_SCENE_EXT[k][d]=[];
+      KP_SCENE_EXT[k][d]=KP_SCENE_EXT[k][d].concat(s[d]);
+    });
+  });
+}
+
+/* ================= ⑰ 场景素材再加料（第二批：墓地 / 实验室 / 小镇 / 火车 / 公寓 / 工厂 / 图书馆 / 地铁站） ================= */
+var KP_SCENE_EXT_3={
+  cemetery:{
+    sight:['一排排墓碑排得很齐。','有一块碑是新的。','墓前放着刚摆上去的花。','地上有一堆新挖的土。','铁门歪在一边。'],
+    sound:['风从树里穿过。','有鸟叫了一声就没了。','铁门被吹得响。','远处有钟声。','有土块滚下来的声音。'],
+    smell:['湿土味很重。','有花香。','有烧过纸的味道。','草被踩过的味道。','空气里有石头味。'],
+    temp:['这里比路上凉。','靠墙的地方暖一点。','风一停，反而更冷。','手心很快就僵了。','地气是凉的。'],
+    touch:['碑面很凉。','新土是松的。','石头上有一层苔。','围栏的铁条是糙的。','踩下去会陷。'],
+    light:['月亮照在碑上。','只有门口有灯。','手电扫过去都是影子。','碑上的字要凑近才看得清。',
+      '树把光挡成一块一块的。'],
+    air:['有雾贴着地面。','空气里全是湿土味。','风一直没停。','草的味道很重。','呼吸能看见白气。'],
+    fact:['有一块碑上没有刻字。','后墙有一处缺口。','守墓的小屋锁着。','新土就在第三排。','这里的日期大多差很多年。'],
+    act:['有人蹲下来看碑上的字。','有人用手电照新土。','有人把倒下的花扶正。','有人在门口停了一下才进来。',
+      '有人数了数新碑。'],
+    obs:['有人发现有一块碑是空的。','有人注意到新土是最近翻的。','有人看出脚印绕过了某一排。',
+      '有人发现有一块碑被人擦过。','有人认出其中一个名字和档案里的一样。']
+  },
+  lab:{
+    sight:['台面上摆着一排瓶子。','柜子上贴着标签。','有一只笼子是空的。','地上有碎玻璃。','墙上贴着一张表。'],
+    sound:['有机器一直在响。','通风柜还开着。','有水滴进盆里。','有玻璃碰在一起的声音。','有人把开关按下去了。'],
+    smell:['化学味很冲。','有酒精味。','有腐烂的味。','有烧焦的味。','空气刺鼻。'],
+    temp:['屋里很凉。','有一处是热的。','试管架旁边冷。','通风口那边有风。','手贴台面是凉的。'],
+    touch:['台面是凉的。','玻璃上有油。','手套是硬的。','金属架上有一层锈。','地上很滑。'],
+    light:['有一盏台灯还亮着。','紫外灯开着，照得发蓝。','灯管很刺眼。','光只照到台面。','暗处的东西看不清楚。'],
+    air:['空气里有味道。','通风口有风。','这里有股酸味。','呼吸有点刺。','灰在光里浮。'],
+    fact:['记录本写到一半。','有一扇柜子锁着。','电还在。','号码锁没有锁。','这里刚有人用过。'],
+    act:['有人翻开记录本。','有人拿起一只瓶子看标签。','有人打开笼子看了一眼。','有人在表上找日期。',
+      '有人把灯调亮了一点。'],
+    obs:['有人发现记录上的日期是今天。','有人注意到有一只瓶子是空的。','有人看出笼子里的东西跑掉了。',
+      '有人发现台面上少了一样东西。','有人认出手套是新的。']
+  },
+  town:{
+    sight:['街上一个人都没有。','店门都关着。','只有一家还亮着灯。','路口停着一辆车。','电线杆上贴着纸。'],
+    sound:['有狗在叫。','有收音机的声音。','钟响了一下。','有人关门。','远处有火车。'],
+    smell:['有面包味。','有煤烟味。','有雨后土的味道。','有油烟味。','空气很干净。'],
+    temp:['街上风很大。','店里是暖的。','巷子里冷。','站在背风处好一点。','屋里的热气从门缝出来。'],
+    touch:['门板是湿的。','墙上掉灰。','栏杆是凉的。','玻璃上有一层雾。','石头路面很滑。'],
+    light:['路灯只有一盏亮。','窗户里有光。','有车灯扫过来。','店里亮着，外面暗。','光是黄的。'],
+    air:['有煤烟味。','风从街口来。','空气里有水汽。','巷子里不通风。','闻得到做饭的味道。'],
+    fact:['只有一家店开着。','邮局的门锁着。','公告栏上还是旧报纸。','这条路通向车站。','镇上没有警察。'],
+    act:['有人去敲那家还开着门的店。','有人凑近看公告栏。','有人往巷子里看。','有人拉了一下车门的把手。',
+      '有人站在街中间听。'],
+    obs:['有人发现所有的门都关着。','有人注意到公告栏上的纸是新的。','有人看出这条街没住人。',
+      '有人发现有一个窗户的灯刚灭。','有人认出门口的车是外地牌照。']
+  },
+  train:{
+    sight:['车厢里只剩几盏灯。','行李架上还放着行李。','窗外是黑的。','过道上有人站着。','座位之间散着纸。'],
+    sound:['铁轨的声音很匀。','广播在报站。','有刹车声。','隔壁车厢有人在说话。','车厢连接处一直响。'],
+    smell:['有煤烟味。','有食物的味道。','有汗味。','有金属味。','空气不新鲜。'],
+    temp:['车厢里冷。','靠窗更冷。','暖气管是热的。','连接处风最大。','越往车尾越冷。'],
+    touch:['座椅是硬的。','玻璃很凉。','扶手是金属的。','门把很沉。','地板上有一层灰。'],
+    light:['车厢的灯一跳一跳。','窗外偶尔有灯过去。','走廊里很暗。','手电照到窗户上是自己。',
+      '下一节车厢的门缝里有光。'],
+    air:['空气不流通。','有烟味。','窗缝里有风。','连接处的风一直往里灌。','车厢里有股铁味。'],
+    fact:['车还在开。','广播报了下一站。','通道门是锁的。','这节车厢只有你们几个。','座位号和票对不上。'],
+    act:['有人往车头走。','有人拉开窗帘。','有人检查自己的行李。','有人把门锁上。','有人把窗户擦了一块。'],
+    obs:['有人发现有一件行李的主人不在。','有人注意到报的站名没听过。','有人看出车在减速。',
+      '有人发现行李架上的东西被翻过。','有人认出隔壁座位的人是刚才上车的。']
+  },
+  apartment:{
+    sight:['楼道里堆着杂物。','有一户的门开着。','信箱是坏的。','楼梯的灯不亮。','墙上是小广告。'],
+    sound:['楼上有电视声。','有人在楼道里走。','有门响。','水管里有声音。','有人在下楼。'],
+    smell:['有饭菜味。','有煤气味。','楼道里有潮味。','有香烟味。','有清洁剂的味道。'],
+    temp:['楼道比屋里冷。','屋里是暖的。','楼梯间有风。','顶楼更冷。','靠门的地方有风。'],
+    touch:['扶手是黏的。','门很薄。','墙上有一层灰。','地砖是凉的。','栏杆一推就响。'],
+    light:['声控灯要拍一下才亮。','屋里只有一盏灯。','楼道里只有楼梯口亮。','光从门缝里出来。','对门有一线光。'],
+    air:['楼道里有味道。','屋里有烟味。','厨房那边有煤气。','空气不流通。','窗口有一点风。'],
+    fact:['信箱里塞满了信。','有一户的门被撬过。','电表还在转。','天台的门开着。','这栋楼只有一部电梯。'],
+    act:['有人拍了一下声控灯。','有人翻了一下信箱。','有人敲了敲门。','有人试着拧门把手。','有人趴在门上听。'],
+    obs:['有人发现有一户的信半年没人取。','有人注意到门锁是新的。','有人看出楼道里的灰只有一处被踩过。',
+      '有人发现对门的猫眼被人从里面堵上了。','有人认出小广告上的号码是同一个。']
+  },
+  factory:{
+    sight:['车间里一排机器。','地上全是油。','铁架上挂着东西。','传送带停着。','窗户碎了大半。'],
+    sound:['有铁皮在响。','风穿过厂房。','有东西掉下来。','链条在晃。','有回声。'],
+    smell:['有油味。','有铁锈味。','有机油和灰的味。','有焦味。','空气里有金属味。'],
+    temp:['厂房里冷。','机器旁边暖一点。','天窗下面有风。','机油是温的。','越往里越闷。'],
+    touch:['机器上全是油。','铁架很凉。','地上有一层腻。','扶手是糙的。','铁皮一碰就响。'],
+    light:['天窗漏下来一块光。','手电照过去都是灰。','有一盏工灯还亮着。','有光从门缝里横着进来。',
+      '高处的灯够不到。'],
+    air:['空气里有油味。','风从破窗进来。','灰在光里飘。','这里很闷。','呼吸里有铁味。'],
+    fact:['有一台机器是新的。','地上的油是最近的。','电闸是拉下来的。','侧门通向院子。','这里停产很久了。'],
+    act:['有人拉了一下电闸。','有人爬上铁架。','有人用手抹了一下油。','有人推开侧门。','有人踢了踢地上的零件。'],
+    obs:['有人发现有一台机器被人动过。','有人注意到油迹是新的。','有人看出这里最近开过工。',
+      '有人发现电表还在走。','有人认出地上有一截新的电线。']
+  },
+  library:{
+    sight:['书架一直排到墙。','有几排是空的。','地上散着书。','梯子倒在过道上。','天花板上有个洞。'],
+    sound:['有翻书的声音。','有椅子被拖动。','楼上有人走路。','有风吹动纸页。','书架响了一下。'],
+    smell:['有旧纸味。','有霉味。','有灰尘味。','有皮革味。','空气很干。'],
+    temp:['里面很凉。','靠窗的地方暖。','书库里更冷。','楼上比楼下闷。','手贴书架是凉的。'],
+    touch:['书脊一碰就掉皮。','桌面有刻痕。','纸是脆的。','梯子很晃。','灰一擦就腻。'],
+    light:['高窗透进来一束光。','灯只开了一排。','光柱里的灰看得清。','书库里面没有灯。','手电照一行书脊。'],
+    air:['空气里有灰。','不通风。','有股旧纸的味。','楼上有风。','呼吸里的灰味很重。'],
+    fact:['目录卡被抽走了一些。','有一间书库锁着。','借书单停在某一天。','还书箱是满的。','这里的书按编号排。'],
+    act:['有人抽出一本书。','有人翻目录柜。','有人把书放回架子。','有人扶起梯子。','有人把散的书摞起来。'],
+    obs:['有人发现同一本书缺了几册。','有人注意到目录卡被人抽走。','有人看出书是从里往外搬的。',
+      '有人发现有一排书架是空的。','有人认出散在地上的书都是同一个编号。']
+  },
+  subway:{
+    sight:['站台上没有人。','指示牌还亮着。','轨道下面很黑。','闸机开着。','墙上贴着广告。'],
+    sound:['有电流声。','远处有列车。','广播在重复一句话。','有风从隧道里来。','灯管响了一下。'],
+    smell:['有铁屑味。','有霉味。','有股灰尘味。','有湿土味。','空气里有一股臭氧味。'],
+    temp:['站台比地面暖。','轨道那边有风。','越往隧道口越冷。','长椅上有一层凉气。','通风口一直在吹。'],
+    touch:['栏杆是凉的。','长椅是湿的。','地砖很滑。','广告牌上有一层油。','扶手很凉。'],
+    light:['灯只亮一半。','广告灯箱还亮着。','隧道里什么都没有。','光从闸机那边过来。','手电照到轨道上都是水。'],
+    air:['有风从隧道来。','空气不流通。','有股铁味。','风里带着水汽。','站台上很闷。'],
+    fact:['隧道里没有车。','售票亭是空的。','时刻表停在某一天。','这里只有两个出口。','闸机没有通电。'],
+    act:['有人跳过闸机。','有人往隧道里看。','有人按了紧急电话。','有人扶着栏杆下到轨道边。',
+      '有人把长椅上的东西拿开。'],
+    obs:['有人发现站台上少了一块指示牌。','有人注意到时刻表停在同一天。','有人看出有人最近在这里待过。',
+      '有人发现广告牌后面有东西。','有人认出广播里的声音不像人录的。']
+  }
+};
+if(typeof KP_SCENE_EXT==='object'){
+  Object.keys(KP_SCENE_EXT_3).forEach(function(k){
+    if(!KP_SCENE_EXT[k]) KP_SCENE_EXT[k]={};
+    var s=KP_SCENE_EXT_3[k];
+    Object.keys(s).forEach(function(d){
+      if(!KP_SCENE_EXT[k][d]) KP_SCENE_EXT[k][d]=[];
+      KP_SCENE_EXT[k][d]=KP_SCENE_EXT[k][d].concat(s[d]);
+    });
+  });
+}
+
+/* ================= ⑱ 怪物素材再加料（第一批：深潜者 / 食尸鬼 / 米·戈 / 修格斯 / 夜魇 / 蛇人） =================
+   每只按 15 个维度各加 3 条。不同怪物的外观 / 声音 / 环境反应必须是它们自己的，不能套同一个模板。 */
+var KP_CREATURE_EXT_2={
+  deepone:{
+    first:['它从水里直起身，先露出来的是肩膀。','岸边的水动了一下，然后站起一个人形的东西。','它不是游过来的，是走上来的。'],
+    look:['眼睛太大，而且不眨。','脖子两侧有裂口，一直在动。','手指之间有膜，指节比人多一节。'],
+    act:['它站着不动，头慢慢转过来。','它走路的姿势像在陆地上不太习惯。','它用手掌撑着地往前挪。'],
+    sound:['它喉咙里有水声。','它吸气的时候像有东西在漏气。','它不叫，只有呼吸声。'],
+    smell:['有股鱼腥味，混着水草。','味道像退潮后的滩涂。','它身上一直在往下滴水。'],
+    temp:['它站过的地面又湿又凉。','靠近它的时候，温度低得很明显。','它身上是冷的。'],
+    touch:['皮肤是湿的、滑的，像鱼。','摸上去有一层黏。','鳞片很小，很密。'],
+    env:['它站过的地方留了一摊水。','水顺着它的方向一路滴过来。','它走过的地方都是湿脚印。'],
+    near:['越靠近，腥味越重。','有人在它旁边听见水声，可这里没有水。','它的眼睛一直跟着人转。'],
+    tell:['它的肩先动了一下。','它的手指张开了。','它把重心往下压了压。'],
+    battle:['它一下就把人按住，力气大得不像人。','它不用工具，只用两只手。','它挨了一下，只是停了一停。'],
+    hurt:['伤口里流出来的东西是稀的。','被打中的地方很快又立起来。','它退了两步，但没有倒。'],
+    die:['它倒下以后，喉咙里还在响。','它死的时候眼睛还是睁的。','尸体很快就和退潮的滩涂一个味道。'],
+    vanish:['它退进水里，就没有再上来。','只留下地上一摊水。','水面合上，什么都没剩。'],
+    observe:['有人认出这种手指不是人该有的。','有人看出它身上有旧伤。','有人注意到它一直朝着水的方向看。']
+  },
+  ghoul:{
+    first:['先听见的是爪子刮石头的声音。','它从坑里爬上来，先露出背。','有东西在暗处站起来，比人高一点。'],
+    look:['脸像狗，但眼睛是人样的。','指甲很长，指节往外翻。','皮肤是灰的，一处处是烂的。'],
+    act:['它四脚着地跑，很快。','它一边跑一边回头看。','它用爪子扒地，像在找东西。'],
+    sound:['它叫起来像小孩哭。','它的呼吸很粗。','它啃东西的声音很清楚。'],
+    smell:['腐肉味很重。','味道像放久了的肉。','它身上有土和血的味。'],
+    temp:['它身上是凉的。','靠近它的时候不觉得冷，只觉得味道重。'],
+    touch:['它的皮是硬的，像旧的皮子。','摸上去是干的。','爪子很钝，但有力。'],
+    env:['它扒过的地方土是松的。','它待过的地方有骨头。','地上有它拖东西的痕。'],
+    near:['它的鼻子一直在动。','它侧着头听。','它盯着人的手看。'],
+    tell:['它把身体压低。','它的爪子在地上抓了两下。','它开始一点一点往前挪。'],
+    battle:['它会抱住人不放。','它被打退，又扑上来。','它专挑落单的人。'],
+    hurt:['它中了枪只是踉跄一下。','伤口的血流得很少。','它低头看了一眼伤口，又抬起来。'],
+    die:['它倒下去，还在嚼嘴里的东西。','尸体很快就招虫。','它死前的叫声很尖。'],
+    vanish:['它钻进土里，几下就不见了。','它退进暗处，声音还在。','只留下地上一道拖痕。'],
+    observe:['有人看出它吃过人。','有人认出这种爪子留下的痕和墙上的抓痕一样。','有人注意到它怕光。']
+  },
+  migo:{
+    first:['空气里有嗡嗡声，然后才看见它。','它从上面下来，落地很轻。','先出现的是翅膀，然后是那对粉色的壳。'],
+    look:['像一只很大的螃蟹，背上有膜翅。','头上有好几根触须，一直在动。','壳是粉的，关节处是黑的。'],
+    act:['它用很多条腿走路，很快。','它把一样东西塞进自己的壳里。','它转过来的时候整个身体一起转。'],
+    sound:['翅膀的声音像电机。','它发出的声音像人说话，但只有一半。','有嗡嗡声，方向一直在变。'],
+    smell:['有一股腥味，像坏掉的鱼。','味道很冲，像化学药水。','空气里有股冷的腥味。'],
+    temp:['它周围是凉的。','靠近它的时候，空气里有静电的感觉。'],
+    touch:['壳是硬的，缝里是软的。','摸上去有细微的震颤。','它的关节是凉的。'],
+    env:['它落下以后，地上的灰浮起来一层。','附近的电器都不正常了。','有东西被它带走了。'],
+    near:['靠近的时候，耳朵里有嗡声。','它能听懂人说话。','它开始对着人比划。'],
+    tell:['它的翅膀先张开了。','它把前面两条腿抬起来。','它开始像倒数一样地发声。'],
+    battle:['它不从正面打，专挑后面。','它会把人带飞起来。','它挨了一下就退到高处。'],
+    hurt:['壳上裂了一道，里面是湿的。','它被击中的地方流出无色的液体。','它没有流血。'],
+    die:['它倒下以后，翅膀还在动。','尸体很快就干了。','壳里的东西被取走了。'],
+    vanish:['它直接飞走，一点声音都没有。','它从窗出去，消失在天上。','地上只剩一层灰。'],
+    observe:['有人听出它在模仿人说话。','有人看出它在记录什么。','有人注意到它一直在看表。']
+  },
+  shoggoth:{
+    first:['黑色的东西从门里挤出来。','地上那堆东西开始动了。','墙后面有东西在动，然后整面墙都不对了。'],
+    look:['它没有固定的形状。','表面一直有眼睛出现，又消失。','它是黑的，光上去不反。'],
+    act:['它整个往前挪，像在流。','它把东西吞进去，包起来。','它伸出一部分来试探。'],
+    sound:['它发出声音，像好几个人一起在说话。','气泡一样的声音从里面出来。','它移动的时候没有声音。'],
+    smell:['有股海边的腥味，很重。','味道像烂掉的东西。','空气里有水汽和铁味。'],
+    temp:['它周围又湿又凉。','靠近它的时候，空气变重。'],
+    touch:['摸上去是冷的、湿的。','它黏在手上，甩不掉。','很沉，推不动。'],
+    env:['它经过的地方都湿了。','地上的东西被它包走了。','它走过以后，墙上留下一层膜。'],
+    near:['靠近的时候，鞋底被粘住。','它开始朝有声音的方向聚。','它身上睁开了很多眼睛。'],
+    tell:['它整体的方向变了。','它停下来，然后猛地展开。','有一部分先伸了过来。'],
+    battle:['它什么都吞。','打它没有用，只会陷进去。','它能把人整个包起来。'],
+    hurt:['被打中的地方很快又长回来。','它被割开，马上又合上。','它没有受伤的样子。'],
+    die:['它会散开，然后不动了。','它剩下的部分还在慢慢渗。','地上一大摊，很快就干掉。'],
+    vanish:['它退回去，连痕都不剩。','它从排水沟走了。','留下的那层膜慢慢干了。'],
+    observe:['有人听出它发出的声音是学来的。','有人看出它怕火。','有人注意到它一直在模仿人的动作。']
+  },
+  nightgaunt:{
+    first:['先出现的是一对翅膀，然后是那个没有脸的头。','它是从上面下来的，一点声音都没有。','有东西在栏杆上停住了。'],
+    look:['脸是空白的，什么都没有。','背上有角，尾巴末端是刺。','皮肤是黑的，看起来像橡胶。'],
+    act:['它不扇翅膀也能悬着。','它会用尾巴先碰一下。','它抓住人就走。'],
+    sound:['它完全不发声。','只有翅膀带起的风声。','它经过的时候，空气被推开。'],
+    smell:['没有味道。','靠近它的时候闻不到任何东西。','空气里只有一点凉。'],
+    temp:['它是凉的，但没有温度的感觉。','靠近的时候，皮肤上起了一层。'],
+    touch:['摸上去像橡胶，很涩。','它的皮肤很滑，抓不住。','尾巴上的刺是硬的。'],
+    env:['它停过的地方，灰是散开的。','它经过以后，周围的声音都停了。'],
+    near:['被它抓过的地方又麻又痒。','它靠近的时候，人动不了。','它一直不出声，只在很近的地方。'],
+    tell:['它先伸的是尾巴。','它开始往下降。','它把角低下来。'],
+    battle:['它专抓走一个人。','它从来不正面打。','被它碰到的人会笑，然后被抓走。'],
+    hurt:['它挨了一下就往上飞。','它受伤后不再靠近。','看不出它疼不疼。'],
+    die:['它摔下来以后就不动了。','尸体很快就看不见了。','它消失得比倒下更快。'],
+    vanish:['它飞上去，进了黑里。','它带走了人，然后什么都没有。','只有一阵风。'],
+    observe:['有人看出它就是抓人的那个。','有人发现被它碰过的地方会发麻。','有人注意到它从来不出声。']
+  },
+  serpent:{
+    first:['他站着的时候像人，走近了才看出不对。','它把领子拉高了一点，露出来的地方有鳞。','有一个像人的东西在等你们，一直没动。'],
+    look:['瞳孔是竖的。','脖子和手腕上有鳞，很细。','皮肤是冷的，颜色不太对。'],
+    act:['它的动作比人快。','它说话的时候舌头会分叉。','它一直保持距离。'],
+    sound:['它说话很慢，很稳。','它笑起来像嘶声。','没有别的声音。'],
+    smell:['有股冷腥味。','味道很淡，但一直在。','闻起来像蛇。'],
+    temp:['它的手是凉的。','靠近它的时候温度低一点。'],
+    touch:['鳞很细，摸着不像人皮。','很凉。'],
+    env:['它站过的地方有很淡的味道。','周围的人好像都认识它。','它一出现，话题就变了。'],
+    near:['它一直在看人的脖子。','它不眨眼。','它把手指交叉起来。'],
+    tell:['它把手从口袋里拿出来。','它的瞳孔缩了一下。','它往后让了一步。'],
+    battle:['它力气很大，动作很快。','它会先把灯打掉。','它不打正面，先缠。'],
+    hurt:['伤口里流出来的血很暗。','它挨了一下就退。','它受伤后不再开口。'],
+    die:['它死的时候还保持着人形。','尸体很快就凉了。','头部的鳞退了一点色。'],
+    vanish:['它混进人群就不见了。','它退到后面，再没出来。','地上只剩一件外套。'],
+    observe:['有人认出它的手和档案照片上的一样。','有人看出它怕火。','有人注意到它从来没在人前喝过水。']
+  }
+};
+KP_CREATURE_EXT_2 && Object.keys(KP_CREATURE_EXT_2).forEach(function(k){
+  if(!KP_CREATURE_EXT[k]) KP_CREATURE_EXT[k]={};
+  var s=KP_CREATURE_EXT_2[k];
+  Object.keys(s).forEach(function(d){
+    if(!KP_CREATURE_EXT[k][d]) KP_CREATURE_EXT[k][d]=[];
+    KP_CREATURE_EXT[k][d]=KP_CREATURE_EXT[k][d].concat(s[d]);
+  });
+});
+
+/* ================= ⑲ 怪物素材再加料（第二批：猎犬 / 幽魂 / 不可名状 / 拜亚基 / 空鬼 / 月兽） ================= */
+var KP_CREATURE_EXT_3={
+  hound:{
+    first:['墙角那个角度不对，然后它就从那里出来了。','先是一声很远的吠，然后它已经在屋里。','它不是走进来的，是从角落长出来的。'],
+    look:['身体伸得很长，不是正常的长。','它的角朝着好几个方向。','它看起来像狗，但没有一处对得上。'],
+    act:['它一跳就跨过了整个房间。','它沿着角度走，不走路中间。','它先退回角里，再冲出来。'],
+    sound:['它叫得很难听，像从水里传上来。','它的呼吸和脚步是分开的。','它的声音先在很近的地方，然后才到。'],
+    smell:['空气里有一点烧焦的味。','靠近它的地方味道像电。','没有别的味道。'],
+    temp:['它经过的地方一阵凉。','墙角的温度比别处低。'],
+    touch:['它的毛是硬的，像铁丝。','摸上去是干的、烫的。'],
+    env:['它经过以后，墙角多了一道痕。','屋子里的直角看着都不太对。','它站过的地方灰被推开。'],
+    near:['有人在墙上看见了会动的影子。','越接近角落，越能听见它。','所有直角都让人不敢靠近。'],
+    tell:['它把头压低。','它开始绕着角转。','它停下来，然后不动了。'],
+    battle:['它从角里出来一次，就又退回去。','它扑上来的时候没有声音。','它专咬腿。'],
+    hurt:['它被伤到的地方会先散开。','它受伤后退出这个角，从另一个进来。','看不出血。'],
+    die:['它散开以后就不再聚起来。','地上剩下一层灰。','它消失的时候像被抽走。'],
+    vanish:['它退进角里，就不见了。','只留下墙上的一道新痕。','角还在，它不在了。'],
+    observe:['有人看出它只从直角出来。','有人注意到它从来不叫第二次。','有人发现自己不敢看墙角。']
+  },
+  ghost:{
+    first:['有人站在那儿，但地上没有影子。','先是一处冷，然后才看清有个人形。','它一直在，只是刚才没人注意。'],
+    look:['能看见后面墙上的画。','轮廓很清楚，边缘是模糊的。','它保持着死的时候那个姿势。'],
+    act:['它一直重复同一个动作。','它指着一个方向，不动。','它从房间一头走到另一头，又回来。'],
+    sound:['它说话听不清，只有气声。','没有脚步声。','它发出的声音像隔着水。'],
+    smell:['有一点旧衣服的味。','空气里有一点点香。','没有味道。'],
+    temp:['它占的那一块地方特别冷。','走过去的时候像穿过冷水。'],
+    touch:['碰不到。','手伸进去就是凉的。'],
+    env:['它待的房间比别处冷。','有东西自己动了。','它经过的地方，灰尘被带起来。'],
+    near:['越靠近它，越听不清自己说话。','有人在它旁边想起了别的事。','它跟着人转过来。'],
+    tell:['它突然停了。','它转过来看着人。','它指向某个人的身后。'],
+    battle:['它不碰人，只是让人动不了。','它一靠近，人就开始发抖。','它把灯弄灭了。'],
+    hurt:['打不到它。','刀从它身上穿过去。','它退开一点，又回来。'],
+    die:['它散开以后，房间暖了一点。','它消失的地方，地上留了一摊水。','它最后一次转过头，然后没了。'],
+    vanish:['它慢慢淡掉。','它退回墙里。','它原地消失，只剩下冷。'],
+    observe:['有人认出它穿的衣服是几十年前的。','有人看出它在重复死前的事。','有人注意到它只对一个人有反应。']
+  },
+  nameless:{
+    first:['门里的东西说不清是什么形状。','先看到的是轮廓，然后是一些对不上的地方。','它就在那儿，但没有一处能看明白。'],
+    look:['越看越说不清。','它有像脸的地方，但没有五官。','它在动，可看不出在往哪边动。'],
+    act:['它一直保持同一个姿势和同一段距离。','它伸出来的东西长短不对。','它整体在变，但说不上哪里变了。'],
+    sound:['声音从好几个方向一起来。','它发出的声音像人在说话，可听不出字。','安静的时候最难受。'],
+    smell:['空气里有一股很难形容的味。','闻久了会头疼。'],
+    temp:['靠近它的时候，冷是从里面出来的。','温度说不清是冷是热。'],
+    touch:['不敢碰。','碰到的地方，后来一直没感觉。'],
+    env:['它周围的影子方向和光对不上。','附近的东西开始不整齐。','看着它的时候，房间像是歪的。'],
+    near:['离得越近，越记不住它长什么样。','有人在它旁边说不出话。','盯着看的人开始头疼。'],
+    tell:['它整体的方向好像转过来一点。','有一段伸长了。','它停了。'],
+    battle:['靠近它的人自己就开始出错。','它会让人攻击身边的人。','它不动手，但人已经倒下了。'],
+    hurt:['没法判断它有没有受伤。','它被击中以后变得不太一样，但看不出来。'],
+    die:['它散得很慢。','它消失以后，地面上一块是空的。','在场的人都说记不清最后发生了什么。'],
+    vanish:['它就在那儿不见了。','它没有走，只是没有了。','再看的时候，那里什么都没有。'],
+    observe:['有人只看了两眼就不敢再看。','有人注意到所有人都记得的不一样。','有人发现相机里什么都没拍到。']
+  },
+  byakhee:{
+    first:['翅膀的声音先到，然后才有影子压下来。','它是从很高的地方直接落下来的。','先是一阵风，然后是那股味道。'],
+    look:['它是按这个比例长出来的，多出来的地方都长在翅膀上。','脸是马一样的，毛发是湿的。','爪子有三根，都很长。'],
+    act:['它落下来的时候先收翅膀。','它用后腿站着，前爪腾空。','它不飞的时候一直没停过抖。'],
+    sound:['它的叫声像鸟，但低很多。','翅膀的声音像帆。','它落地的时候几乎没有声音。'],
+    smell:['有股腥味，混着风的味道。','味道像海上的雾。'],
+    temp:['它带下来的风是凉的。','周围一圈都比别处冷。'],
+    touch:['羽毛很硬，像铁片。','它的爪子是热的。'],
+    env:['它落地的地方，灰被吹开一圈。','有东西被风带倒了。','它站过的地方留了印子。'],
+    near:['靠近的时候，风一直不停。','它转头看人的时候，脖子转得太远。','它把头低下来闻。'],
+    tell:['它把翅膀收了收。','它开始发出很低的声。','它的爪子先离地了。'],
+    battle:['它会先把人抓到半空。','它从上方攻。','它一次只带一个人。'],
+    hurt:['羽毛下面流出来的东西是黑的。','它受伤后会先飞起来再看。','它掉了几根毛以后更凶。'],
+    die:['它落下来，翅膀还在动。','尸体很快就硬了。','它们会把它带走。'],
+    vanish:['它直接飞走，很快就成了黑点。','它带走了东西，然后没有回来。','只剩地上的印子。'],
+    observe:['有人看出它按气味找人。','有人注意到它一直被什么牵着。','有人认出它身上的味道和某个地方一样。']
+  },
+  starvampire:{
+    first:['空气里先有一处不对，然后那是声音。','有东西在动，可它前面什么都没有。','先感觉到的是被看着。'],
+    look:['看不出形状，只能从它挡住的东西判断。','它吸光。','轮廓要在很暗的地方才看得见。'],
+    act:['它移动的时候，后面的东西才慢慢跟着变。','它一直保持距离。','它把东西从人手里拿走，人还不知道。'],
+    sound:['没有声音，只有吸东西的那种动静。','它过来的时候，别的都听不见了。','有一阵很低的嗡声。'],
+    smell:['没有味道。','靠近的时候，空气有一点发苦。'],
+    temp:['它吸热，走过的地方更冷。','被它靠近的那一块温度掉得很快。'],
+    touch:['摸不到，只能感觉到冷。','手伸过去是空的，但很冷。'],
+    env:['它经过的地方，东西不见了。','光线会绕开它。','附近的火变小。'],
+    near:['靠近它的人会突然很累。','手上的东西会自己不见了。','有人在它旁边觉得喘不上气。'],
+    tell:['影子先动。','有一处的光被挡住了。','有东西从人身边掠过去。'],
+    battle:['它不打人，它拿走东西。','被它碰到的人会慢慢失去力气。','它专挑有光的时候靠近。'],
+    hurt:['没法判断它有没有受伤。','它被伤到会退开，然后从另一边回来。'],
+    die:['它消失的地方什么都没有。','它散掉的时候，房间里一下子变亮。','地上留下一点灰。'],
+    vanish:['它就那样没了。','有东西从门口过去了。','只剩下冷和少掉的东西。'],
+    observe:['有人发现自己的东西不见了。','有人看出它怕强光。','有人注意到它一直在避开某个方向。']
+  },
+  moonbeast:{
+    first:['它是被人抬进来的，抬的时候还在动。','舱口先伸出来一只手，然后是整个身体。','它从罐子里出来，很慢。'],
+    look:['灰白色的，皮肤上全是纹路。','头是蟾蜍样的，没有脖子。','手上有五个指头，但指头像触手。'],
+    act:['它走两步停一下。','它用手掌贴着地面。','它一直朝着有光的地方。'],
+    sound:['它发出的声音像很多人在低语。','它呼吸很慢很重。','它一叫，周围的人会跟着动。'],
+    smell:['有股药水味，像泡过的东西。','味道很淡，很腥。'],
+    temp:['它是凉的，但动的地方偏热。','靠近它的时候，空气有点闷。'],
+    touch:['皮肤是软的，像湿的布。','按下去会陷。'],
+    env:['它待过的地方会留下黏的东西。','附近的人会不由自主地安静。','它站的地方，光会变弱。'],
+    near:['越靠近它，越听不清别人说话。','有人想跟着它走。','它周围的空气会让人觉得困。'],
+    tell:['它把手抬起来。','它开始对着一个方向叫。','它把身体转向前方。'],
+    battle:['它不追人，但人会自己走过去。','它用手抓，很慢，但抓得住。','它叫人朝自己的同伴动手。'],
+    hurt:['被打中的地方会陷下去一块。','它受伤后会一直叫。'],
+    die:['它死了以后还在慢慢动。','尸体很快就干了。','罐子会被人收走。'],
+    vanish:['它被带走，装进罐子里。','它缩回舱口，没人再看见它。','只剩下地上那点黏的东西。'],
+    observe:['有人听出它一直在重复同一句话。','有人看出它是在被人使唤。','有人注意到只有听着它的人才受影响。']
+  }
+};
+KP_CREATURE_EXT_3 && Object.keys(KP_CREATURE_EXT_3).forEach(function(k){
+  if(!KP_CREATURE_EXT[k]) KP_CREATURE_EXT[k]={};
+  var s=KP_CREATURE_EXT_3[k];
+  Object.keys(s).forEach(function(d){
+    if(!KP_CREATURE_EXT[k][d]) KP_CREATURE_EXT[k][d]=[];
+    KP_CREATURE_EXT[k][d]=KP_CREATURE_EXT[k][d].concat(s[d]);
+  });
+});
+
+/* ================= ⑳ 口述句库（第四批，KP_UNIV5） =================
+   继续往「KP 直接念」的方向加量：短句、具体、不渲染，玩家一听就知道发生了什么。 */
+var KP_UNIV5={
+  fact:['门口的脚印是往里的。','这扇门后面是墙。','楼梯只到一层半。','桌上的东西都是成对的。',
+    '屋子里没有椅子。','这间的窗户比别的小。','所有的抽屉都拉出来过。','墙上有一块是新补的。',
+    '地上有几块砖是新铺的。','这个房间没有门牌。','走廊到这间就结束了。','这里的东西都做过标记。',
+    '墙上的画是复印的。','柜子后面有一条缝。','天花板四个角都有痕迹。','门口的地垫下面有东西。',
+    '这面墙比别处厚。','窗框上有撬过的痕。','地上有一圈被踩实的地方。','这里的桌子被搬动过。',
+    '暖气是关着的。','灯绳被剪短了。','屋里的味道比走廊重。','这一层只有这一间有锁。',
+    '水管从天花板上过去。','有一个门框比别的低。','地上有蜡。','墙上的钉子还挂着线。',
+    '这里的东西都是旧的，只有一样是新的。','窗台上有烟灰。','门是从里面钉住的。','地上有几根头发。',
+    '这里的灰只有一层。','柜子里是空的，但摆过东西。','有一处墙皮是新掉的。','桌子腿下面垫着纸。',
+    '这间屋子比楼道安静。','有一扇窗是朝里的。','地上的水是从上面漏的。','门后面有一件外套。',
+    '这里的电线是明线。','楼梯下面的空间被堵上了。','有一把钥匙插在门上。','墙上记着一串数字。',
+    '这间的灯和别间不一样。','地上有烧过的纸。','有一样东西是最近才放进来的。','这里能听见楼下的动静。'],
+  note:['门虚掩着。','里面很暗。','东西是对的。','水是新的。','这里没住人。','锁是好的。','地上是干净的。',
+    '灯是坏的。','纸是空的。','有人刚来过。','这里很空。','窗户关着。','味道是从里面出来的。',
+    '这里很少有人来。','表是停的。','楼梯是窄的。','门是往外开的。','这里比外面干。','桶是满的。',
+    '绳子是用过的。','脚印停在这儿。','这里只有一条道。','墙是新的。','声音是在里面的。','东西是摆过的。',
+    '这里有人睡过。','窗户上有手印。','纸上什么也没写。','没有第二个人。','时间是凌晨。'],
+  act:['有人把灯照向地面。','有人贴着墙走。','有人先数了房间。','有人把门关上，又打开。',
+    '有人把东西插回原位。','有人在门口蹲下。','有人回头招了下手。','有人把外套递过去。',
+    '有人把烟头踩灭。','有人翻开了那本书。','有人摸了一下墙面。','有人把灯关了听了一会儿。',
+    '有人先走到楼梯口。','有人把包放在地上。','有人把椅子挪到门口。','有人扶着栏杆下去。',
+    '有人拉了一下门上的绳子。','有人用手背试了试玻璃。','有人用脚尖碰了碰地上的东西。',
+    '有人把箱子搬到中间。','有人把衣服挂回门后。','有人拿手电扫了一圈天花板。','有人把水壶放在窗台上。',
+    '有人翻了一下桌上的纸。','有人把窗帘拉到一边。','有人把桌上的灰吹开。','有人在门口挡住后面的人。',
+    '有人把门留了缝。','有人先出去看了一眼。','有人把袖子挽起来。','有人蹲下去又站起来。',
+    '有人把东西分给旁边的人。','有人开始数呼吸。','有人把地图折起来。','有人把灯放到地上。',
+    '有人扶了一下差点倒的东西。','有人把鞋在门槛上蹭了蹭。','有人先走到里面那间。','有人用手挡住手电。',
+    '有人把罐头打开。','有人把绳子打了个结。','有人把纸塞进口袋。','有人把名字记下来。'],
+  sight:['地上有一片碎瓷。','门框上挂着布条。','墙角有一个水桶。','天花板上挂着一根线。',
+    '墙边靠着一把扫帚。','楼梯扶手上搭着毛巾。','桌上摆着一盏没点的灯。','有一个箱子只开了一半。',
+    '地上有一个烟灰缸，满的。','窗户下面有一块湿的。','墙上有一排钉眼。','门后贴着一张纸。',
+    '门口有一双拖鞋。','柜子上放着一顶帽子。','墙上有一道横向的痕。','地上散着几个瓶盖。',
+    '桌角缺了一块。','天花板垂下来一段电线。','有一把椅子倒着。','地上有一小片黑。',
+    '墙上有两个孔对得很齐。','窗帘掉了一边。','门口堆着几个空瓶。','地上有一条被擦过的痕。',
+    '柜门是歪的。','架子上放着一排同样的东西。','地上有几个扣子。','有一处的地砖颜色不同。',
+    '墙上有一个圈，是画的。','角落里放着一只箱子，锁着。','地上有一张撕掉一半的照片。','窗台上有几根烟。',
+    '门边挂着一串钥匙。','地上有一个脚印，很清楚。','天花板有一处往下滴水。','有一段楼梯没有扶手。',
+    '墙上贴着一张图，边角卷起来了。','地上有几块砖是松的。','桌上放着一只空碗。','门上有三个指印。',
+    '走廊的尽头堆着东西。','窗户上有一块是补的。','地上有一条长长的拖痕。','架子最上层有东西。',
+    '墙上画着一个箭头。','地毯下面有东西顶着。','屋里有几个箱子摞在一起。','桌上有一摞纸，最上面那张是空的。'],
+  sound:['有金属在地上拖。','楼上隔一会儿响一下。','有门在风里动。','远处有人在搬东西。',
+    '有东西一直在低频地响。','有人在小声说话，听不清字。','有鸟从窗户外面过去。','某个房间里有人在咳嗽。',
+    '有水滴在铁上。','有绳子和木头摩擦的声音。','脚步声在上层来回。','有东西掉进了水里。',
+    '有人在外面走过。','有玻璃碎的声音，很远。','楼板响了一下。','有东西在抓墙。',
+    '有人把门带上了。','有铁门合上的声音。','某处有电流声。','有人在下面敲了两下。',
+    '有东西在木头上磨。','有人叫了一声，很短。','有风灌进来，吹动了纸。','有椅子被拖动。',
+    '有人把东西放下了。','有链条在晃。','有东西滚过地面。','有人在楼上数数。',
+    '有一声闷响，像东西倒了。','管子里一直有声音。','有东西在窗外面蹭。','有脚步停在门口。',
+    '有开关被按了一下。','有人从楼梯上下来。','有纸张被翻动。','有东西落在屋顶上。',
+    '远处有一辆车停下。','有声音从墙后面过来。','有东西在呼吸。','有人敲了三下墙。',
+    '有绳子上面的钩子在响。','有风从下面灌上来。','有东西在地上滑。','有人在外面说了句什么。'],
+  react:['有人放下手里的东西。','有人往门口挪了一步。','有人用眼神示意不要出声。','有人把灯压低。',
+    '有人挡在前面。','有人伸手拉住了门。','有人退到队伍中间。','有人把手电关了。',
+    '有人回头看了一眼后面。','有人把手放在嘴上。','有人低头不说话。','有人小声数了个数。',
+    '有人往后退了半步。','有人把东西收紧了。','有人站住不动。','有人看着别人的反应。',
+    '有人先看了一眼门口。','有人摸了一下口袋。','有人把肩膀提起来。','有人往后靠了靠。',
+    '有人慢慢把脚收回来。','有人摇头，又点头。','有人把手举到一半又放下。','有人咽了一下。',
+    '有人用手指了指上面。','有人侧着身子听。','有人把外套扣上。','有人把身体压低。',
+    '有人拉了一下同伴的衣服。','有人把重心移到后脚。','有人深吸一口气。','有人抿了下嘴。',
+    '有人把手电递给旁边的人。','有人站在门口没有进去。','有人先退了回来。','有人把帽子压低了。',
+    '所有人都没动。','有人偷偷看了一眼表。','有人把东西护在身前。','有人轻轻把门推上。'],
+  obs:['有人注意到门口的地垫是反的。','有人发现墙上有两处钉子被拔过。','有人看出桌上的杯子被人动过。',
+    '有人注意到这里的窗都朝着一个方向。','有人发现地上少了一块砖。','有人认出门是新装的。',
+    '有人看出这张纸是从本子上撕的。','有人注意到楼梯的第三级是新的。','有人发现灯的位置比别的房间低。',
+    '有人看出灰上有一道很直的痕。','有人注意到柜门上的灰被碰掉了一块。','有人发现这里的水是新打的。',
+    '有人认出这个笔迹和别处一样。','有人看出墙上那张图是照着这里画的。','有人注意到门是从里面锁的。',
+    '有人发现桌上的纸少了一角。','有人看出这里有两个人来过。','有人注意到窗框上有一道新的划痕。',
+    '有人发现门口的脚印比进来的时候多。','有人看出电线是新接的。','有人注意到墙上的灰有手印。',
+    '有人发现有一只鞋是反的。','有人看出这个箱子被打开过。','有人注意到有个房间没有门牌。',
+    '有人发现柜子里有一层新的灰。','有人看出字是最近写的。','有人注意到房顶有一处是新补的。',
+    '有人发现门轴上有油。','有人看出这里的家具是后来搬进来的。','有人注意到桌子上有划痕，很新。',
+    '有人发现外面听不见这里的声音。','有人看出这扇门比别的门新。','有人注意到有人把窗帘拉过。',
+    '有人发现地上有一小段烧过的线。','有人看出纸上的折痕是刚折的。','有人注意到墙上的钟是反挂的。',
+    '有人发现这里所有的门都朝同一个方向开。','有人看出架子上的东西按大小排过。','有人注意到水面上有油。'],
+  find:['有人低头看见了这个。','有人往旁边让开，让其他人看。','有人先摸到的，不是先看到的。',
+    '有人推了一下，后面是空的。','有人把东西拉出来一半。','有人扒开上面的灰。','有人用手电照到了角落。',
+    '有人把布掀开一角。','有人伸手进去拿出来。','有人在最下面一层找到的。','有人抬头才发现。',
+    '有人转身的时候看见了。','有人先听见才找过去的。','有人用力把门推开。','有人蹲下去捡起来。',
+    '有人把上面的箱子挪开。','有人顺着线找过去。','有人用手一推就开了。','有人在门后找到了。',
+    '有人把水放掉才看见。','有人先数了数目。','有人把灯照到最里面。','有人按住一头才拿出来。',
+    '有人从缝里看见了。','有人用刀撬开的。','有人把纸翻过来。','有人觉得不对才回头看。',
+    '有人在这里停住了。','有人把箱子底翻过来。','有人先看见了，但没说话。','有人从上面往下看。',
+    '有人用手擦掉灰。','有人把东西倒出来。','有人把绳子拉上来。'],
+  temp:['屋里比楼道凉。','靠窗的位置更冷。','有热气从下面上来。','门把手是冰的。','墙角有一块是暖的。',
+    '衣服湿了以后很难受。','呼出来的气很快就散。','地面一直是凉的。','靠近灯泡那里是热的。',
+    '有人把手放在铁上又拿开。','这里比刚才那一间冷。','靠门口有一点风。','闷得人想脱外套。',
+    '有冷气从缝里出来。','手电握久了也凉。','这里的空气是干的。','靠近水管的地方更凉。',
+    '有人搓了一下手。','玻璃上结了雾。','有热气从管道那边过来。','这间屋子比外面暖一点。',
+    '越往下走越凉。','脚尖先冷。','有人把围巾拉紧。'],
+  touch:['摸上去有一层灰。','木头一按就软。','铁是凉的。','地面有点黏。','绳子很糙。','玻璃上有油。',
+    '布是硬的。','墙上一擦就掉粉。','桌面有刻痕。','门把是松的。','纸摸起来是脆的。','石头上有青苔。',
+    '手一碰就起来一片灰。','鞋子踩下去有声音。','有一处是湿的。','这里有东西粘手。','铁链上一手锈。',
+    '栏杆有点晃。','书页一翻就要掉。','衣服上有水。','绳结很紧。','皮肤碰上去一阵凉。','桌面是干净的。'],
+  light:['光只到门口。','手电照到的地方很小。','有一盏灯一直没灭。','光从上面漏下来一条。',
+    '影子跟着人走。','手电的电池快没了。','有光在动，但没人动。','这里比刚才暗。',
+    '灯管只亮一半。','有人把灯举高。','光在墙上被切成一块一块。','反射的光照到了天花板。',
+    '光扫过一排东西。','越往里越黑。','有光从窗缝里横着进来。','手电的光圈缩了。',
+    '有一盏灯突然亮了。','灯光是黄的。','光在湿的地方反了一下。','暗处的东西看不出轮廓。',
+    '有人把灯对着地面。','地上的影子比人先动。','有光照到远处一小块。'],
+  air:['空气很干。','有风吹到脸上。','这里很闷。','空气里有一点味道。','风从后面过来。','这里的空气是凉的。',
+    '有人在门口停了一下才进去。','灰尘在光里。','空气很静，一动都不动。','风把纸吹起来了。',
+    '这里闻得到外面。','空气压得人想深呼吸。','从楼梯口有风进来。','这里不通风。'],
+  smell:['有一点霉味。','有烟味。','有铁味。','有湿墙的味道。','有一股很淡的香。','有食物的味道。',
+    '像有人刚走过。','有一点血味。','味道很淡。','有煤油味。','有一点药水味。','空气里有一层灰味。',
+    '味道是从上面下来的。','这里很干净，没有味道。','有一股冷腥味。','有东西在烂。','味道比刚才重。',
+    '有人闻了一下就皱起眉。','有一处味道特别重。','味道像是从墙里出来的。'],
+  anomaly:['指针停在同一个位置。','有人数了两遍，结果不一样。','刚才关着的门是开的。',
+    '地上多了一样不该有的东西。','有一个影子比光早到。','地上的水印是新的，可没有人进来。',
+    '表比刚才少了十分钟。','这间屋子和刚才看到的不一样。','有人在原地转了两次。',
+    '东西的重量不对。','有一段路走了很久也没走完。','刚才的脚印没了。','墙上的字比刚才多了一个。',
+    '同一扇门开了两次，位置不一样。','有人在镜子里看到了后面的东西。','有人听见自己的名字被叫了一次。',
+    '有东西把灯绳拉了一下。','照片上的位置换了。','窗外的景色和刚才不同。','有个房间出现了两次。',
+    '有人发现自己的影子不动。','东西自己归位了。','这里的钟是倒着走的。','声音比动作慢。'],
+  super:['影子先动，人后才动。','有东西穿过了墙。','有声音从锁着的房间出来。','地上的痕走向了墙里。',
+    '有东西在光里更看不清。','镜子里的方向是反的。','有东西在屋顶上走，但屋顶是平的。',
+    '有人听见了还没说出口的话。','有东西在学着人的动作。','房间比走廊长。','有水往上流。',
+    '有人在照片里看见了自己。','有东西从影子里出来。','墙上的画动了。','时间在这里不对。'],
+  trace:['地上有拖过的两条痕。','墙上的抓痕很高。','有东西在这里吃过东西。','地上有黏的东西，还是湿的。',
+    '门框上挂着一点皮。','地上有四个印子。','有东西把铁皮咬开了。','有一排很整齐的痕。',
+    '角落里有骨头，是新的。','墙上的痕是往上走的。','地上有一片干了的。','有羽毛和黏的东西在一起。',
+    '绳子上有牙印。','有一样东西被撕成了两半。','灰尘被推开成一条线。'],
+  delay:['现在还没什么。','有动静，但还在外面。','暂时就只有这个声音。','有东西在更远的地方。',
+    '还看不出是什么。','先别管它。','眼下这里还是安全的。','它还没有进来。','有东西在等。',
+    '距离还远。','先做你们手上的事。','动静停了一会儿。'],
+  hook:['外面的声音停了。','有人把手电关了。','所有灯同时灭了一下。','有人在楼下喊了一声。',
+    '门自己开了一条缝。','有东西碰了一下门。','有人发现少了一个人。','墙上有东西在动。',
+    '后面的路突然没了。','有人低声说了句什么。','远处传来一声闷响。','有光照进来了，但没有人。',
+    '所有人同时听见了同一个声音。','有东西在门口。','电话自己响了。'],
+  end:['这里就到这里。','接下来看你们怎么选。','你们先商量一下。','手电还够用一会儿。',
+    '这一间检查完了。','暂时没有别的发现。','先记下来再说。','下一步你们打算去哪。','外面的动静还在。',
+    '现在轮到你们决定。','需要做什么，直接说。','这里先告一段落。']
+};
+KP_UNIV5 && Object.keys(KP_UNIV5).forEach(function(k){
+  if(!KP_UNIV2[k]) KP_UNIV2[k]=[];
+  KP_UNIV2[k]=KP_UNIV2[k].concat(KP_UNIV5[k]);
+});
+
+/* ================= ㉑ 场景开场句（每个场景多条） =================
+   原来每个场景只有一句开场，连着生成必然重复。这里每个场景补几句，开头就不会老是同一句。 */
+var KP_SCENE_EXT_4={
+  hospital:{open:['这里是医院的住院楼，灯基本都不亮。','走廊很长，两边的病房门有一半开着。',
+    '一进门就是消毒水的味道。','楼梯间在走廊中间，整栋楼没有电。']},
+  house:{open:['这是一栋老宅，家具上都盖着布。','门没锁，屋里的灰有一层。',
+    '一楼是三间房，只有一间开着门。','屋里的东西大多还在原位。']},
+  church:{open:['教堂里很暗，长椅上都是灰。','讲台后面还有一扇小门。',
+    '里面只有门口这一块是亮的。','地下室的入口在讲台侧后面。']},
+  forest:{open:['林子很密，路只有一条。','地上的叶子是湿的，走起来没什么声音。',
+    '树上有刻的记号，隔一段一个。','前面有一块空地，比别处亮。']},
+  port:{open:['码头上堆着货箱，一个人都没有。','有一间仓库的门是开着的。',
+    '水面很平，只有一两条船在动。','铁链和缆绳拖在地上。']},
+  school:{open:['这是一所学校，走廊两边都是柜子。','教室的桌椅都还在，黑板没擦。',
+    '操场上还留着东西，没有人。','这里很安静，安静得不对。']},
+  hotel:{open:['这是家酒店，前台的灯还亮着。','走廊铺着地毯，脚步没声音。',
+    '大部分房间都锁着，只有一间开着。','前台后面那排钟全停着。']},
+  basement:{open:['下面很黑，只能靠手电。','管道沿着墙走，地上有水。','屋顶很低，得低头。','这里只有一个出口。']},
+  cemetery:{open:['雾里是一排排碑，没有别的东西。','门口的铁门歪着，是开着的。',
+    '地上有新翻的土，就在第三排。','守墓的小屋锁着，里面没有灯。']},
+  lab:{open:['这是一间实验室，台面上还摆着东西。','通风柜一直开着，屋里有化学味。',
+    '记录本翻在中间，没有合上。','有一只笼子是空的，门开着。']},
+  town:{open:['这是镇上唯一一条主街。','两边的门窗都关着，只有一家还亮着灯。',
+    '公告栏上贴的还是旧报纸。','街上一个人都没有。']},
+  train:{open:['列车还在开，这节车厢只剩你们几个。','车厢里的灯一跳一跳。',
+    '行李架上还放着没人拿的行李。','窗外是黑的，看不到东西。']},
+  apartment:{open:['这是一栋老式公寓，楼道里的灯是坏的。','楼道里堆着杂物，只能侧身过。',
+    '有一户的门开着，里面没开灯。','信箱都塞满了，没人取。']},
+  factory:{open:['这是一间废弃的厂房，很高。','光从破掉的顶棚漏下来一块。',
+    '机器都停着，地上有油。','这里停产很久了。']},
+  library:{open:['这是图书馆的书库，书架一直排到墙。','地上的书散着，没有人收。',
+    '有几排书架是空的。','只有高窗透进来一束光。']},
+  subway:{open:['这是废弃的地铁站，站台上没有人。','指示牌还亮着，别的都停了。',
+    '轨道下面很黑，看不到底。','闸机是开着的，没有通电。']}
+};
+if(typeof KP_SCENE_EXT==='object'){
+  Object.keys(KP_SCENE_EXT_4).forEach(function(k){
+    if(!KP_SCENE_EXT[k]) KP_SCENE_EXT[k]={};
+    var o=KP_SCENE_EXT_4[k].open||[];
+    if(!KP_SCENE_EXT[k].open) KP_SCENE_EXT[k].open=[];
+    KP_SCENE_EXT[k].open=KP_SCENE_EXT[k].open.concat(o);
+  });
 }
 </script>
 </body>

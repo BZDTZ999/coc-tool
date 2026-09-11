@@ -4,7 +4,7 @@
 'use strict';
 var XP_TOOLS=[['random','🎲 跑团随机','随机名字 / NPC / 地点，KP 临场取材'],
   ['sky','🌙 天文·天象','选日期和地点，看当天的月相与日月出没'],
-  ['kp','✍️ KP正在瞎编！','一句话或几个标签，写出一段能直接念的描写（本地素材，不联网）']];
+  ['kp','✍️ KP正在瞎编！','一句话或几个标签，写出一段能直接念的描写（本地素材 · 口述体 · 不联网）']];
 var xpTool='random';
 function xpToolOf(c){
   var t=(c&&c.tool)||xpTool;

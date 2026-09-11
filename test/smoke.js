@@ -2349,9 +2349,11 @@ const ready = new Promise((res) => {
     var want=w.kpState.lines.map(function(l){ return l.t; }).join('');
     return !!clip && clip===want && clip.length>20;
   })());
-  ok('KP：怪物素材每个都有 15 个描写维度、每维 2 条，不同怪物不是同一套模板', (function(){
+  ok('KP：怪物素材每个都有 15 个描写维度、每维至少 4 条，不同怪物不是同一套模板', (function(){
     var allFull=w.KP_CREATURES.every(function(c){
-      return w.KP_CDIM_KEYS.every(function(k){ return (c.c[k]||[]).length===2; });
+      return w.KP_CDIM_KEYS.every(function(k){
+        return (c.c[k]||[]).length+((w.KP_CREATURE_EXT[c.v]||{})[k]||[]).length>=4;
+      });
     });
     var overlap=null;
     w.KP_CDIM_KEYS.forEach(function(k){
@@ -2394,6 +2396,153 @@ const ready = new Promise((res) => {
       w.KP_UNIV.bank.delay.length>0 && w.KP_UNIV.light.moon && w.KP_UNIV.emotion.fear &&
       src.indexOf('function')<0 && src.indexOf('http')<0;
   })());
+  /* ---------- 本轮：生成质量与重复度（叙述入口 / 段落结构 / 最近使用 / 口述句库 / 连续 20 次压力测试） ---------- */
+  ok('KP：开头结构库——15 类叙述入口（声音/视觉/气味/触觉/动作/反应/对话/事实/异常/天气时间/正常转异常/异常补环境/直接进事件/观察/短句），每类都有多条模板', (function(){
+    var need=['sound','sight','smell','touch','act','react','talk','fact','odd','sky','turn','odd2','event','obs','short'];
+    var keys=Object.keys(w.KP_OPENERS), names=w.KP_OPEN_N||{};
+    var allIn=need.every(function(k){
+      return keys.indexOf(k)>=0 && (w.KP_OPENERS[k]||[]).length>=8 && !!names[k];
+    });
+    var withSc=need.filter(function(k){
+      return (w.KP_OPENERS[k]||[]).some(function(x){ return x.indexOf('{sc}')>=0; });
+    }).length;
+    var tpl=0; keys.forEach(function(k){ tpl+=w.KP_OPENERS[k].length; });
+    if(!(allIn && withSc>=10 && tpl>=150)) console.log('   -> 类型='+keys.length+' 模板='+tpl+' 带场景='+withSc);
+    return keys.length>=15 && allIn && withSc>=10 && tpl>=150 && w.KP_QUOTE.length>=40;
+  })());
+  ok('KP：段落结构库——20 套骨架，生成时按骨架铺句子；明确要求的条件排在中间，不固定第一句', (function(){
+    w.kpClear();
+    w.kpState.text='废弃医院，凌晨三点，暴雨，调查员刚发现尸体';
+    w.kpState.length='mid';
+    w.kpGen();
+    var L=w.kpState.lines||[];
+    var scen=L.length>0 && L[0].t.indexOf('废弃医院')>=0;
+    var bodyAt=-1;
+    L.forEach(function(l,i){ if(bodyAt<0 && l.d==='event') bodyAt=i; });
+    var r=w.kpResolve();
+    var plan=w.kpPickPlan(w.kpCands(r.cond,r.forbidden,r.delay),6,r.cond);
+    var hasEvent=plan.indexOf('event')>=0, hasEnv=plan.indexOf('env')>=0;
+    var spoken=plan.filter(function(d){ return w.KP_SPOKEN_DIM.indexOf(d)>=0; }).length;
+    if(!(scen && bodyAt>0 && hasEvent && hasEnv && spoken>=1))
+      console.log('   -> scen='+scen+' bodyAt='+bodyAt+' event='+hasEvent+' env='+hasEnv+' spoken='+spoken+' plan='+plan.join('>'));
+    w.kpClear();
+    return w.KP_PARAS.length>=20 && L.length>=3 && scen && bodyAt>0 && hasEvent && hasEnv && spoken>=1;
+  })());
+  ok('KP：最近使用记录——开头类型 / 段落结构 / 句式 / 素材 / 意象都记，短期不重复且会存盘', (function(){
+    w.kpClear();
+    w.kpState.text='废弃医院，凌晨三点，暴雨';
+    w.kpState.length='mid';
+    w.kpGen();
+    var a=JSON.parse(JSON.stringify(w.kpRec()));
+    w.kpGen();
+    var b=w.kpRec();
+    var grew=a.mat.length>0 && b.mat.length>a.mat.length && b.sig.length>=a.sig.length &&
+      b.imag.length>0 && b.open.length>a.open.length && b.struct.length===2;
+    var freshOpen=b.open[b.open.length-1]!==a.open[a.open.length-1];
+    var noDup=b.mat.filter(function(x,i){ return b.mat.indexOf(x)!==i; }).length===0;
+    var saved=!!(w.state.ui.kp&&w.state.ui.kp.recent&&w.state.ui.kp.recent.mat.length);
+    if(!(grew&&freshOpen&&noDup&&saved))
+      console.log('   -> grew='+grew+' fresh='+freshOpen+' nodup='+noDup+' saved='+saved+
+        ' mat '+a.mat.length+'->'+b.mat.length+' imag '+a.imag.length+'->'+b.imag.length);
+    w.kpClear();
+    return grew && freshOpen && noDup && saved;
+  })());
+  ok('KP：口述句库（事实 / 动作 / 对话 / 观察 / 发现 / 短句）参与生成，句子偏短、不堆文学腔', (function(){
+    var need=['fact','note','act','talk','react','obs','find'];
+    var d=w.KP_UNIV2, have=need.every(function(k){ return (d[k]||[]).length>=10; });
+    var bad=[], worst=0;
+    for(var k=0;k<8;k++){
+      w.kpClear();
+      w.kpState.text='废弃医院，凌晨三点，暴雨';
+      w.kpState.length='mid';
+      w.kpGen();
+      var L=w.kpState.lines||[];
+      var spoken=L.filter(function(l){ return need.indexOf(l.d)>=0; }).length;
+      if(spoken<1) bad.push('spoken=0');
+      var lens=L.map(function(l){ return l.t.length; });
+      var avg=lens.reduce(function(x,y){ return x+y; },0)/Math.max(1,lens.length);
+      worst=Math.max(worst,avg,Math.max.apply(null,lens));
+      worst=Math.max(worst,Math.max.apply(null,lens)*0+avg);
+    }
+    if(!(have&&!bad.length&&worst<=26)) console.log('   -> have='+have+' bad='+JSON.stringify(bad)+' worst='+worst.toFixed(1));
+    w.kpClear();
+    return have && !bad.length && worst<=26;
+  })());
+  ok('KP：连续 20 次生成压力测试——固定条件「废弃医院，凌晨三点，暴雨，调查员刚发现尸体」', (function(){
+    w.kpClear();
+    w.kpState.text='废弃医院，凌晨三点，暴雨，调查员刚发现尸体';
+    w.kpState.length='mid';
+    var N=20, heads=[], all=[], texts=[];
+    for(var i=0;i<N;i++){
+      w.kpGen();
+      var L=w.kpState.lines.map(function(l){ return {t:l.t,d:l.d}; });
+      texts.push(L.map(function(x){ return x.t; }).join(''));
+      if(L[0]) heads.push(L[0].t);
+      L.forEach(function(x){ all.push(x); });
+    }
+    function cnt(a){ var m={}; a.forEach(function(x){ m[x]=(m[x]||0)+1; }); return m; }
+    function uniq(a){ var o={},n=0; a.forEach(function(x){ if(!o[x]){ o[x]=1; n++; } }); return n; }
+    var cm=cnt(all.map(function(x){ return x.t; }));
+    var startDiff=uniq(heads), lineDiff=uniq(all.map(function(x){ return x.t; }));
+    var repSlot=0, topLine=0;
+    Object.keys(cm).forEach(function(k){ if(cm[k]>1) repSlot+=cm[k]; if(cm[k]>topLine) topLine=cm[k]; });
+    /* 明确要求的那几句（天气 / 时间 / 事件）每段都必须出现，统计重复度时把它们单算 */
+    var must={mood:1,event:1,object:1,env:1,mine:1};
+    var core=all.filter(function(x){ return !must[x.d]; }).map(function(x){ return x.t; });
+    var coreDiff=uniq(core);
+    var img={};
+    all.forEach(function(x){ w.kpImagKeys(x.t).forEach(function(k){ img[k]=(img[k]||0)+1; }); });
+    var maxImg=0; Object.keys(img).forEach(function(k){ if(img[k]>maxImg) maxImg=img[k]; });
+    var sceneHit=0, weatherHit=0, bodyHit=0;
+    texts.forEach(function(t){
+      if(t.indexOf('废弃医院')>=0) sceneHit++;
+      if(/暴雨|雨点|雨水|雨声|雷|雨把|下雨|地上到处是水/.test(t)) weatherHit++;
+      if(/尸体|躺着一个人|躺着的那位|已经死了|死了|人已经死|是一具|已经不动|一动不动|没有呼吸|已经没有脉搏|没救了/.test(t)) bodyHit++;
+    });
+    var pre={}; heads.forEach(function(h){ var s2=h.slice(0,4); pre[s2]=(pre[s2]||0)+1; });
+    var maxPre=0; Object.keys(pre).forEach(function(k){ if(pre[k]>maxPre) maxPre=pre[k]; });
+    console.log('   -> 20 次：开头不同 '+startDiff+'/20 · 整句不同 '+lineDiff+'/'+all.length+
+      ' · 非条件句不同 '+coreDiff+'/'+core.length+' · 重复句 '+repSlot+' 次 · 最高单句重复 '+topLine+
+      ' · 最高频意象 '+maxImg+' · 最高频开头四字 '+maxPre+' · 条件命中 场景'+sceneHit+'/暴雨'+weatherHit+'/尸体'+bodyHit);
+    w.kpClear();
+    return startDiff>=14 && lineDiff/Math.max(1,all.length)>=0.9 &&
+      coreDiff/Math.max(1,core.length)>=0.9 && repSlot/Math.max(1,all.length)<=0.16 &&
+      topLine<=4 && maxImg<=30 && maxPre<=6 &&
+      sceneHit===N && bodyHit===N && weatherHit>=14;
+  })());
+  ok('KP：素材库扩充——场景 / 口述 / 怪物 / 条件句各路都有下限，总量是原来（547 条）的 10 倍以上', (function(){
+    function sum(o){ var n=0; Object.keys(o).forEach(function(k){ n+=(o[k]||[]).length; }); return n; }
+    var sceneLines=0;
+    w.KP_SCENES.forEach(function(s){ Object.keys(s.L).forEach(function(k){ sceneLines+=s.L[k].length; }); });
+    var sceneExt=0; Object.keys(w.KP_SCENE_EXT).forEach(function(s){ sceneExt+=sum(w.KP_SCENE_EXT[s]); });
+    var creature=0;
+    w.KP_CREATURES.forEach(function(c){ w.KP_CDIM_KEYS.forEach(function(k){ creature+=(c.c[k]||[]).length; }); });
+    var cExt=0; Object.keys(w.KP_CREATURE_EXT).forEach(function(v){ cExt+=sum(w.KP_CREATURE_EXT[v]); });
+    var spoken=sum(w.KP_UNIV2);
+    var total=sceneLines+sceneExt+creature+cExt+spoken+sum(w.KP_OPENERS)+sum(w.KP_MOOD_SAY)+
+      sum(w.KP_EVENT_SAY)+sum(w.KP_OBJECT_SAY)+sum(w.KP_WEATHER_SAY)+sum(w.KP_TIME_SAY)+
+      (w.KP_WT_SAY||[]).length;
+    console.log('   -> 素材条目合计 '+total+'（场景 '+(sceneLines+sceneExt)+' · 口述 '+spoken+
+      ' · 怪物 '+(creature+cExt)+' · 开头 '+sum(w.KP_OPENERS)+' · 条件句 '+
+      (sum(w.KP_MOOD_SAY)+sum(w.KP_EVENT_SAY)+sum(w.KP_OBJECT_SAY)+sum(w.KP_WEATHER_SAY)+sum(w.KP_TIME_SAY))+'）');
+    return total>=5400 && sceneLines+sceneExt>=1200 && spoken>=1900 && creature+cExt>=1200 &&
+      sum(w.KP_MOOD_SAY)>=200 && sum(w.KP_EVENT_SAY)>=230 && sum(w.KP_WEATHER_SAY)>=130 &&
+      sum(w.KP_TIME_SAY)>=80 && (w.KP_WT_SAY||[]).length>=130 && w.KP_PARAS.length>=20 && w.KP_IMAG.length>=35;
+  })());
+  ok('KP：每段必出的条件句（天气+时间 合成 / 发现尸体 / 氛围）库都够大，开头不会只有一两种写法', (function(){
+    /* env（天气+时间）在固定条件下 100% 出现，库太小就会连点十几次都是同一句开场 */
+    function heads(a,n){ var o={}, i, k; for(i=0;i<a.length;i++){ k=String(a[i]).slice(0,n); o[k]=1; } return Object.keys(o).length; }
+    var wt=w.KP_WT_SAY||[];
+    var wtHead=heads(wt,6), wtVar=heads(wt.map(function(x){
+      return x.replace(/\{w\}|\{wn\}|\{wt\}/g,'雨').replace(/\{t\}/g,'夜');
+    }),4);
+    var bodyVar=new Set(w.KP_EVENT_SAY.body).size;
+    var moodVar=new Set(w.KP_MOOD_SAY.oppressive).size;
+    console.log('   -> 天气时间合成句 '+wt.length+' 条 / 开头 6 字 '+wtHead+' 种 · 发现尸体 '+bodyVar+
+      ' 条 · 压抑氛围 '+moodVar+' 条');
+    return wt.length>=130 && wtHead>=20 && wtVar>=15 && bodyVar>=30 && moodVar>=15;
+  })());
+
   w.kpClear();
 
   await new Promise(function(done){

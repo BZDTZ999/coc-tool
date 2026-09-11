@@ -19,7 +19,7 @@ var KP_NEGN_KEYS=['creature','blood','gore','supernatural','sound','attack','dea
 /* ================= 状态（存在 state.ui.kp，刷新后还在） ================= */
 var kpState={
   tab:'scene', text:'', quick:{}, adv:{}, forbidden:{}, delay:{}, restriction:'',
-  length:'mid', showAdv:false, creature:'', cdim:{}, mine:[], draft:null, mute:{},
+  length:'mid', showAdv:false, creature:'', cdim:{}, mine:[], draft:null, mute:{}, recent:null,
   lines:[], hint:'', notes:[], ctx:null, seq:0, loaded:false
 };
 function kpEnsure(){
@@ -41,6 +41,7 @@ function kpEnsure(){
   if(s.cdim && typeof s.cdim==='object') kpState.cdim=s.cdim;
   if(s.mine && s.mine.length) kpState.mine=s.mine;
   if(s.mute && typeof s.mute==='object') kpState.mute=s.mute;
+  if(s.recent && typeof s.recent==='object') kpState.recent=s.recent;
   if(s.lines && s.lines.length){
     kpState.lines=s.lines; kpState.hint=s.hint||''; kpState.notes=s.notes||[];
     kpState.ctx=s.ctx||null; kpState.seq=s.seq||s.lines.length;
@@ -52,7 +53,8 @@ function kpSave(){
   state.ui.kp={text:kpState.text, quick:kpState.quick, adv:kpState.adv, forbidden:kpState.forbidden,
     delay:kpState.delay, restriction:kpState.restriction, length:kpState.length, tab:kpState.tab,
     creature:kpState.creature, cdim:kpState.cdim, mine:kpState.mine, lines:kpState.lines,
-    mute:kpState.mute, hint:kpState.hint, notes:kpState.notes, ctx:kpState.ctx, seq:kpState.seq};
+    mute:kpState.mute, hint:kpState.hint, notes:kpState.notes, ctx:kpState.ctx, seq:kpState.seq,
+    recent:kpState.recent};
   saveStateQuiet();
 }
 function kpNextId(){ kpState.seq=(kpState.seq||0)+1; return 'kp'+kpState.seq; }
@@ -79,6 +81,149 @@ function kpTidy(t){
   t=kpList(t); if(!t) return '';
   if(!/[。！？…～」』")]$/.test(t)) t+='。';
   return t;
+}
+/* ================= 最近使用记录 / 叙述入口 / 段落结构（防重复用） =================
+   连点「再来一段」不能老是同一批句子、同一种开头、同一批意象。所以每次生成都记一笔：
+   开头类型 / 段落结构 / 句式签名 / 用过的整句 / 用过的意象，接下来几段里这些都会被降权。 */
+var KP_RECENT_MAX={open:9,struct:10,imag:36,mat:150,sig:40};
+function kpRec(){
+  if(!kpState.recent || typeof kpState.recent!=='object') kpState.recent={};
+  var r=kpState.recent;
+  ['open','struct','imag','mat','sig'].forEach(function(k){ if(!Array.isArray(r[k])) r[k]=[]; });
+  return r;
+}
+function kpRecHas(k,v){ return kpHasIn(kpRec()[k],v); }
+function kpRecPush(k,v){
+  if(v===undefined || v===null || v==='') return;
+  var r=kpRec(), a=r[k], max=KP_RECENT_MAX[k]||12, i=a.indexOf(v);
+  if(i>=0) a.splice(i,1);
+  a.push(v);
+  while(a.length>max) a.shift();
+}
+/* 句式签名：去掉标点、把数字归一，取前 6 个字 —— 同一句式的句子会撞在一起，用来防「连着几句一个结构」 */
+function kpSig(t){
+  var s=String(t||'').replace(/[，。！？、；：「」『』（）《》""'',.!?;:\-—…～\s]/g,'');
+  return s.replace(/[0-9０-９]+/g,'#').slice(0,6);
+}
+/* 一句话命中了哪几组核心意象（走廊 / 灯光 / 空气 / 寒意 / 声音 / 脚步…） */
+function kpImagKeys(t){
+  var out=[], s=String(t||''), i, j;
+  for(i=0;i<KP_IMAG.length;i++){
+    var ws=KP_IMAG[i][1];
+    for(j=0;j<ws.length;j++){ if(s.indexOf(ws[j])>=0){ out.push(KP_IMAG[i][0]); break; } }
+  }
+  return out;
+}
+/* 候选人「最近用过」的扣分：整句用过最重，句式其次，意象按命中数累加 */
+function kpRecentScore(o,rec){
+  var s=0, i, hit=0, mi=rec.mat.indexOf(o.t);
+  /* 用过的整句记得越近扣得越多 —— 同一个条件句的几个说法就能轮流上，不会老用第一句 */
+  if(mi>=0) s+=9+8*((mi+1)/(rec.mat.length||1));
+  if(kpHasIn(rec.sig,o.sig)) s+=5;
+  for(i=0;i<o.im.length;i++) if(kpHasIn(rec.imag,o.im[i])) hit++;
+  s+=hit*3;
+  if(hit>=2) s+=2;
+  return s;
+}
+/* 没有具体场景 / 分区时，{sub} 的兜底说法 */
+var KP_OPEN_SUB=['里面','那一头','边上','深处','后面','前面','拐角那边'];
+/* 把素材里的占位符填成这一次生成的实际条件（{sc} 场景 · {sub} 分区 · {t} 时间 · {wn}/{w}/{wt} 天气 · {q} 台词） */
+function kpFill(t,ctx){
+  var s=String(t==null?'':t);
+  if(s.indexOf('{')<0) return s;
+  var c=ctx||{};
+  s=s.split('{sc}').join(c.sc||'').split('{sub}').join(c.sub||'').split('{wt}').join(c.wt||'')
+     .split('{wn}').join(c.wn||'').split('{w}').join(c.w||'').split('{t}').join(c.t||'')
+     .split('{q}').join(c.q||'');
+  return s.replace(/^[，。、；：]+/,'').replace(/「」/g,'').replace(/，\s*，/g,'，')
+    .replace(/，\s*。/g,'。').replace(/\s{2,}/g,' ').replace(/[，、]\s*$/,'');
+}
+/* 这一次生成用到的实际条件（给占位符用） */
+function kpSlots(cond){
+  var sc=(cond.scene||[])[0]? kpFindScene(cond.scene[0]) : null;
+  var to=(cond.time||[])[0]? kpOptOf('time',cond.time[0]) : null;
+  var wo=(cond.weather||[])[0]? kpOptOf('weather',cond.weather[0]) : null;
+  var sub=(sc&&sc.subs&&sc.subs.length)? kpRandOne(sc.subs) : kpRandOne(KP_OPEN_SUB);
+  return {sc:sc? sc.n:'这里', sub:sub, t:to? to.n:'',
+    wn:wo? wo.n:'', w:wo? (KP_W_TXT[wo.v]||wo.n):'', wt:wo? (wo.n+'天'):'',
+    q:kpRandOne(KP_QUOTE)};
+}
+/* 换一个「叙述入口」：类型尽量不跟最近十几次重复，模板从这一类里随机抽一条 */
+function kpOpenPool(cond,type){
+  var list=KP_OPENERS[type]||[], out=[], i;
+  var needSc=!!((cond.scene||[])[0]), needT=!!((cond.time||[])[0]), needW=!!((cond.weather||[])[0]);
+  for(i=0;i<list.length;i++){
+    var s=list[i];
+    if(!needT && s.indexOf('{t}')>=0) continue;
+    if(!needW && (s.indexOf('{w}')>=0 || s.indexOf('{wn}')>=0 || s.indexOf('{wt}')>=0)) continue;
+    if(!needSc && s.indexOf('{sc}')>=0) continue;
+    out.push(s);
+  }
+  if(needSc){
+    out=out.filter(function(s){ return s.indexOf('{sc}')>=0; });
+    /* 场景名尽量别顶在句首，不然连着十几段都从「XX医院……」开始 */
+    var noLead=out.filter(function(s){ return s.indexOf('{sc}')!==0; });
+    if(noLead.length) out=noLead;
+  }
+  return out;
+}
+function kpPickOpener(cond,ctx){
+  var types=Object.keys(KP_OPENERS), rec=kpRec(), i;
+  /* 一句话里说了场景，开场就得把这个场景带上（结果必须仍然符合原始条件） */
+  if((cond.scene||[]).length)
+    types=types.filter(function(t){ return (KP_OPENERS[t]||[]).some(function(s){ return s.indexOf('{sc}')>=0; }); });
+  var pool=types.filter(function(t){ return !kpHasIn(rec.open,t) && kpOpenPool(cond,t).length; });
+  if(!pool.length) pool=types.filter(function(t){ return kpOpenPool(cond,t).length; });
+  if(!pool.length) return null;
+  var ty=kpRandOne(pool), ops=kpOpenPool(cond,ty);
+  if(!ops.length) return null;
+  var t=kpTidy(kpFill(kpRandOne(ops),ctx));
+  if(!t) return null;
+  return {t:t,type:ty};
+}
+/* 偏「口述」的维度：一段话里至少要有一句这一类，别整段都在写景 */
+var KP_SPOKEN_DIM=['fact','note','act','react','obs','talk','find'];
+/* 选一套段落结构（同时避开最近用过的几套），保证用户明确要求的维度一定在里面 */
+function kpFitPlan(seed,want){
+  var p=seed.slice(), i=0;
+  while(p.length>want) p.splice(1+Math.floor(Math.random()*(p.length-1)),1);
+  while(p.length<want){ p.push(seed[i%seed.length]); i++; }
+  return p;
+}
+function kpPickPlan(cands,want,cond){
+  if(want<1) return [];
+  var avail={}, i;
+  for(i=0;i<cands.length;i++){ var d=cands[i]&&cands[i].d; if(d) avail[d]=1; }
+  var force=[];
+  if((cond.mood||[]).length) force.push('mood');
+  if((cond.event||[]).length) force.push('event');
+  if((cond.object||[]).length) force.push('object');
+  (cond.focus||[]).forEach(function(f){ var d=KP_FOCUS2DIM[f]; if(d) force.push(d); });
+  if(avail.mine) force.push('mine');
+  /* 天气和时间各占一格：用户明确给了就得让它们出现 */
+  if(avail.env && ((cond.weather||[]).length || (cond.time||[]).length)) force.push('env');
+  var rec=kpRec();
+  var fresh=KP_PARAS.filter(function(p){ return !kpHasIn(rec.struct,p.join('>')); });
+  var pool=fresh.length? fresh : KP_PARAS;
+  var plan=kpFitPlan(kpRandOne(pool),want);
+  /* 明确要求的维度必须排进去：从第 2 句起的槽位里随机占（不占第一句，
+     免得「发现尸体」这种永远出现在开头）。位置互不重复，所以不会被彼此挤掉。 */
+  var need={};
+  force.forEach(function(d){ if(avail[d]) need[d]=(need[d]||0)+1; });
+  var pos=[], k, assigned={};
+  for(k=1;k<plan.length;k++) pos.push(k);
+  pos=kpShuffled(pos);
+  Object.keys(need).forEach(function(d){
+    for(var n=0;n<need[d] && pos.length;n++){ var at=pos.pop(); plan[at]=d; assigned[at]=1; }
+  });
+  /* 每一段至少留一句「口述句」（事实 / 动作 / 反应 / 观察…），别整段都在写景；
+     只在没被明确要求占掉的槽位里安排，不会把「发现尸体」这种挤掉。 */
+  var spoken=KP_SPOKEN_DIM.filter(function(d){ return avail[d]; });
+  if(!spoken.length) spoken=['fact'];
+  var free=[], hasSpoken=false;
+  for(k=1;k<plan.length;k++){ if(assigned[k]) continue; free.push(k); if(KP_SPOKEN_DIM.indexOf(plan[k])>=0) hasSpoken=true; }
+  if(!hasSpoken && free.length) plan[free[Math.floor(Math.random()*free.length)]]=kpRandOne(spoken);
+  return plan;
 }
 function kpUVal(e){ return Array.isArray(e)? e[0] : e; }
 function kpUDim(e,fb){ return Array.isArray(e)? (e[1]||fb) : fb; }
@@ -376,25 +521,58 @@ function kpMinePick(cond){
 /* 候选素材：按「用户明确要求 → 场景 → 通用 → 补充」排好序，系统补充永远排在最后 */
 function kpCands(cond,fo,dly){
   var c=[], sc=(cond.scene||[])[0]? kpFindScene(cond.scene[0]) : null;
-  function add(t,d){ if(t && kpTextOK(t,d,fo)) c.push({t:t,d:d}); }
-  /* ① 明确说了的氛围 / 事件 / 物体：先保证它们出现 */
-  (cond.mood||[]).forEach(function(m){ if(KP_MOOD_CLAUSE[m]) add(KP_MOOD_CLAUSE[m],'mood'); });
-  (cond.event||[]).forEach(function(v){ if(kpEvOK(v,fo) && KP_EVENT_CLAUSE[v]) add(KP_EVENT_CLAUSE[v],'event'); });
-  (cond.object||[]).forEach(function(v){ if(KP_OBJECT_CLAUSE[v]) add(KP_OBJECT_CLAUSE[v],'object'); });
+  var slots=kpSlots(cond);
+  function add(t,d,must){ t=kpFill(t,slots); if(t && kpTextOK(t,d,fo)) c.push({t:t,d:d,must:must?1:0}); }
+  /* ① 明确说了的氛围 / 事件 / 物体：先保证它们出现（标成 must，选句时一定排进去） */
+  (cond.mood||[]).forEach(function(m){
+    var arr=KP_MOOD_SAY[m]||(KP_MOOD_CLAUSE[m]? [KP_MOOD_CLAUSE[m]] : []);
+    arr.forEach(function(x){ add(x,'mood',1); });
+  });
+  (cond.event||[]).forEach(function(v){
+    if(!kpEvOK(v,fo)) return;
+    var arr=KP_EVENT_SAY[v]||(KP_EVENT_CLAUSE[v]? [KP_EVENT_CLAUSE[v]] : []);
+    arr.forEach(function(x){ add(x,'event',1); });
+  });
+  (cond.object||[]).forEach(function(v){
+    var arr=KP_OBJECT_SAY[v]||(KP_OBJECT_CLAUSE[v]? [KP_OBJECT_CLAUSE[v]] : []);
+    arr.forEach(function(x){ add(x,'object',1); });
+  });
+  /* ①.5 用户明确给了天气 / 时间：这一段里必须有，不然生成出来就不符合原始条件了 */
+  var wv=(cond.weather||[])[0], tv=(cond.time||[])[0];
+  if(wv && tv){
+    /* 两样都给：一句里同时带上，占一个位置就够 */
+    KP_WT_SAY.forEach(function(x){ add(x,'env',1); });
+  } else if(wv){
+    (KP_WEATHER_SAY[wv]||[]).forEach(function(x){ add(x,'env',1); });
+    kpShuffled(KP_UNIV.weather[wv]||[]).forEach(function(e){ add(kpUVal(e),'env',1); });
+  } else if(tv){
+    (KP_TIME_SAY[tv]||[]).forEach(function(x){ add(x,'env',1); });
+    kpShuffled(KP_UNIV.time[tv]||[]).forEach(function(e){ add(kpUVal(e),'env',1); });
+  }
   /* ② 我的素材 */
-  kpMinePick(cond).forEach(function(m){ add(m.t,'mine'); });
-  /* ③ 场景素材（用户点/说出来的场景，永远优先于通用素材） */
+  kpMinePick(cond).forEach(function(m){ add(m.t,'mine',1); });
+  /* ③ 场景素材（场景自身 + 场景加料），永远优先于通用素材 */
   var order=[];
   (cond.focus||[]).forEach(function(f){ var d=KP_FOCUS2DIM[f]; if(d && order.indexOf(d)<0) order.push(d); });
   KP_SDIM_ORDER.forEach(function(d){ if(order.indexOf(d)<0) order.push(d); });
   if(sc){
-    add(kpRandOne(sc.L.open||[]),'open');
+    /* 场景开场句：L.open 和加料里的 open 合起来抽，不然每个场景只有一句，连点就会重复 */
+    add(kpRandOne((sc.L.open||[]).concat((KP_SCENE_EXT[sc.v]||{}).open||[])),'open');
+    var ext=KP_SCENE_EXT[sc.v]||null, extra=[];
+    Object.keys(sc.L||{}).forEach(function(k2){ if(order.indexOf(k2)<0 && extra.indexOf(k2)<0) extra.push(k2); });
+    if(ext) Object.keys(ext).forEach(function(k2){ if(order.indexOf(k2)<0 && extra.indexOf(k2)<0) extra.push(k2); });
+    order=order.concat(extra);
     order.forEach(function(d){
-      kpShuffled(sc.L[d]||[]).forEach(function(x){ add(x,d); });
+      var arr=(sc.L[d]||[]).concat((ext&&ext[d])||[]);
+      kpShuffled(arr).forEach(function(x){ add(x,d); });
     });
   }
+  /* ③.5 口述句库：事实 / 动作 / 对话 / 观察 / 发现…任何场景都能铺，也是「像 KP 现场念的」那一批 */
+  Object.keys(KP_UNIV2).forEach(function(d){
+    kpShuffled(KP_UNIV2[d]||[]).forEach(function(x){ add(x,d); });
+  });
   /* ④ 天气 / 时间 / 氛围 / 光线 / 情绪的通用写法 */
-  var w=(cond.weather||[])[0], t=(cond.time||[])[0];
+  var w=wv, t=tv;
   if(w && KP_UNIV.weather[w]) kpShuffled(KP_UNIV.weather[w]).forEach(function(e){ add(kpUVal(e),kpUDim(e,'air')); });
   if(t && KP_UNIV.time[t]) kpShuffled(KP_UNIV.time[t]).forEach(function(e){ add(kpUVal(e),kpUDim(e,'air')); });
   (cond.mood||[]).forEach(function(m){ if(KP_UNIV.mood[m]) kpShuffled(KP_UNIV.mood[m]).forEach(function(e){ add(kpUVal(e),kpUDim(e,'air')); }); });
@@ -419,20 +597,114 @@ function kpCands(cond,fo,dly){
   });
   return c;
 }
-/* 组段：按顺序取，避免相邻同维度（句子不至于一句视觉一句视觉堆在一起） */
-function kpSelect(cands,want,keys,out){
-  var deferred=[], i, c, tx;
-  for(i=0;i<cands.length && out.length<want;i++){
-    c=cands[i]; if(!c.t) continue;
+/* 组段：按「段落结构」排句子 —— 每个槽位取该维度里最近没用过的一句；用户明确要求的条件一定排进去。
+   同时避开最近几段用过的整句 / 句式 / 意象，所以连点「再来一段」不会老是同一批句子。 */
+function kpSelect(cands,want,keys,out,plan){
+  var rec=kpRec(), i, c, tx, pool=[];
+  for(i=0;i<cands.length;i++){
+    c=cands[i]; if(!c || !c.t) continue;
     tx=kpTidy(c.t); if(!tx || keys[tx]) continue;
-    if(out.length && out[out.length-1].d===c.d){ deferred.push({t:tx,d:c.d}); continue; }
-    keys[tx]=1; out.push({t:tx,d:c.d});
+    if(!c.must && kpHasIn(rec.mat,tx)) continue;          /* 最近几段用过的整句不重复（用户明确要求的条件句除外，它必须出现） */
+    pool.push({t:tx,d:c.d||'air',must:c.must?1:0,idx:i,sig:kpSig(tx),im:kpImagKeys(tx)});
   }
-  for(i=0;i<deferred.length && out.length<want;i++){
-    c=deferred[i];
-    if(keys[c.t]) continue;
-    if(out.length && out[out.length-1].d===c.d) continue;
-    keys[c.t]=1; out.push({t:c.t,d:c.d});
+  var byDim={};
+  for(i=0;i<pool.length;i++){ var o=pool[i]; (byDim[o.d]||(byDim[o.d]=[])).push(o); }
+  var used={}, chosen=[];
+  function score(o){ return kpRecentScore(o,rec); }
+  function takeDim(d){
+    var q=byDim[d]||[], k, best=null, bs=Infinity;
+    for(k=0;k<q.length;k++){
+      var x=q[k]; if(used[x.t]) continue;
+      var sc=score(x);
+      if(sc<bs){ bs=sc; best=x; if(sc===0) break; }
+    }
+    return best;
+  }
+  function accept(o){
+    used[o.t]=1; keys[o.t]=1; chosen.push(o);
+    kpRecPush('mat',o.t); kpRecPush('sig',o.sig);
+    o.im.forEach(function(x){ kpRecPush('imag',x); });
+  }
+  /* ① 先按段落结构排槽位 */
+  (plan||[]).forEach(function(d){
+    if(chosen.length>=want) return;
+    var o=takeDim(d); if(o) accept(o);
+  });
+  /* ② 用户明确要求的条件（氛围 / 事件 / 物体 / 我的素材）：同一维度至少出现一句，插在中间而不是堆到末尾 */
+  var mustSeen={};
+  chosen.forEach(function(o){ if(o.must) mustSeen[o.d]=1; });
+  pool.filter(function(o){ return o.must && !used[o.t]; })
+    .sort(function(a,b){ return (score(a)-score(b))||(a.idx-b.idx); })
+    .forEach(function(o){
+    if(chosen.length>=want) return;
+    if(mustSeen[o.d]) return;
+    mustSeen[o.d]=1; used[o.t]=1; keys[o.t]=1;
+    var at=chosen.length? 1+Math.floor(Math.random()*chosen.length) : 0;
+    chosen.splice(at,0,o);
+    kpRecPush('mat',o.t); kpRecPush('sig',o.sig);
+    o.im.forEach(function(x){ kpRecPush('imag',x); });
+  });
+  /* ③ 还没排满就从剩下的候选里按「最近没用过」的顺序补，避免相邻同维度 */
+  var rest=pool.slice().sort(function(a,b){ return (b.must-a.must)||(score(a)-score(b))||(a.idx-b.idx); });
+  var deferred=[];
+  function spare(o){
+    /* 明确要求的维度已经有一句了，就不再补第二句（免得同一段里出现两次「发现尸体」） */
+    if(o.must && mustSeen[o.d]) return false;
+    return true;
+  }
+  for(i=0;i<rest.length && chosen.length<want;i++){
+    var o2=rest[i]; if(used[o2.t] || !spare(o2)) continue;
+    if(chosen.length && chosen[chosen.length-1].d===o2.d){ deferred.push(o2); continue; }
+    if(o2.must) mustSeen[o2.d]=1;
+    accept(o2);
+  }
+  for(i=0;i<deferred.length && chosen.length<want;i++){
+    var o3=deferred[i]; if(used[o3.t] || !spare(o3)) continue;
+    if(o3.must) mustSeen[o3.d]=1;
+    accept(o3);
+  }
+  chosen.forEach(function(o){ out.push({t:o.t,d:o.d}); });
+  return out;
+}
+/* 一次生成：先选「叙述入口」，再选「段落结构」，再按结构铺素材（开头 / 结构 / 维度 / 素材每次都会重挑） */
+function kpBuild(r,want,keys,cmode){
+  var cond=r.cond, out=[], i, op, t1;
+  if(cmode===undefined) cmode=kpCreatureMode(r);
+  if(cmode) kpState.creature=cmode;
+  if(cmode){
+    /* 怪物：只在有场景 / 时间 / 天气时给一句开场，其余全是它自己的素材维度 */
+    if(!r.delay.creature && kpFrameOf(cond)){
+      for(t1=0;t1<3 && !op;t1++){
+        var o1=kpPickOpener(cond,kpSlots(cond));
+        if(o1 && !keys[o1.t]) op=o1;
+      }
+      if(op){ out.push({t:op.t,d:'open'}); kpRecPush('open',op.type); }
+    }
+    var dims=kpCreatureDims(), cands=[];
+    if(r.delay.creature){
+      dims=['env','observe'];
+      kpShuffled((KP_UNIV.bank&&KP_UNIV.bank.delay)||[]).forEach(function(e){ cands.push({t:kpUVal(e),d:'delay'}); });
+    }
+    cands=cands.concat(kpCreatureCands(kpFindCreature(cmode),dims,r.forbidden));
+    var want2=want-out.length;
+    if(want2>0){
+      var plan2=kpPickPlan(cands,want2,cond);
+      kpRecPush('struct',plan2.join('>'));
+      kpSelect(cands,want2,keys,out,plan2);
+    }
+    return out;
+  }
+  for(t1=0;t1<4 && !op;t1++){
+    var o2=kpPickOpener(cond,kpSlots(cond));
+    if(o2 && !keys[o2.t]) op=o2;
+  }
+  if(op){ out.push({t:op.t,d:'open'}); kpRecPush('open',op.type); }
+  var cands2=kpCands(cond,r.forbidden,r.delay);
+  var want3=want-out.length;
+  if(want3>0){
+    var plan3=kpPickPlan(cands2,want3,cond);
+    kpRecPush('struct',plan3.join('>'));
+    kpSelect(cands2,want3,keys,out,plan3);
   }
   return out;
 }
@@ -457,8 +729,10 @@ function kpCreatureDims(){
 function kpCreatureCands(cr,dims,fo){
   var c=[];
   if(!cr) return c;
+  var ext=KP_CREATURE_EXT[cr.v]||null;
   dims.forEach(function(k){
-    kpShuffled((cr.c&&cr.c[k])||[]).forEach(function(x){
+    var arr=(cr.c&&cr.c[k]||[]).concat((ext&&ext[k])||[]);
+    kpShuffled(arr).forEach(function(x){
       if(kpTextOK(x,k,fo)) c.push({t:x,d:'c-'+k});
     });
   });
@@ -478,22 +752,6 @@ function kpCreatureMode(r){
   if(kpState.tab==='creature') return kpCreaturePick();
   return '';
 }
-function kpBuildCreature(r,want,keys){
-  var cr=kpFindCreature(kpCreaturePick());
-  if(!cr) return [];
-  var out=[], dims=kpCreatureDims(), cands=[];
-  if(r.delay.creature){
-    dims=['env','observe'];
-    kpShuffled((KP_UNIV.bank&&KP_UNIV.bank.delay)||[]).forEach(function(e){ cands.push({t:kpUVal(e),d:'delay'}); });
-  }
-  cands=cands.concat(kpCreatureCands(cr,dims,r.forbidden));
-  if(!r.delay.creature){
-    var frame=kpFrameOf(r.cond);
-    if(frame) out.push({t:frame,d:'open'});
-  }
-  kpSelect(cands,want,keys,out);
-  return out;
-}
 /* ================= 生成 / 撤销 / 继续 / 扩写 / 长度 ================= */
 function kpDegradeNote(r,got,want){
   var h=[];
@@ -510,17 +768,10 @@ function kpGen(){
   kpSync();
   var r=kpResolve();
   kpState.notes=r.notes||[];
-  var want=KP_LEN_N[kpState.length]||6, keys={}, out=[];
+  var want=KP_LEN_N[kpState.length]||6, keys={};
   var cmode=kpCreatureMode(r);
-  if(cmode){
-    kpState.creature=cmode;
-    out=kpBuildCreature(r,want,keys);
-  } else {
-    var frame=kpFrameOf(r.cond);
-    if(frame) out.push({t:frame,d:'open'});
-    kpSelect(kpCands(r.cond,r.forbidden,r.delay),want,keys,out);
-  }
-  kpState.ctx={cond:r.cond,forbidden:r.forbidden,delay:r.delay,used:keys,creature:cmode};
+  var out=kpBuild(r,want,keys,cmode);
+  kpState.ctx={cond:r.cond,forbidden:r.forbidden,delay:r.delay,used:keys,creature:cmode||''};
   kpState.lines=out.map(function(o){ return {i:kpNextId(),t:o.t,d:o.d,lock:false}; });
   if(cmode){
     var cr=kpFindCreature(cmode);
@@ -551,10 +802,12 @@ function kpAppend(n,mode){
     var prefer=cands.filter(function(c){ return !seen[c.d]; });
     if(prefer.length) cands=prefer;
   }
-  kpSelect(cands,n,keys,out);
+  var plan=kpPickPlan(cands,n,ctx.cond);
+  kpRecPush('struct',plan.join('>'));
+  kpSelect(cands,n,keys,out,plan);
   if(out.length<n){
     var k2={}; out.forEach(function(o){ k2[o.t]=1; });
-    kpSelect(cands,n-out.length,k2,out);
+    kpSelect(cands,n-out.length,k2,out,plan);
   }
   out.forEach(function(o){ kpState.lines.push({i:kpNextId(),t:o.t,d:o.d,lock:false}); });
   return out.length;
@@ -584,7 +837,7 @@ function kpAgain(){
   }
   var keys={}, out=[];
   locked.forEach(function(l){ keys[l.t]=1; });
-  kpSelect(kpCandsOfCtx(ctx),want-locked.length,keys,out);
+  out=kpBuild({cond:ctx.cond,forbidden:ctx.forbidden,delay:ctx.delay},want-locked.length,keys,ctx.creature||'');
   var it=0, res=[];
   kpState.lines.forEach(function(l){
     if(l.lock) res.push(l);
@@ -747,14 +1000,14 @@ function kpResetAll(){
   kpState.tab='scene'; kpState.text=''; kpState.quick={}; kpState.adv={}; kpState.forbidden={};
   kpState.delay={}; kpState.restriction=''; kpState.length='mid'; kpState.showAdv=false;
   kpState.creature=''; kpState.cdim={}; kpState.mine=[]; kpState.draft=null;
-  kpState.mute={};
+  kpState.mute={}; kpState.recent=null;
   kpState.lines=[]; kpState.hint=''; kpState.notes=[]; kpState.ctx=null; kpState.seq=0;
 }
 function kpClear(){
   kpSync();
   kpState.text=''; kpState.quick={}; kpState.adv={}; kpState.forbidden={}; kpState.delay={};
   kpState.restriction=''; kpState.lines=[]; kpState.notes=[]; kpState.hint=''; kpState.ctx=null;
-  kpState.creature=''; kpState.cdim={}; kpState.mute={};
+  kpState.creature=''; kpState.cdim={}; kpState.mute={}; kpState.recent=null;
   kpSave(); xpRefresh();
 }
 
