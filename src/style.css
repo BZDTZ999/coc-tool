@@ -824,7 +824,6 @@ body.fsfloat-surveyors #fsFloatHost #pcList .pcatts9{gap:4px;margin-top:7px}
 body.fsfloat-surveyors #fsFloatHost #pcList .pctile em{font-size:14px}
 
 /* ---- 全屏 NPC 浮层：卡片不显示备注 ---- */
-body.fsfloat-npcs #fsFloatHost .npcmini .npc-note{display:none!important}
 body.fsfloat-npcs #fsFloatHost .npccols{grid-template-columns:repeat(2,minmax(0,1fr))}
 
 /* ================= 本轮增补 3：战斗详情头 + 小卡经历外框（含真火焰） ================= */

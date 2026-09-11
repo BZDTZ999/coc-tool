@@ -1595,22 +1595,25 @@ const ready = new Promise((res) => {
     return a>=15 && a<=90 && a%5===0 && b>=40 && b<=90 && b%5===0 && c===30 && d>=40 && d<=60;
   })());
 
-  ok('NPC 小卡：KP 自己填的备注优先显示（没填时显示模板提示）', (function(){
+  /* 小卡不显示备注/描述（那行会把卡片撑成好几行）；备注本身照旧存在后台与详情卡里。 */
+  ok('NPC 小卡：不显示备注/描述那一行（详情卡里照旧能填能存）', (function(){
     w.switchTab('npcs');
     $('npcTplCat').value=''; w.npcTplOptions();
     $('npcTplSel').value='市民';
     var before=S.actors.length;
     w.genNpcFromTpl();
     var npc=S.actors[S.actors.length-1];
-    var mini=function(){ return $('npcList').querySelector('.npcmini[data-id="'+npc.id+'"] .npc-note'); };
+    var card=function(){ return $('npcList').querySelector('.npcmini[data-id="'+npc.id+'"]'); };
     var tplNote='普通市民，警觉但不善战斗';
-    var showsTpl=!!mini() && mini().textContent.indexOf(tplNote)===0;
+    var cleanOnGen=!!card() && card().innerHTML.indexOf('npc-note')<0 && card().textContent.indexOf(tplNote)<0;
+    /* 自己在详情卡里填了备注，也不该跑到小卡上；但后台要存住 */
     $('am-npc-back').value='KP 自己写的备注';
     w.saveActorModal();
-    var showsMine=!!mini() && mini().textContent.indexOf('KP 自己写的备注')>=0;
+    var stored=npc.notes==='KP 自己写的备注';
+    var stillClean=!!card() && card().textContent.indexOf('KP 自己写的备注')<0 && card().innerHTML.indexOf('npc-note')<0;
     S.actors.length=before;
     w.closeActorModal(); w.renderNpcs();
-    return showsTpl && showsMine;
+    return cleanOnGen && stillClean && stored;
   })());
 
   ok('NPC 小卡：阵营下拉不会顶出卡片（min-width:0 + max-width:100%）', (function(){
@@ -1636,21 +1639,12 @@ const ready = new Promise((res) => {
     return gone.every(function(t){ return all.indexOf(t)<0; });
   })());
 
-  ok('NPC 小卡：老存档（只有 template、没有 note）也回查出模板备注', (function(){
-    $('npcTplCat').value=''; w.npcTplOptions(); $('npcTplSel').value='警察';
-    var before=S.actors.length;
-    w.genNpcFromTpl();
-    var npc=S.actors[S.actors.length-1];
-    /* 模拟老版本存下来的角色：清掉 note，只留 template */
-    npc.note=''; npc.notes=''; npc.template='人类·警察';
-    w.renderNpcs();
-    var el=$('npcList').querySelector('.npcmini[data-id="'+npc.id+'"] .npc-note');
-    var hit=!!el && el.textContent.indexOf('警用左轮与警棍')>=0;
-    /* 真的什么都没有时就不占地方，不渲染空行 */
-    var bare=w.npcMiniHTML({id:'y',kind:'npc',name:'空白',side:'中立',count:1,attrs:{},hp:{cur:1,max:1},san:{cur:1,max:1},mp:{cur:1,max:1},skills:[],spells:[],weapons:[],inv:[],bagItems:[]});
-    var noEmpty=bare.indexOf('npc-note')<0;
-    S.actors.length=before; w.closeActorModal(); w.renderNpcs();
-    return hit && noEmpty;
+  ok('NPC 小卡：类型/模板/备注都齐全也照样不渲染备注行', (function(){
+    var html=w.npcMiniHTML({id:'y',kind:'npc',name:'警察',side:'敌人',count:1,template:'人类·警察',
+      note:'警用左轮与警棍',notes:'KP 备注',attrs:{},hp:{cur:1,max:1},san:{cur:1,max:1},mp:{cur:1,max:1},
+      skills:[],spells:[],weapons:[],inv:[],bagItems:[]});
+    return html.indexOf('npc-note')<0 && html.indexOf('警用左轮与警棍')<0 && html.indexOf('KP 备注')<0 &&
+      /class="npc-side"/.test(html) && html.indexOf('警察')>=0;
   })());
 
   ok('静态检查：src 里没有「漏 var 的全局赋值」（离线版严格模式会整段挂掉）', (function(){
