@@ -970,6 +970,8 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-imgdoc.zoom .sp-img{max-width:none;margin:0 auto;cursor:zoom-out}
 .sp-draghint{position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-140%);z-index:99;pointer-events:none;padding:8px 16px;border-radius:999px;border:1px solid var(--gold);background:rgba(20,22,28,.94);color:var(--gold);font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.45);transition:transform .14s ease}
 .sp-draghint.on{transform:translateX(-50%) translateY(0)}
+/* 拖文件进来时右半屏里的 PDF / 图片 iframe 别挡住 drop（不然「拖到窗口里任何地方」在正文是 PDF 时会落进阅读器里） */
+body.spfiledrag #sidePane iframe{pointer-events:none}
 .sp-doc{flex:1 1 auto;overflow:auto;padding:4px 14px 20px;font-size:14px;line-height:1.85;word-break:break-word}
 .sp-doc h1{font-size:1.35em;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:4px}
 .sp-doc h2{font-size:1.2em;color:var(--gold)}

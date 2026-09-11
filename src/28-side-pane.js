@@ -512,6 +512,9 @@ function moduleDragIsOurs(dt){
   return true;
 }
 function moduleDragHint(on){
+  /* 拖着的时候把右半屏里的 PDF / 图片 iframe 的点击穿透关掉：
+     不然「拖到窗口里任何地方」在正文正好是 PDF 时会落进阅读器里，我们收不到 drop。 */
+  try{ document.body.classList[on?'add':'remove']('spfiledrag'); }catch(e){}
   var el=$('spDragHint');
   if(on){
     if(!el){

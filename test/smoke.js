@@ -1592,11 +1592,13 @@ const ready = new Promise((res) => {
     w.moduleDragHint(true);
     var el=d.getElementById('spDragHint');
     var shown=!!el && el.classList.contains('on') && /放进/.test(el.textContent);
+    /* 拖着的时候要让右半屏的 PDF iframe 不挡 drop（不然拖到正文是 PDF 的地方就落进阅读器里了） */
+    var dragging=d.body.classList.contains('spfiledrag');
     w.moduleDragHint(false);
-    var hidden=!!el && !el.classList.contains('on');
+    var hidden=!!el && !el.classList.contains('on') && !d.body.classList.contains('spfiledrag');
     /* 右边开着时 .xlsx 也不算我们的（让左边导入框自己接） */
     var stillNotOurs=!w.moduleDragIsOurs(xlsx);
-    return notOurs && imgOurs && shown && hidden && stillNotOurs;
+    return notOurs && imgOurs && shown && dragging && hidden && stillNotOurs;
   })());
 
   /* 载具/地图自愈：老存档把 vehicles 存成空数组、地图删光时不能整个空掉 */
