@@ -26,9 +26,10 @@ function renderNav(){
     b.onclick=function(){ toggleFloat(x[2]); };
     nav.appendChild(b);
   });
-  /* 右半屏：模组 / 规则书（不切换左边页面，只把右半边打开） */
+  /* 右半屏：模组 / 规则书 / 更多小玩意儿（不切换左边页面，只把右半边打开） */
   [['nav-module','📖 模组','module','上传模组（word / pdf）在右半屏看，左边照常带团'],
-   ['nav-rulebook','📚 规则书','rulebook','右半屏查规则书：目录 + 全文搜索跳转']].forEach(function(x){
+   ['nav-rulebook','📚 规则书','rulebook','右半屏查规则书：目录 + 全文搜索跳转'],
+   ['nav-extras','🧰 更多小玩意儿','extras','随机名字 / NPC / 地点，还有当天的月相与日出日落']].forEach(function(x){
     var b=document.createElement('button');
     b.id=x[0]; b.textContent=x[1];
     if(sidePaneIsOpen(x[2])) b.className='active';

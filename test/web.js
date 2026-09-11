@@ -52,7 +52,7 @@ const interceptor = requestInterceptor(async (request) => {
 
   const fails = [];
   const ok = (name, cond) => { console.log((cond ? 'PASS ' : 'FAIL ') + name); if (!cond) fails.push(name); };
-  ok('导航8个入口(4页+剧本+骰子+模组+规则书)', d.querySelectorAll('#nav button').length === 8);
+  ok('导航9个入口(4页+剧本+骰子+模组+规则书+更多小玩意儿)', d.querySelectorAll('#nav button').length === 9);
   ok('示例数据已初始化', w.state && w.state.actors.length >= 1 && w.state.maps.length >= 1);
   ok('品牌为带团妙妙小工具', /带团妙妙小工具/.test((d.querySelector('.brand') || {}).textContent || ''));
   ok('首屏未加载 xlsx(懒加载)', typeof w.XLSX === 'undefined');
@@ -73,6 +73,12 @@ const interceptor = requestInterceptor(async (request) => {
   ok('真实卡导入：其他资产表（5 格）读入', !!last && !!last.assetsTable && 'vehicle' in last.assetsTable && 'other' in last.assetsTable);
   ok('真实卡导入：导入即建立对比快照', !!last && !!last.importSnapshot && !!last.importSnapshot.skills);
   ok('在线版：模板走按需 URL 且未内联', w.__COC_BLANK_CARD_URL === 'assets/cards/pink.xlsx' && typeof w.__COC_BLANK_CARD_B64 === 'undefined');
+  ok('在线版：天文计算库走按需 URL（不内联进 index.html）', (function(){
+    var hasFile = fs.existsSync(path.join(ROOT, 'assets', 'sky', 'astronomy.js'));
+    var html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+    return w.__COC_SKY_URL === 'assets/sky/astronomy.js' && hasFile &&
+      html.length < 20000 && !/astronomy-engine/.test(html);
+  })());
   const blankPath = path.join(ROOT, 'assets', 'cards', 'pink.xlsx');
   ok('在线版：空白人物卡模板随包提供', fs.existsSync(blankPath) && fs.statSync(blankPath).size > 100000);
   ok('在线版：能生成导出用的卡片字节', typeof w.buildCardXlsx === 'function' && !!w.importSnapshotOf && !!w.exportActorCard);

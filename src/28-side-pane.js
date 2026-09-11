@@ -11,7 +11,7 @@ function sidePaneCfg(){
   if(!state.ui.sidePane || typeof state.ui.sidePane!=='object') state.ui.sidePane={open:false,kind:'module',ratio:0.5};
   var c=state.ui.sidePane;
   if(c.ratio==null || !isFinite(c.ratio)) c.ratio=0.5;
-  if(c.kind!=='module' && c.kind!=='rulebook') c.kind='module';
+  if(c.kind!=='module' && c.kind!=='rulebook' && c.kind!=='extras') c.kind='module';
   return c;
 }
 function sidePaneIsOpen(kind){
@@ -41,6 +41,7 @@ function applySidePane(){
   } else {
     pane.style.flexBasis=''; if(left) left.style.flexBasis='';
   }
+  try{ moduleFitTabs(); }catch(e){}          /* 左右拖宽窄后，标签名字跟着重新分配宽度 */
   sidePaneResizeScenes();
 }
 /* 左半边变窄/变宽后，地图与战斗场景要按新宽度重新量一次尺寸，
@@ -99,6 +100,7 @@ function renderSidePane(){
   var c=sidePaneCfg();
   if(!c.open){ pane.innerHTML=''; return; }
   if(c.kind==='rulebook') renderRulebookPane(pane);
+  else if(c.kind==='extras') renderExtrasPane(pane);
   else renderModulePane(pane);
 }
 
@@ -365,17 +367,101 @@ function renderModulePane(pane){
     '<input type="file" id="moduleFolderInput" webkitdirectory directory multiple style="display:none" onchange="onModulePick(event)">';
   moduleBindDrop();
   moduleScrollActiveTab();
+  moduleFitTabs();
 }
 /* 多文件时顶上这一排标签页：点一下换一份，✕ 把这份移出去 */
 function moduleTabsHTML(){
   if(!moduleFiles.length) return '';
   var tabs=moduleFiles.map(function(f){
     var on=(f.id===moduleActiveId);
-    return '<span class="sp-tab'+(on?' on':'')+'" title="'+esc(f.name)+'" onclick="moduleSelect(\''+f.id+'\')">'+
+    return '<span class="sp-tab'+(on?' on':'')+'" data-id="'+esc(f.id)+'" draggable="true" title="'+esc(f.name)+'（拖动可以换顺序）"'+
+      ' onclick="moduleSelect(\''+f.id+'\')"'+
+      ' ondragstart="moduleTabDragStart(event,\''+f.id+'\')" ondragover="moduleTabDragOver(event)"'+
+      ' ondrop="moduleTabDrop(event,\''+f.id+'\')" ondragend="moduleTabDragEnd()">'+
       moduleIcon(f.kind)+'<span class="sp-tabname">'+esc(f.name)+'</span>'+
       '<i class="sp-tabx" title="移出这一份" onclick="event.stopPropagation();moduleCloseOne(\''+f.id+'\')">✕</i></span>';
   }).join('');
   return '<div class="sp-tabs" id="spTabs">'+tabs+'</div>';
+}
+/* ---- 标签页：拖动换顺序 + 横向放不下时自动压缩名字（全称 → … → 两个字） ---- */
+var moduleTabDragId=null;
+function moduleTabDragStart(e, id){
+  moduleTabDragId=id;
+  if(e && e.dataTransfer){
+    e.dataTransfer.effectAllowed='move';
+    try{ e.dataTransfer.setData('text/plain', id); }catch(err){}
+  }
+  var el=e && e.currentTarget;
+  if(el) try{ el.classList.add('dragging'); }catch(err){}
+}
+function moduleTabDragOver(e){
+  if(!moduleTabDragId) return;
+  if(e && e.preventDefault) e.preventDefault();
+  var el=e && e.currentTarget; if(!el) return;
+  var after=false;
+  try{
+    var r=el.getBoundingClientRect();
+    after=(e.clientX - r.left) > r.width/2;
+  }catch(err){}
+  var all=$('spTabs') ? $('spTabs').querySelectorAll('.sp-tab') : [];
+  for(var i=0;i<all.length;i++) all[i].classList.remove('dropbefore','dropafter');
+  el.classList.add(after?'dropafter':'dropbefore');
+}
+function moduleTabDrop(e, targetId){
+  if(e && e.preventDefault) e.preventDefault();
+  var after=false;
+  var el=e && e.currentTarget;
+  if(el){
+    try{ var r=el.getBoundingClientRect(); after=(e.clientX - r.left) > r.width/2; }catch(err){}
+  }
+  var dragId=moduleTabDragId;
+  moduleTabDragEnd();
+  if(!dragId || dragId===targetId) return;
+  moduleReorder(dragId, targetId, after);
+}
+function moduleTabDragEnd(){
+  moduleTabDragId=null;
+  var tabs=$('spTabs'); if(!tabs) return;
+  var all=tabs.querySelectorAll('.sp-tab');
+  for(var i=0;i<all.length;i++) all[i].classList.remove('dragging','dropbefore','dropafter');
+}
+/* 把 id 这份挪到 targetId 前面（after=false）或后面（after=true），顺序存进浏览器 */
+function moduleReorder(dragId, targetId, after){
+  var from=-1;
+  moduleFiles.forEach(function(f,i){ if(f.id===dragId) from=i; });
+  if(from<0) return;
+  var item=moduleFiles.splice(from,1)[0];
+  var to=-1;
+  moduleFiles.forEach(function(f,i){ if(f.id===targetId) to=i; });
+  if(to<0) moduleFiles.push(item);
+  else moduleFiles.splice(after?to+1:to, 0, item);
+  moduleSaveStore(); renderSidePane();
+}
+/* 一行放不下时按「平分到的宽度」裁每个标签的名字；放得下就恢复全称 */
+function moduleFitTabs(){
+  var tabs=$('spTabs'); if(!tabs) return;
+  var list=[].slice.call(tabs.querySelectorAll('.sp-tab'));
+  if(!list.length) return;
+  var avail=tabs.clientWidth;
+  if(!avail) return;
+  var names=list.map(function(t){ return t.querySelector('.sp-tabname'); });
+  names.forEach(function(n){ if(n) n.style.maxWidth='none'; });          /* 先量自然宽度 */
+  var need=0, chrome=[];
+  list.forEach(function(t,i){
+    need+=t.offsetWidth;
+    chrome.push(t.offsetWidth-(names[i]?names[i].offsetWidth:0));
+  });
+  var pad=20, gap=4;
+  if(need<=avail-pad){                                                   /* 放得下：显示全称 */
+    names.forEach(function(n){ if(n) n.style.maxWidth=''; });
+    return;
+  }
+  var budget=Math.floor((avail-pad-gap*(list.length-1))/list.length);
+  var MIN=34;                                                            /* 最少也留两个字的位置 */
+  list.forEach(function(t,i){
+    if(!names[i]) return;
+    names[i].style.maxWidth=Math.max(MIN, budget-chrome[i])+'px';
+  });
 }
 function moduleBodyHTML(m){
   if(!m){

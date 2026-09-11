@@ -941,7 +941,7 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sidepane{flex:0 0 50%;min-width:260px;position:sticky;top:92px;height:calc(100vh - 116px);display:flex;flex-direction:column;
   background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.28)}
 .sidepane[hidden]{display:none}
-.sp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.sp-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
 .sp-head b{color:var(--gold)}
 .sp-tools{margin-left:auto;gap:5px;flex-wrap:nowrap}
 .sp-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:auto}
@@ -949,7 +949,7 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-empty p{margin:6px 0}
 .sp-drop{margin:8px;padding:8px 10px;border:2px dashed var(--line);border-radius:10px;text-align:center;color:var(--muted);font-size:12px}
 .sp-drop.on{border-color:var(--acc);color:var(--gold);background:rgba(227,196,127,.08)}
-.sp-filebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.sp-filebar{flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
 .sp-find{flex-wrap:wrap;gap:4px;align-items:center}
 .sp-find input{width:150px}
 .sp-hit{background:rgba(227,196,127,.32);color:inherit;border-radius:3px}
@@ -958,11 +958,15 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-frame{width:100%;height:calc(100vh - 250px);min-height:360px;border:0;background:#fff}
 .sp-body-fill{overflow:hidden}
 .sp-body-fill .sp-frame{flex:1 1 auto;height:auto;min-height:240px}
-.sp-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);scrollbar-width:thin}
-.sp-tab{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;max-width:240px;padding:3px 5px 3px 9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03);color:var(--ink);font-size:12px;line-height:1.5;cursor:pointer;white-space:nowrap}
+/* 标签页这一条固定高度：正文很长时（Word / txt）不能让 flex 把它压扁（以前会从 39px 缩到 24px，标签只剩一条细缝） */
+.sp-tabs{flex:0 0 auto;min-height:39px;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);scrollbar-width:thin}
+.sp-tab{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;height:26px;max-width:240px;padding:0 5px 0 9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03);color:var(--ink);font-size:12px;line-height:1;cursor:pointer;white-space:nowrap;cursor:grab}
+.sp-tab.dragging{opacity:.45}
+.sp-tab.dropbefore{box-shadow:-3px 0 0 var(--gold)}
+.sp-tab.dropafter{box-shadow:3px 0 0 var(--gold)}
 .sp-tab:hover{border-color:var(--acc)}
 .sp-tab.on{border-color:var(--gold);background:rgba(227,196,127,.14);color:var(--gold)}
-.sp-tabname{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.sp-tabname{flex:0 1 auto;min-width:0;max-width:180px;overflow:hidden;text-overflow:ellipsis}
 .sp-tabx{font-style:normal;opacity:.45;padding:0 3px;border-radius:50%;font-size:11px}
 .sp-tabx:hover{opacity:1;background:rgba(255,255,255,.14)}
 .sp-imgdoc{text-align:center;padding:10px}
@@ -972,6 +976,15 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-draghint.on{transform:translateX(-50%) translateY(0)}
 /* 拖文件进来时右半屏里的 PDF / 图片 iframe 别挡住 drop（不然「拖到窗口里任何地方」在正文是 PDF 时会落进阅读器里） */
 body.spfiledrag #sidePane iframe{pointer-events:none}
+/* 更多小玩意儿（右半屏）：随机 / 天象 —— 跟着背景主题一起变色 */
+body.bgcustom .xp-tabs{background:var(--uic-d);border-bottom-color:var(--uic-line)}
+body.bgcustom .xp-tab{border-color:var(--uic-line);color:var(--ink)}
+body.bgcustom .xp-tab.on{color:var(--gold);background:var(--uic-a)}
+body.bgcustom .xp-box,body.bgcustom .sky-card,body.bgcustom .sky-cal{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .xp-line{background:transparent;border-bottom-color:var(--uic-line)}
+body.bgcustom .rt-name{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .xp-chip{border-color:var(--uic-line);color:var(--ink)}
+body.bgcustom .xp-chip.on{border-color:var(--gold);color:var(--gold)}
 .sp-doc{flex:1 1 auto;overflow:auto;padding:4px 14px 20px;font-size:14px;line-height:1.85;word-break:break-word}
 .sp-doc h1{font-size:1.35em;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:4px}
 .sp-doc h2{font-size:1.2em;color:var(--gold)}
@@ -984,6 +997,47 @@ body.spfiledrag #sidePane iframe{pointer-events:none}
 .sp-pre{white-space:pre-wrap;word-break:break-word;font-family:inherit;margin:0}
 .sp-h{color:var(--gold);line-height:1.5;margin:.9em 0 .4em}
 .sp-img{max-width:100%;height:auto;display:block;margin:10px auto;border-radius:6px;background:#fff}
+
+/* ---- 🧰 更多小玩意儿（右半屏第三个面板）：跑团随机 / 天文·天象 ---- */
+.xp-tabs{flex:0 0 auto;display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.xp-tab{flex:0 0 auto;height:26px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03);
+  color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap}
+.xp-tab.on{border-color:var(--gold);background:rgba(227,196,127,.14);color:var(--gold)}
+.xp-body{display:block;padding:8px 10px 18px;overflow:auto}
+.xp-box{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);margin:0 0 10px;padding:8px 10px}
+.xp-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-bottom:6px;border-bottom:1px dashed var(--line);margin-bottom:8px}
+.xp-line b{color:var(--gold);font-size:13px}
+.xp-chips{display:inline-flex;gap:3px;flex-wrap:wrap}
+.xp-chip{height:22px;padding:0 8px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font-size:11.5px;cursor:pointer}
+.xp-chip.on{border-color:var(--gold);color:var(--gold);background:rgba(227,196,127,.12)}
+.xp-out{min-height:20px}
+.rt-names{display:flex;flex-wrap:wrap;gap:6px}
+.rt-name{display:inline-flex;flex-direction:column;line-height:1.3;padding:4px 9px;border:1px solid var(--line);border-radius:8px;
+  background:rgba(255,255,255,.03);cursor:pointer;font-size:13px}
+.rt-name:hover{border-color:var(--acc);color:var(--gold)}
+.rt-name em{font-style:normal;font-size:10.5px;color:var(--muted)}
+.rt-row{display:flex;align-items:flex-start;gap:8px;padding:3px 0;border-bottom:1px dotted rgba(255,255,255,.05);line-height:1.5}
+.rt-row:last-child{border-bottom:0}
+.rt-k{flex:0 0 62px;color:var(--muted);font-size:12px;text-align:right;padding-top:1px}
+.rt-v{flex:1 1 auto;min-width:0;font-size:13px;word-break:break-word}
+.rt-re{flex:0 0 auto;font-style:normal;padding:0 6px;height:20px}
+.rt-place{padding:3px 0;border-bottom:1px dotted rgba(255,255,255,.05);cursor:pointer;line-height:1.5}
+.rt-place:last-child{border-bottom:0}
+.rt-place:hover b{color:var(--gold)}
+.rt-place b{font-size:13px;margin-right:6px}
+.sky-ctrl .xp-line{margin-bottom:6px}
+.sky-ctrl input,.sky-ctrl select{height:26px}
+.sky-custom{border-bottom:0;padding-bottom:0;color:var(--muted);font-size:12px}
+.sky-head{color:var(--gold);font-size:13px;font-weight:700;padding:2px 0 6px}
+.sky-card{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);padding:8px 10px;margin-bottom:8px}
+.sky-line{padding:2px 0;font-size:13px;line-height:1.7}
+.sky-line b{color:var(--gold)}
+.sky-line .hint{margin-left:6px}
+.sky-cal{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);margin-bottom:8px}
+.sky-cal>summary{cursor:pointer;padding:6px 10px;color:var(--gold);font-size:12.5px}
+.sky-ev{display:flex;gap:8px;align-items:baseline;padding:2px 10px 6px;font-size:12.5px}
+.sky-ev-d{flex:0 0 84px;font-family:var(--mono);color:var(--muted)}
+.sky-ev-k{flex:0 0 auto;color:var(--gold);font-size:11.5px}
 .sp-pb{border:0;border-top:1px dashed var(--line);margin:16px 0}
 .sp-bullet{color:var(--gold);margin-right:6px}
 .sp-td{font-size:.95em}

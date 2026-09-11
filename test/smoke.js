@@ -100,7 +100,7 @@ const ready = new Promise((res) => {
   const cssText = (() => { let t=''; try{ [...d.styleSheets].forEach(sh => { try{ [...sh.cssRules].forEach(r => { t += r.cssText + '\n'; }); }catch(e){} }); }catch(e){} return t; })();
 
   // 基础
-  ok('导航8个入口(4页+剧本+骰子+模组+规则书)且无快速查询', d.querySelectorAll('#nav button').length === 8 && !d.getElementById('nav-quick') && !d.getElementById('nav-settings'), '#nav=' + d.querySelectorAll('#nav button').length);
+  ok('导航9个入口(4页+剧本+骰子+模组+规则书+更多小玩意儿)且无快速查询', d.querySelectorAll('#nav button').length === 9 && !d.getElementById('nav-quick') && !d.getElementById('nav-settings'), '#nav=' + d.querySelectorAll('#nav button').length);
   ok('剧本与骰子悬浮入口存在', !!d.getElementById('nav-script') && !!d.getElementById('nav-dice') && !!d.getElementById('floatPanel'));
   ok('品牌名称为带团妙妙小工具', /带团妙妙小工具/.test(d.querySelector('.brand').textContent));
   ok('初始示例数据存在', S.actors.length >= 1 && S.maps.length >= 1 && S.activeMapId);
@@ -441,7 +441,7 @@ const ready = new Promise((res) => {
   w.toggleSceneFs('map');
   ok('地图全屏：body 标记 + 图标菜单出现', d.body.classList.contains('fs-map') && $('fsNav').hidden === false);
   ok('全屏图标菜单 6 项 + 返回', d.querySelectorAll('#fsNav button').length === 7 && !!d.querySelector('#fsNav .fsback'));
-  ok('全屏不隐藏导航栏本体（仍为8个入口）', d.querySelectorAll('#nav button').length === 8);
+  ok('全屏不隐藏导航栏本体（仍为9个入口）', d.querySelectorAll('#nav button').length === 9);
   // 全屏切换场景：战斗
   w.toggleSceneFs('combat');
   ok('全屏可在 地图/战斗 之间切换', d.body.classList.contains('fs-combat') && !d.body.classList.contains('fs-map'));
@@ -1529,6 +1529,31 @@ const ready = new Promise((res) => {
     return okDir && cleaned;
   })());
 
+  /* 标签页：拖动换顺序（纯逻辑，直接摆好 moduleFiles 再调 moduleReorder，同步好断言） */
+  ok('模组：标签页可拖动换顺序（拖到前一半插前面、后一半插后面）', (function(){
+    var paneWasOpen=w.sidePaneIsOpen('module');
+    if(!paneWasOpen) w.toggleSidePane('module');
+    w.moduleClear();
+    w.moduleFiles=[{id:'t1',name:'甲.txt',kind:'text',size:1,text:'a'},
+                   {id:'t2',name:'乙.txt',kind:'text',size:1,text:'b'},
+                   {id:'t3',name:'丙.txt',kind:'text',size:1,text:'c'}];
+    w.moduleActiveId='t1';
+    w.renderSidePane();
+    var tabs=d.querySelectorAll('#spTabs .sp-tab');
+    var dom=tabs.length===3 && tabs[0].getAttribute('draggable')==='true' &&
+      !!tabs[0].querySelector('.sp-tabname') && !!tabs[0].querySelector('.sp-tabx');
+    w.moduleReorder('t1','t3',true);                       /* 甲 拖到 丙 后面 */
+    var a=w.moduleFiles.map(function(f){ return f.name.charAt(0); }).join('');
+    w.moduleReorder('t1','t2',false);                      /* 甲 拖到 乙 前面（回到原样） */
+    var b=w.moduleFiles.map(function(f){ return f.name.charAt(0); }).join('');
+    w.moduleReorder('t3','t1',false);                      /* 丙 拖到 甲 前面 */
+    var c=w.moduleFiles.map(function(f){ return f.name.charAt(0); }).join('');
+    var activeKept=(w.moduleActive()||{}).id==='t1';
+    w.moduleClear();
+    if(!paneWasOpen) w.closeSidePane();
+    return dom && a==='乙丙甲' && b==='甲乙丙' && c==='丙甲乙' && activeKept;
+  })());
+
   /* 拖放必须被接住：以前漏了 drop 的 preventDefault，浏览器就会自己去开新标签页 / 下载 */
   ok('模组：拖进来的文件被接住（preventDefault），右半屏没开也会自动打开', (function(){
     var paneWasOpen=w.sidePaneIsOpen('module');
@@ -1831,6 +1856,124 @@ const ready = new Promise((res) => {
       /class="npc-side"/.test(html) && html.indexOf('警察')>=0;
   })());
 
+  /* ---------- 🧰 更多小玩意儿（右半屏第三个面板）：跑团随机 + 天文·天象 ---------- */
+  ok('菜单栏：规则书右边多了「更多小玩意儿」', (function(){
+    var b=d.getElementById('nav-extras');
+    var btns=[].slice.call(d.querySelectorAll('#nav button'));
+    return !!b && /更多小玩意儿/.test(b.textContent) &&
+      btns.indexOf(d.getElementById('nav-rulebook'))<btns.indexOf(b);
+  })());
+  await new Promise(function(done){
+    if(!w.sidePaneIsOpen('extras')) w.toggleSidePane('extras');
+    setTimeout(done, 400);
+  });
+  ok('更多小玩意儿：和模组/规则书一样占右半屏，里面两个工具页签', (function(){
+    var pane=$('sidePane'), tabs=pane.querySelectorAll('#xpTabs .xp-tab');
+    return w.sidePaneIsOpen('extras') && tabs.length===2 &&
+      /跑团随机/.test(tabs[0].textContent) && /天文/.test(tabs[1].textContent) &&
+      !!pane.querySelector('#rtNames') && !!pane.querySelector('#rtNpc') && !!pane.querySelector('#rtPlaces');
+  })());
+  ok('跑团随机：中文/英文（带中文翻译）/日文（带假名）三种名字，单次与批量都行', (function(){
+    var r=[];
+    w.rtSetNameKind('cn'); w.rtSetNameSex('any'); w.rtSetNameCount(6); w.rtRollNames();
+    r.push(w.rtState.names.length===6 && /^[\u4e00-\u9fa5]{2,4}$/.test(w.rtState.names[0].text));
+    w.rtSetNameKind('en'); w.rtRollNames();
+    r.push(/^[A-Za-z]+ [A-Za-z]+（[\u4e00-\u9fa5]+·[\u4e00-\u9fa5]+）$/.test(w.rtState.names[0].text));
+    w.rtSetNameKind('jp'); w.rtRollNames();
+    r.push(/^[\u4e00-\u9fa5]+ [\u4e00-\u9fa5]+（[ぁ-ん]+ [ぁ-ん]+）$/.test(w.rtState.names[0].text));
+    w.rtSetNameSex('f'); w.rtRollNames();
+    r.push(w.rtState.names.length===6);
+    w.rtSetNameCount(1); w.rtRollNames();
+    r.push(w.rtState.names.length===1 &&
+      d.querySelectorAll('#rtNames .rt-name').length===1);      /* 生成结果落在界面上，能点着复制 */
+    return r.every(Boolean);
+  })());
+  ok('跑团随机：NPC 一次掷出全部字段，能单独重掷某一项（其余不动）', (function(){
+    w.rtRollNpc();
+    var n=w.rtState.npc;
+    var all=w.RT_NPC_FIELDS.every(function(f){ return String(n[f[0]]||'').length>0; });
+    var rows=d.querySelectorAll('#rtNpc .rt-row').length;
+    var before=JSON.stringify(n);
+    w.rtRerollNpc('job');
+    var after=JSON.stringify(w.rtState.npc);
+    var changedJob=w.rtState.npc.job;
+    var othersSame=w.RT_NPC_FIELDS.every(function(f){
+      return f[0]==='job' || w.rtState.npc[f[0]]===n[f[0]];
+    });
+    return all && rows===w.RT_NPC_FIELDS.length && before!==after && !!changedJob && othersSame;
+  })());
+  ok('跑团随机：地点五类都能出，批量生成条数对得上', (function(){
+    var kinds=['spot','town','street','building','room'], r=[];
+    kinds.forEach(function(k){
+      w.rtSetPlaceKind(k); w.rtSetPlaceCount(5); w.rtRollPlaces();
+      r.push(w.rtState.places.length===5 && w.rtState.places.every(function(p){
+        return p.main && p.sub;
+      }));
+    });
+    return r.every(Boolean) && d.querySelectorAll('#rtPlaces .rt-place').length===5;
+  })());
+  ok('天文·天象：天文计算库随包带着（离线版内联，在线版按需加载）', (function(){
+    return !!w.Astronomy && typeof w.Astronomy.SearchRiseSet==='function' &&
+      typeof w.SKY_CITIES==='object' && w.SKY_CITIES.length>=80;
+  })());
+  await new Promise(function(done){
+    w.xpSetTool('sky');
+    w.skyState.date='1926-10-17'; w.skyState.cityId='london';
+    w.skyRun();
+    setTimeout(done, 1500);
+  });
+  ok('天文·天象：日出日落 / 月出月落 / 月相 / 完全黑暗 都算得出来（1926-10-17 伦敦）', (function(){
+    var o=w.skyState.out;
+    if(!o || o.err) return false;
+    var inDay=function(ms,a,b){ return ms!=null && ms>o.day0+a*3600e3 && ms<o.day0+b*3600e3; };
+    return inDay(o.sunrise,4,11) && inDay(o.sunset,14,21) &&      /* 十月伦敦：约 6:26 日出 / 17:04 日落 */
+      inDay(o.moonrise,0,24) && o.moonset!=null &&
+      Math.abs(o.dayLen-(o.sunset-o.sunrise))<1000 &&
+      o.darkA!=null && o.darkB!=null && o.darkB>o.darkA &&
+      o.cons.length>0 && o.planets.length>0;
+  })());
+  ok('天文·天象：月相名称、月龄、照明率对得上日期', (function(){
+    var o=w.skyState.out;
+    return !!o && o.moonAge>9.5 && o.moonAge<11.5 &&        /* 1926-10-06 新月 → 10-17 约 10.5 天 */
+      o.moonLight>75 && o.moonLight<90 &&
+      d.getElementById('skyOut').textContent.indexOf('盈凸月')>=0;
+  })());
+  ok('天文·天象：当晚能看到什么 / 流星雨 / 特殊天象 都在界面上', (function(){
+    var t=d.getElementById('skyOut').textContent;
+    return /今晚可见/.test(t) && /行星/.test(t) && /流星雨/.test(t) && /特殊天象/.test(t) &&
+      /完全黑暗/.test(t) && /月相/.test(t) && /1926 年 10 月 17 日/.test(t) && /伦敦/.test(t);
+  })());
+  ok('天文·天象：本月天象日历列出月相节点与流星雨峰值', (function(){
+    var ev=w.skyMonthEvents();
+    var kinds={};
+    (ev||[]).forEach(function(e){ kinds[e.k]=(kinds[e.k]||0)+1; });
+    /* 1926 年的时间戳是负数（1970 之前），所以只要求是有限数字 + 有说明文字 */
+    var r=!!ev && ev.length>=4 && kinds['月相']>=3 && kinds['流星雨']>=1 &&
+      ev.every(function(e){ return typeof e.ms==='number' && isFinite(e.ms) && !!e.t; }) &&
+      ev.every(function(e,i){ return i===0 || ev[i].ms>=ev[i-1].ms; });      /* 按时间排好序 */
+    if(!r) console.log('   -> skyMonthEvents: ' + JSON.stringify({date:w.skyState.date, city:w.skyState.cityId, n:(ev||[]).length, kinds:kinds}));
+    return r;
+  })());
+  ok('天文·天象：换城市/换日期会重算（北京今天 + 自定义坐标）', (function(){
+    var r=[];
+    w.skyState.cityId='beijing'; w.skyState.date='1926-10-17'; w.skyRun();
+    var bj=w.skyState.out;
+    r.push(!!bj && bj.city==='北京' && bj.err!==true);
+    w.skyState.cityId='custom'; w.skyState.lat=78.22; w.skyState.lon=15.65; w.skyState.tz=1;
+    w.skyState.date='1926-06-21'; w.skyRun();
+    r.push(!!w.skyState.out && w.skyState.out.polar && /极昼/.test(w.skyState.out.polar));
+    w.skyState.cityId='london';
+    return r.every(Boolean);
+  })());
+  await new Promise(function(done){
+    if(!w.sidePaneIsOpen('extras')) w.toggleSidePane('extras');
+    w.xpSetTool('random');
+    setTimeout(done, 300);
+  });
+  ok('更多小玩意儿：切回跑团随机，工具页签高亮跟着变', (function(){
+    var on=d.querySelector('#xpTabs .xp-tab.on');
+    return !!on && on.getAttribute('data-v')==='random' && !!d.getElementById('rtNames');
+  })());
   ok('静态检查：src 里没有「漏 var 的全局赋值」（离线版严格模式会整段挂掉）', (function(){
     var bad=require('./scan-undef')();
     if (bad.length) console.log('   -> ' + bad.map(function(b){return b.file+':'+b.line+' '+b.name;}).join(', '));
