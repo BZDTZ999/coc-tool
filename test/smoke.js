@@ -1542,6 +1542,43 @@ const ready = new Promise((res) => {
     if(!paneWasOpen) w.closeSidePane();
     return prevented===1 && stopped===1 && added && opened;
   })());
+  /* 真机 bug：dt.files 里明明有文件，但先走 webkitGetAsEntry 时 entry.file() 没回调成 → 一条都读不到 */
+  var dropFixN=-1;
+  await new Promise(function(done){
+    if(!w.sidePaneIsOpen('module')) w.toggleSidePane('module');
+    w.moduleClear();
+    var stuck={isFile:true, isDirectory:false, file:function(){ /* 永不回调：真机上的挂法 */ }};
+    var dt={
+      files:[new w.File(['直接拖进来的正文'], '直接拖的.txt', {type:'text/plain'})],
+      items:[{kind:'file', webkitGetAsEntry:function(){ return stuck; }}],
+      types:['Files']
+    };
+    w.moduleDropLoad(dt, function(n){ dropFixN=n; done(); });
+    setTimeout(done, 1500);
+  });
+  ok('模组：拖入优先用 dt.files —— entry.file() 卡死不回调也照样读得到', (function(){
+    var names=w.moduleFiles.map(function(f){ return f.name; });
+    return dropFixN===1 && names.indexOf('直接拖的.txt')>=0;
+  })());
+  /* 拖文件夹：dt.files 是空的（文件夹不出现在 files 里），这时才该走 entry 递归 */
+  var dropDirN=-1;
+  await new Promise(function(done){
+    w.moduleClear();
+    var fileEntry={isFile:true, isDirectory:false, file:function(cb2){ cb2(new w.File(['夹内正文'], '夹内-第一章.txt', {type:'text/plain'})); }};
+    var dir={isFile:false, isDirectory:true, createReader:function(){
+      var calls=0;
+      return { readEntries:function(cb2){ if(calls++) return cb2([]); cb2([fileEntry]); } };
+    }};
+    var dt={files:[], items:[{kind:'file', webkitGetAsEntry:function(){ return dir; }}], types:['Files']};
+    w.moduleDropLoad(dt, function(n){ dropDirN=n; done(); });
+    setTimeout(done, 1500);
+  });
+  ok('模组：拖的是文件夹（dt.files 为空）时仍走 entry 递归把里面的文件读出来', (function(){
+    var names=w.moduleFiles.map(function(f){ return f.name; });
+    var r=dropDirN===1 && names.indexOf('夹内-第一章.txt')>=0;
+    w.moduleClear();
+    return r;
+  })());
   ok('模组：人物卡 .xlsx 不归模组栏管；拖拽时有「松手放进模组」提示', (function(){
     var wasOpen=w.sidePaneIsOpen('module');
     if(wasOpen) w.closeSidePane();

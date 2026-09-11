@@ -206,6 +206,7 @@ function moduleReadOne(file, cb){
     if(!item.url) item.missing=true;
     cb(item); return;
   }
+  if(kind==='other'){ cb(item); return; }        /* 认不出的格式别去读，读出来也是乱码；照旧给「另存为 PDF」的提示 */
   var rd=new FileReader();
   rd.onerror=function(){ cb(null); };
   if(kind==='docx'){
@@ -286,6 +287,10 @@ function moduleWalkEntry(entry, out, done){
   done();
 }
 function moduleDropLoad(dt, cb){
+  var fs=(dt && dt.files)?[].slice.call(dt.files):[];
+  /* 真实拖放里 dt.files 一定装着拖进来的文件（拖几个就是几个），直接用它最稳。
+     以前先走 webkitGetAsEntry，只要 entry.file() 那一步在真实浏览器里没回调成，
+     就会一条都读不到 —— 用户看到的就是「没读到文件（可能是空的文件夹或这个格式不支持）」。 */
   var entries=[], items=dt && dt.items;
   if(items && items.length){
     for(var i=0;i<items.length;i++){
@@ -295,16 +300,18 @@ function moduleDropLoad(dt, cb){
       if(en) entries.push(en);
     }
   }
-  if(!entries.length){
-    var fs=(dt && dt.files)?[].slice.call(dt.files):[];
+  var hasDir=false;
+  entries.forEach(function(en){ if(en && en.isDirectory) hasDir=true; });
+  if(fs.length && !hasDir){ moduleAddFiles(fs, cb); return; }     /* 只有文件 → 绕开 entry，直接收 */
+  if(!entries.length){                                             /* 没有 entry（老浏览器）→ 还是用 dt.files */
     if(!fs.length){ if(cb) cb(0); return; }
-    moduleAddFiles(fs, cb);
-    return;
+    moduleAddFiles(fs, cb); return;
   }
   var out=[], pending=entries.length;
   entries.forEach(function(en){
     moduleWalkEntry(en, out, function(){
-      if(--pending<=0) moduleAddFiles(out, cb);
+      /* 目录里有文件就用目录里的；一条都没读出来（entry 回调失败等）就退回 dt.files，别白拖一趟 */
+      if(--pending<=0) moduleAddFiles(out.length?out:fs, cb);
     });
   });
 }
@@ -485,7 +492,6 @@ function moduleFont(d){
 /* ---------- 拖放：文件 / 整个文件夹拖到窗口里任何地方都收（在模组栏里打开，不跳新标签页） ----------
    要点：dragover 与 drop 都必须 preventDefault，否则浏览器会按默认动作处理 ——
    PDF / 图片会跳到一个新标签页、docx 会静默下载（用户反馈过这个）。 */
-var MODULE_FILE_RE=/\.(pdf|docx|png|jpe?g|gif|webp|bmp|svg|avif|txt|md|markdown|csv|log)$/i;
 var CARD_FILE_RE=/\.(xlsx|xls)$/i;
 function moduleDragHasFiles(e){
   var dt=e.dataTransfer; if(!dt) return false;
@@ -501,9 +507,9 @@ function moduleDragNames(dt){
 function moduleDragIsOurs(dt){
   var names=moduleDragNames(dt);
   if(!names.length) return true;                                   /* 读不到名字（多半是文件夹）→ 按我们的处理 */
-  if(names.every(function(n){ return CARD_FILE_RE.test(n); })) return false;
-  if(sidePaneIsOpen('module')) return true;
-  return names.every(function(n){ return MODULE_FILE_RE.test(n); });
+  if(names.every(function(n){ return CARD_FILE_RE.test(n); })) return false;  /* 人物卡 .xlsx 归左边导入框 */
+  /* 其余一律接住：认不出的格式也给出「另存为 PDF」的提示，好过浏览器跳新标签页 / 静默下载 */
+  return true;
 }
 function moduleDragHint(on){
   var el=$('spDragHint');
