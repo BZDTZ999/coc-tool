@@ -80,6 +80,13 @@ const interceptor = requestInterceptor(async (request) => {
       html.length < 20000 && !/astronomy-engine/.test(html);
   })());
   const blankPath = path.join(ROOT, 'assets', 'cards', 'pink.xlsx');
+  ok('在线版：PDF 阅读器（pdf.js）走按需 URL、首屏不下载（也不内联）', (function(){
+    var hasLib = fs.existsSync(path.join(ROOT, 'assets', 'pdfjs', 'pdf.min.js'));
+    var hasWorker = fs.existsSync(path.join(ROOT, 'assets', 'pdfjs', 'pdf.worker.min.js'));
+    var html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+    return w.__COC_PDFJS_BASE === 'assets/pdfjs/' && hasLib && hasWorker &&
+      typeof w.pdfjsLib === 'undefined' && html.length < 20000 && !/pdfjsLib/.test(html);
+  })());
   ok('在线版：空白人物卡模板随包提供', fs.existsSync(blankPath) && fs.statSync(blankPath).size > 100000);
   ok('在线版：能生成导出用的卡片字节', typeof w.buildCardXlsx === 'function' && !!w.importSnapshotOf && !!w.exportActorCard);
   w.close();

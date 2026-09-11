@@ -267,8 +267,11 @@ canvas.scene{display:block;width:100%;height:auto}
 .addbar .small{margin-left:2px}
 
 /* ===== v3 样式 ===== */
-#mapWrap{overflow:auto;max-height:80vh}
-canvas#mapCanvas{width:auto;height:auto;display:block}
+/* 地图本体比框小时居中显示（比框大时靠 JS 的 centerMapView() 滚动到中间）。
+   注意：只能用子元素的 margin:auto 居中 —— 加 justify-content:center 的话，
+   画布比框大时左半边会被推到框外、滚不到（flex 居中在溢出时的老毛病）。 */
+#mapWrap{overflow:auto;max-height:80vh;display:flex}
+canvas#mapCanvas{width:auto;height:auto;display:block;margin:auto}
 .zoomrow{display:inline-flex;align-items:center;gap:4px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px 6px}
 .zoomval{font-family:var(--mono);font-size:12px;min-width:44px;text-align:center}
 .npccols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:start}
@@ -787,7 +790,7 @@ body.fs-map #tab-maps .mapctrlrow,
 body.fs-map #tab-maps #mapTools,
 body.fs-map #tab-maps #mapDragHint,
 body.fs-map #tab-maps #mapHint{display:none!important}
-body.fs-map #tab-maps #mapWrap{display:flex;align-items:center;justify-content:center;overflow:auto;background:transparent}
+body.fs-map #tab-maps #mapWrap{display:flex;overflow:auto;background:transparent}
 body.fs-map #tab-maps #mapCanvas{margin:auto;flex:none}
 #fsMapCtl{display:none;position:absolute;left:12px;bottom:12px;z-index:70;flex-direction:column;gap:8px;align-items:flex-start}
 body.fs-map #fsMapCtl{display:flex}
@@ -968,9 +971,8 @@ label.btnfile,.btnfile{display:inline-flex;align-items:center;gap:4px;cursor:poi
 .sp-hit{background:rgba(227,196,127,.32);color:inherit;border-radius:3px}
 .sp-hit.on{background:var(--gold);color:#1a1e2b}
 .sp-fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--gold)}
-.sp-frame{width:100%;height:calc(100vh - 250px);min-height:360px;border:0;background:#fff}
 .sp-body-fill{overflow:hidden}
-.sp-body-fill .sp-frame{flex:1 1 auto;height:auto;min-height:240px}
+.sp-body-fill .pdfv-host{flex:1 1 auto;min-height:240px}
 /* 标签页这一条固定高度：正文很长时（Word / txt）不能让 flex 把它压扁（以前会从 39px 缩到 24px，标签只剩一条细缝） */
 .sp-tabs{flex:0 0 39px;height:39px;min-height:39px;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);scrollbar-width:thin}
 /* 横向滚动条压到 6px 并且不占额外高度：标签再多这一条也始终是 39px */
@@ -992,8 +994,8 @@ label.btnfile,.btnfile{display:inline-flex;align-items:center;gap:4px;cursor:poi
 .sp-imgdoc.zoom .sp-img{max-width:none;margin:0 auto;cursor:zoom-out}
 .sp-draghint{position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-140%);z-index:99;pointer-events:none;padding:8px 16px;border-radius:999px;border:1px solid var(--gold);background:rgba(20,22,28,.94);color:var(--gold);font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.45);transition:transform .14s ease}
 .sp-draghint.on{transform:translateX(-50%) translateY(0)}
-/* 拖文件进来时右半屏里的 PDF / 图片 iframe 别挡住 drop（不然「拖到窗口里任何地方」在正文是 PDF 时会落进阅读器里） */
-body.spfiledrag #sidePane iframe{pointer-events:none}
+/* 拖文件进来时右半屏里的 PDF / 图片别挡住 drop（不然「拖到窗口里任何地方」在正文是 PDF 时会落进阅读器里） */
+body.spfiledrag #sidePane iframe,body.spfiledrag #sidePane .pdfv-host{pointer-events:none}
 /* 更多小玩意儿（右半屏）：随机 / 天象 —— 跟着背景主题一起变色 */
 body.bgcustom .xp-tabs{background:var(--uic-d);border-bottom-color:var(--uic-line)}
 body.bgcustom .xp-tab{border-color:var(--uic-line);color:var(--ink)}
@@ -1080,7 +1082,15 @@ body.bgcustom .xp-chip.on{border-color:var(--gold);color:var(--gold)}
 .rb-pageno input{width:64px;padding:2px 6px}
 .rb-page{flex:1;overflow:auto;padding:10px 14px 24px;font-size:15px;line-height:1.9}
 .rb-pagemtitle,.rb-pagetitle{color:var(--gold);font-size:12px;margin:0 0 6px}
-.rb-frame{flex:1 1 auto;width:100%;min-height:0;border:0;background:#fff;display:block}
+/* 自带 PDF 阅读器（pdf.js）：容器滚动，画布一页一张；两指捏合留给我们自己处理 */
+.pdfv-host{flex:1 1 auto;min-height:0;width:100%;overflow:auto;background:#2a2d33;touch-action:pan-x pan-y;overscroll-behavior:contain}
+body.bgcustom .pdfv-host{background:var(--uic-d)}
+.pdfv-canvas{display:block;margin:0 auto;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.4)}
+.pdfv-load{padding:20px;text-align:center;color:var(--muted)}
+.pdfv-bar{flex:0 0 auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
+body.bgcustom .pdfv-bar{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-bottom-color:var(--uic-line)}
+.pdfv-zoom{display:inline-flex;align-items:center;gap:4px}
+.pdfv-zoomval{font-family:var(--mono);font-size:12px;min-width:44px;text-align:center;color:var(--muted)}
 .rb-hits{flex:1;overflow:auto;padding:0}
 .rb-p{margin:5px 0;word-break:break-word}
 .rb-p mark{background:rgba(227,196,127,.32);color:inherit;border-radius:3px}
@@ -1128,8 +1138,6 @@ body.fs-map .splitwrap,body.fs-combat .splitwrap{display:block}
   .sp-head{position:sticky;top:0;z-index:3;padding:6px 8px}
   .sp-head .sp-tools{margin-left:auto;flex-wrap:wrap;gap:4px}
   .sp-tabs{padding:5px 6px}
-  .sp-frame{height:calc(100vh - 170px)}
-  @supports(height:100dvh){ .sp-frame{height:calc(100dvh - 170px)} }
   .rb-wrap{flex-direction:column}
   .rb-side{width:auto;max-height:34vh;border-right:0;border-bottom:1px solid var(--line)}
 }

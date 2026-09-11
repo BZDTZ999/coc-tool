@@ -108,6 +108,7 @@ function renderSidePane(){
 var moduleFiles=[];                  // 模组里的文件们：[{id,name,kind,size,url?,blob?,text?}]
 var moduleActiveId=null;             // 当前在看的那一份（标签页只有 active 的那份会渲染大图/正文）
 var moduleSeq=0;
+var modulePdfPage={};                // 每份 PDF 看到第几页（换标签页回来还在原地）
 var MODULE_MAX=300;                  // 一次最多收这么多，免得手滑把整个磁盘拖进来
 function moduleKindOf(name, type){
   var s=String(name||'').toLowerCase();
@@ -371,6 +372,13 @@ function renderModulePane(pane){
   pane.innerHTML=head+moduleTabsHTML()+'<div class="sp-body'+(m&&m.kind==='pdf'?' sp-body-fill':'')+'">'+body+drop+'</div>'+
     '<input type="file" id="moduleFileInput" class="file-hidden" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple onchange="onModulePick(event)">'+
     '<input type="file" id="moduleFolderInput" class="file-hidden" webkitdirectory directory multiple onchange="onModulePick(event)">';
+  /* PDF 交给自带阅读器（手机 / 平板上也能翻页、缩放）；每份文件记住自己看到第几页 */
+  if(m && m.kind==='pdf' && m.url){
+    pdfMountPdf($('spPdfHost'), m.url, {
+      page: modulePdfPage[m.id]||1,
+      onPage: function(n){ modulePdfPage[m.id]=n; }
+    });
+  }
   moduleBindDrop();
   moduleScrollActiveTab();
   moduleFitTabs();
@@ -486,8 +494,9 @@ function moduleBodyHTML(m){
   var bar='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span>';
   if(m.kind==='pdf'){
     if(!m.url) return moduleLostHTML(m);
-    return bar+'<span class="hint">'+moduleSizeText(m.size)+' · PDF 用阅读器自带的搜索（Ctrl/⌘+F）与缩放</span></div>'+
-      '<iframe class="sp-frame" src="'+esc(m.url)+'" title="模组 PDF"></iframe>';
+    return bar+'<span class="hint">'+moduleSizeText(m.size)+'</span></div>'+
+      '<div class="pdfv-bar">'+pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="pdfOpenInTab()" title="在新标签页用系统的阅读器打开">↗ 新窗口</button>')+'</div>'+
+      '<div class="pdfv-host" id="spPdfHost" title="模组 PDF"></div>';
   }
   if(m.kind==='image'){
     if(!m.url) return moduleLostHTML(m);
@@ -608,7 +617,7 @@ function moduleDragIsOurs(dt){
   return true;
 }
 function moduleDragHint(on){
-  /* 拖着的时候把右半屏里的 PDF / 图片 iframe 的点击穿透关掉：
+  /* 拖着的时候把右半屏里的 PDF / 图片的点击穿透关掉：
      不然「拖到窗口里任何地方」在正文正好是 PDF 时会落进阅读器里，我们收不到 drop。 */
   try{ document.body.classList[on?'add':'remove']('spfiledrag'); }catch(e){}
   var el=$('spDragHint');
@@ -1024,12 +1033,14 @@ function ensureRulebook(cb, fail){
   document.head.appendChild(s);
 }
 function rbPageCount(){ return rulebookData ? (rulebookData.pages||[]).length : 0; }
-/* 规则书正文用「浏览器自带的 PDF 阅读器」显示原版页面 —— 表格、颜色、流程图、排版全都跟纸书一致。
+/* 规则书正文用原版 PDF 显示 —— 表格、颜色、流程图、排版全都跟纸书一致。
    我们自己的那套文本数据只用来做目录与全文检索（点一下命中页 → PDF 跳到那一页）。
-   离线单文件版把 PDF 内联成 base64，打开时解成 Blob URL 再交给 iframe；
+   离线单文件版把 PDF 内联成 base64，打开时解成 Blob URL 再交给阅读器；
    解不了 Blob（个别环境没有 URL.createObjectURL）就退回 data: URL，照样能显示；
-   在线版直接用仓库里的 assets/rulebook/coc7.pdf。 */
-var rulebookPdfUrl=null, rbZoom=100;
+   在线版直接用仓库里的 assets/rulebook/coc7.pdf。
+   至于「翻页 / 缩放」：浏览器自带的 iframe 阅读器在手机、平板上既不听 #page= 也没缩放按钮，
+   所以正文交给 src/33-pdf-viewer.js 的自带阅读器画（电脑手机同一套操作）。 */
+var rulebookPdfUrl=null;
 function rulebookPdf(){
   if(rulebookPdfUrl!==null) return rulebookPdfUrl;
   var b64=window.__COC_RULEBOOK_PDF_B64;
@@ -1045,16 +1056,15 @@ function rulebookPdf(){
   } else rulebookPdfUrl='';
   return rulebookPdfUrl;
 }
+/* PDF 直链（#page= 只给「↗ 新窗口」用；面板里的翻页由自带阅读器负责） */
 function rbFrameSrc(p){
   var base=rulebookPdf(); if(!base) return '';
-  return base+'#page='+p+'&zoom='+rbZoom+'&view=FitH';
+  return base+'#page='+(p||rulebookPage||1);
 }
 function renderRulebookPane(pane){
   pane.innerHTML='<div class="sp-head"><b>📚 规则书</b>'+
     '<div class="row sp-tools">'+
       '<button class="small ghost" id="rbTocBtn" onclick="rbToggleToc()" title="展开/收起左侧目录与搜索">☰ 收起目录</button>'+
-      '<button class="small ghost" onclick="rbZoomBy(-1)" title="缩小">A－</button>'+
-      '<button class="small ghost" onclick="rbZoomBy(1)" title="放大">A＋</button>'+
       '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
     '</div></div>'+
     '<div class="sp-body rb-wrap" id="rbWrap">'+
@@ -1066,49 +1076,41 @@ function renderRulebookPane(pane){
       '</div>'+
       '<div class="rb-main">'+
         '<div class="rb-bar">'+
-          '<button class="small ghost" onclick="rbGoto(rulebookPage-1)">‹ 上一页</button>'+
-          '<span class="rb-pageno"><input type="number" id="rbPageInput" value="'+rulebookPage+'" min="1" onchange="rbGoto(parseInt(this.value,10))"> / <span id="rbPageMax">'+rbPageCount()+'</span></span>'+
-          '<button class="small ghost" onclick="rbGoto(rulebookPage+1)">下一页 ›</button>'+
-          '<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗ 新窗口</button>'+
+          pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗ 新窗口</button>')+
         '</div>'+
-        '<iframe class="rb-frame" id="rbFrame" title="COC7th 核心规则书"></iframe>'+
+        '<div class="pdfv-host" id="rbFrame" title="COC7th 核心规则书"></div>'+
       '</div>'+
     '</div>';
   rbApplyToc();
   ensureRulebook(function(){
     rbRenderToc();
-    rbPaintFrame();
-    var mx=$('rbPageMax'); if(mx) mx.textContent=rbPageCount();
+    rbMountPdf();
+    pdfSyncBar();
   }, function(err){
     var f=$('rbFrame');
     if(f) f.outerHTML='<div class="sp-empty"><p><b>规则书没能加载</b></p><p class="hint">'+esc(err.message)+'</p></div>';
   });
 }
-function rbPaintFrame(){
-  var f=$('rbFrame'); if(!f) return;
-  var src=rbFrameSrc(rulebookPage);
+/* 把原版 PDF 交给自带阅读器（翻页 / 缩放 / 双指捏合都在它身上） */
+function rbMountPdf(){
+  var host=$('rbFrame'); if(!host) return;
+  var src=rulebookPdf();
   if(!src){
-    f.outerHTML='<div class="sp-empty"><p><b>找不到规则书 PDF</b></p><p class="hint">离线版请用重新构建后的 offline.html；在线版需要能访问 assets/rulebook/coc7.pdf。</p></div>';
+    host.innerHTML='<div class="sp-empty"><p><b>找不到规则书 PDF</b></p><p class="hint">离线版请用重新构建后的 offline.html；在线版需要能访问 assets/rulebook/coc7.pdf。</p></div>';
     return;
   }
-  f.setAttribute('src',src);
-}
-/* 跳到某一页：同一份 PDF 只改 #page= 时，部分浏览器（已加载完的阅读器）不会重新定位，
-   于是「点目录/搜索命中不动」。这时整块换成一个新 iframe 最稳（blob 已缓存，重开很快）。 */
-function rbJump(p){
-  var src=rbFrameSrc(p); if(!src) return;
-  var f=$('rbFrame'); if(!f) return;
-  var cur=(f.getAttribute('src')||'');
-  var sameDoc=!!cur && cur.split('#')[0]===src.split('#')[0];
-  if(!sameDoc){ f.setAttribute('src',src); return; }
-  var nf=document.createElement('iframe');
-  nf.className=f.className; nf.id='rbFrame'; nf.title=f.title||'COC7th 核心规则书';
-  nf.setAttribute('src',src);
-  f.parentNode.replaceChild(nf, f);
+  pdfMountPdf(host, src, {
+    page: rulebookPage,
+    onPage: function(n){
+      rulebookPage=n;
+      rbSyncToc();
+      var mx=$('pdfPageMax'); if(mx) mx.textContent=rbPageCount();
+    }
+  });
 }
 function rbOpenTab(){
   var base=rulebookPdf(); if(!base){ toast('规则书 PDF 还没加载好'); return; }
-  window.open(base+'#page='+rulebookPage, '_blank');
+  pdfOpenInTab(base, rulebookPage);
 }
 /* 目录/搜索面板可收起（记在本机），按钮文字跟着状态走，一眼能看出是开还是关。 */
 function rbTocHidden(){
@@ -1132,8 +1134,7 @@ function rbToggleToc(){
   rbApplyToc();
 }
 function rbZoomBy(d){
-  rbZoom=Math.max(50,Math.min(200,rbZoom+d*10));
-  rbJump(rulebookPage);
+  pdfZoomBy(d);                 /* 老按钮 / 老习惯还能用；真正干活的是自带阅读器 */
 }
 function rbRenderToc(){
   var box=$('rbToc'); if(!box) return;
@@ -1149,16 +1150,19 @@ function rbTocIndexForPage(p){
   for(var i=0;i<toc.length;i++) if(toc[i][2]<=p) best=i;
   return best;
 }
+/* 左侧目录里把「当前页所属的那一条」高亮 */
+function rbSyncToc(){
+  var side=$('rbSide'); if(!side) return;
+  var items=side.querySelectorAll('.rb-tocitem');
+  for(var i=0;i<items.length;i++) items[i].classList.toggle('on', +items[i].dataset.i===rbTocIndexForPage(rulebookPage));
+}
+/* 跳页：点目录 / 搜索命中 / 手工输页码都走这里（自带阅读器翻页，目录高亮由 onPage 回调同步） */
 function rbGoto(p){
   var n=rbPageCount()||1;
   rulebookPage=Math.max(1,Math.min(n, p|0 || 1));
-  var inp=$('rbPageInput'); if(inp) inp.value=rulebookPage;
-  rbJump(rulebookPage);
-  var side=$('rbSide');
-  if(side){
-    var items=side.querySelectorAll('.rb-tocitem');
-    for(var i=0;i<items.length;i++) items[i].classList.toggle('on', +items[i].dataset.i===rbTocIndexForPage(rulebookPage));
-  }
+  if(pdfState.doc) pdfGoPage(rulebookPage);
+  else rbSyncToc();
+  var inp=$('pdfPageInput'); if(inp) inp.value=rulebookPage;
 }
 /* 全文搜索：命中页列在左侧，点一条 → PDF 跳到那一页（搜索词在左侧上下文里能直接看到） */
 function rbSearch(){

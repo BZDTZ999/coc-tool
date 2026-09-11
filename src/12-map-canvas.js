@@ -503,21 +503,26 @@ function battleHit(ev){
   return {x:x,y:y,best:best,prop:findBattleProp(x,y)};
 }
 var battleDrag=null;
+/* 按下的落点与「有没有拖动过」：按下先不动选中/详情，松手还在原地才算单击 */
+var battleDownPt=null, battleMoved=false, battleTap={id:null,t:0};
 function bindBattleCanvas(){
   var cv=$('battleCanvas'); if(!cv) return;
   function battleDown(ev){
     try{ if(cv.setPointerCapture) cv.setPointerCapture(ev.pointerId); }catch(e){}
+    battleDownPt={x:ev.clientX,y:ev.clientY}; battleMoved=false;
     var h=battleHit(ev);
-    if(h.best){ combActiveId=h.best; battleDrag=h.best; renderCombatRoster(); renderActivePanel(); }
+    /* 按在角色身上只是「准备拖动」：先不开详情、也不改选中（拖拽时误弹详情就出在这里） */
+    if(h.best){ battleDrag=h.best; }
     else if(h.prop!=null && h.prop>=0){ battlePropSel=h.prop; battlePropDrag=h.prop; drawBattleScene(); }
     else {
-      battlePropSel=-1;
+      battlePropSel=-1; battleTap={id:null,t:0};
       /* 全屏时点场景空白处 = 收起角色详情 */
       if(document.body && document.body.classList.contains('fs-combat')){ selectComb(null); return; }
     }
     drawBattleScene();
   }
   function battleMove(ev){
+    if(battleDownPt && (Math.abs(ev.clientX-battleDownPt.x)+Math.abs(ev.clientY-battleDownPt.y)>4)) battleMoved=true;
     if(battlePropDrag!=null){
       var hp=battleHit(ev); var pr=battleProps()[battlePropDrag];
       if(pr){ pr.x=Math.max(20,Math.min(B_W-20,hp.x)); pr.y=Math.max(20,Math.min(B_H-20,hp.y)); }
@@ -529,11 +534,25 @@ function bindBattleCanvas(){
     if(sc.pos[battleDrag]){ sc.pos[battleDrag].x=Math.max(30,Math.min(B_W-30,h.x)); sc.pos[battleDrag].y=Math.max(30,Math.min(B_H-30,h.y)); }
     drawBattleScene();
   }
-  function battleUp(){ battleDrag=null; battlePropDrag=null; saveStateQuiet(); }
+  function battleUp(){
+    var dragged=battleDrag, moved=battleMoved;
+    battleDrag=null; battlePropDrag=null; battleDownPt=null; saveStateQuiet();
+    if(moved || !dragged) return;                    /* 拖动过 / 按在空白或道具上 → 不当单击 */
+    /* 停在原地 = 单击：350ms 内连点同一个人算双击 → 才打开角色详情 */
+    var now=Date.now();
+    if(battleTap.id===dragged && now-battleTap.t<=350){ battleTap={id:null,t:0}; selectComb(dragged); }
+    else battleTap={id:dragged,t:now};
+  }
+  /* 鼠标双击也接一下（触屏走上面的连点判定，这里对同一个 id 是重复调用，不会出错） */
+  function battleDbl(ev){
+    var h=battleHit(ev);
+    if(h.best){ battleTap={id:null,t:0}; selectComb(h.best); }
+  }
   cv.addEventListener('pointerdown',battleDown);
   cv.addEventListener('pointermove',battleMove);
   cv.addEventListener('pointerup',battleUp);
   cv.addEventListener('pointercancel',battleUp);
+  cv.addEventListener('dblclick',battleDbl);
 }
 function onBattleBg(e){
   var f=e.target.files&&e.target.files[0]; if(!f) return;

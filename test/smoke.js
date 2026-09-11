@@ -96,6 +96,23 @@ const ready = new Promise((res) => {
 (async () => {
   await ready;
   await new Promise(r => setTimeout(r, 80));
+  /* jsdom 里没有 ReadableStream / structuredClone，真 pdf.js 跑不起来（会直接把整个测试进程带崩）。
+     这里装一个「假 pdfjsLib」，让我们自己的翻页 / 缩放那一层照样能被验到；
+     真实 PDF 渲染由 headless Chrome 截图另外验（见 README「怎么维护」）。 */
+  w.pdfjsLib = {
+    getDocument: function(){
+      return { promise: Promise.resolve({
+        numPages: 318,
+        getPage: function(){
+          return Promise.resolve({
+            getViewport: function(o){ var s = (o && o.scale) || 1; return { width: 612 * s, height: 792 * s }; },
+            render: function(){ return { promise: Promise.resolve(), cancel: function(){} }; }
+          });
+        },
+        destroy: function(){ return Promise.resolve(); }
+      }) };
+    }
+  };
   const S = w.state;
   const cssText = (() => { let t=''; try{ [...d.styleSheets].forEach(sh => { try{ [...sh.cssRules].forEach(r => { t += r.cssText + '\n'; }); }catch(e){} }); }catch(e){} return t; })();
 
@@ -730,6 +747,24 @@ const ready = new Promise((res) => {
     ok('全屏选中角色后详情展开', d.body.classList.contains('comb-has-active'));
     $('battleCanvas').dispatchEvent(new w.MouseEvent('pointerdown', { bubbles:true, clientX:0, clientY:0 }));
     ok('全屏点场景空白处可收起详情', !d.body.classList.contains('comb-has-active'));
+    /* 拖拽不该弹详情、双击才弹（用户反馈过「只想挪一下位置，详情就开了」） */
+    ok('战斗场景：拖动角色不会弹详情，双击才打开', (function(){
+      var bc=$('battleCanvas');
+      bc.getBoundingClientRect=function(){ return {left:0,top:0,width:940,height:500,right:940,bottom:500}; };
+      var sc=w.combatScene(); if(!sc.pos) sc.pos={};
+      sc.pos[part0.id]={x:300,y:200};
+      w.selectComb(null);
+      var fire=function(t,x,y){ bc.dispatchEvent(new w.MouseEvent(t,{bubbles:true,clientX:x,clientY:y})); };
+      fire('pointerdown',300,200); fire('pointerup',300,200);          /* ① 原地单击 → 不弹 */
+      var single=w.combActiveId===null;
+      fire('pointerdown',300,200); fire('pointermove',420,300); fire('pointerup',420,300);   /* ② 拖动 → 挪走但不弹 */
+      var moved=(sc.pos[part0.id].x===420 && sc.pos[part0.id].y===300);
+      var noDetail=w.combActiveId===null;
+      fire('pointerdown',420,300); fire('pointerup',420,300);          /* ③ 双击 → 打开详情 */
+      fire('pointerdown',420,300); fire('pointerup',420,300);
+      var dbl=w.combActiveId===part0.id;
+      return single && moved && noDetail && dbl;
+    })());
   }
   w.exitSceneFs();
 
@@ -1239,23 +1274,36 @@ const ready = new Promise((res) => {
     return !pane.hidden && !$('splitBar').hidden && /📖 模组/.test(pane.textContent) &&
       !!$('moduleFileInput') && !!(pane.querySelector('.sp-drop'));
   })());
+  w.toggleSidePane('rulebook');
+  await new Promise(r => setTimeout(r, 40));
   ok('右半屏：点「规则书」能出目录，翻页会跳到原版 PDF 的那一页', (function(){
-    w.toggleSidePane('rulebook');
     var pane=$('sidePane');
     var toc=pane.querySelectorAll('.rb-tocitem');
     w.rbGoto(Math.min(10, w.rbPageCount()));
-    var f=pane.querySelector('#rbFrame');
+    var host=pane.querySelector('#rbFrame');
     return /📚 规则书/.test(pane.textContent) && w.rbPageCount()>200 && toc.length>50 &&
-      !!f && /#page=10/.test(f.getAttribute('src')||'') &&
-      /#page=10/.test(w.rbFrameSrc(10)) && String($('rbPageInput').value)==='10';
+      !!host && !!host.querySelector('canvas.pdfv-canvas') &&
+      w.pdfState.page===10 && String($('pdfPageInput').value)==='10' &&
+      /#page=10/.test(w.rbFrameSrc(10));
   })());
   ok('右半屏：规则书用的是原版 PDF（保留表格 / 颜色 / 流程图，不是自己重排的 HTML）', (function(){
     var base=w.rulebookPdf();
+    var host=w.document.getElementById('sidePane').querySelector('#rbFrame');
     return /^(blob:|https?:|data:application\/pdf)/.test(base) &&
       /\.pdf$|^blob:|^data:application\/pdf/.test(base) &&
       base.length>64 &&
-      w.rbFrameSrc(1).indexOf(base)===0 &&
-      w.document.getElementById('sidePane').querySelector('#rbFrame').tagName==='IFRAME';
+      !!host && /pdfv-host/.test(host.className) && !!host.querySelector('canvas.pdfv-canvas') &&
+      w.pdfState.src.indexOf(base)===0;
+  })());
+  ok('右半屏：规则书能缩放（手机 / 平板也能，不靠浏览器自带阅读器）', (function(){
+    w.pdfFitWidth();
+    var fit=w.pdfState.fit===true && Math.abs(w.pdfState.zoom-w.pdfFitZoom())<0.001;
+    w.pdfZoomBy(1);
+    var zin=w.pdfState.zoom>w.pdfFitZoom() && w.pdfState.fit===false;
+    w.pdfZoomBy(-1); w.pdfZoomBy(-1);
+    var zout=w.pdfState.zoom<w.pdfFitZoom();
+    w.pdfFitWidth();
+    return fit && zin && zout;
   })());
   ok('右半屏：规则书全文搜索能列出命中页并可跳转', (function(){
     var inp=$('rbSearch'); inp.value='理智';
@@ -1304,6 +1352,29 @@ const ready = new Promise((res) => {
       after($('routeCard')) && after($('mapPointsCard')) && after($('mapLegsCard')) &&
       // 四个面板都在地图本体之前（所以不会把地图挤窄）
       (($('mapPods').compareDocumentPosition(main) & 4) ? true : false);
+  })());
+  /* 打开 / 切换地图时要居中显示（以前总停在左上角，右边一大片空白） */
+  ok('地图页：打开 / 缩放后地图在框里居中，缩放不会跳回左上角', (function(){
+    var wr=$('mapWrap');
+    Object.defineProperty(wr,'clientWidth',{value:600,configurable:true});
+    Object.defineProperty(wr,'clientHeight',{value:400,configurable:true});
+    Object.defineProperty(wr,'scrollWidth',{value:1000,configurable:true});
+    Object.defineProperty(wr,'scrollHeight',{value:620,configurable:true});
+    wr.scrollLeft=0; wr.scrollTop=0;
+    w.centerMapView();
+    var centered=(wr.scrollLeft===200 && wr.scrollTop===110);
+    /* 缩放前后「看到的中心」不变 */
+    wr.scrollLeft=400; wr.scrollTop=200;
+    var keep=w.mapViewCenterRatio();
+    wr.scrollLeft=0; wr.scrollTop=0;
+    w.restoreMapView(keep);
+    var kept=(wr.scrollLeft===400 && wr.scrollTop===200);
+    /* 量完把假尺寸撤掉，别影响后面的用例 */
+    ['clientWidth','clientHeight','scrollWidth','scrollHeight'].forEach(function(k){
+      Object.defineProperty(wr,k,{value:0,configurable:true});
+    });
+    wr.scrollLeft=0; wr.scrollTop=0;
+    return centered && kept && typeof w.mapViewCenterRatio==='function';
   })());
   /* ---------- 战斗页：二级菜单栏（添加角色 / 战斗桌） ---------- */
   w.switchTab('combat');
@@ -1367,6 +1438,8 @@ const ready = new Promise((res) => {
       /body\.bgcustom \.sp-head/.test(cssText) &&
       /body\.bgcustom \.rb-side/.test(cssText) &&
       /body\.bgcustom \.rb-bar/.test(cssText) &&
+      /body\.bgcustom \.pdfv-host/.test(cssText) &&
+      /body\.bgcustom \.pdfv-bar/.test(cssText) &&
       /body\.bgcustom \.tb2\.on/.test(cssText) &&
       /body\.bgcustom \.sp-tbl/.test(cssText) &&
       /--uic-b/.test(cssText);
@@ -1384,11 +1457,15 @@ const ready = new Promise((res) => {
     var shown=!side.classList.contains('hide') && /收起目录/.test(btn.textContent) && w.state.ui.rbTocHide===false;
     return hidden && shown;
   })());
-  ok('规则书：跳页换新 iframe（同份 PDF 改 #page 不生效的浏览器也能跳）', (function(){
-    var pane=$('sidePane'), before=pane.querySelector('#rbFrame');
+  await new Promise(r => setTimeout(r, 30));      /* 阅读器挂载是异步的，等一拍再断言 */
+  ok('规则书：跳页真的翻到那一页（自带阅读器自己画，不再指望浏览器认 #page=）', (function(){
+    var host=$('sidePane').querySelector('#rbFrame');
     w.rbGoto(20);
-    var after=pane.querySelector('#rbFrame');
-    return !!after && after!==before && /#page=20/.test(after.getAttribute('src')||'');
+    /* 点目录 / 搜索命中：页码与目录高亮都要跟着走 */
+    var lit=$('rbSide').querySelector('.rb-tocitem.on');
+    var onPage=w.pdfState.page===20 && String($('pdfPageInput').value)==='20';
+    var tocSynced=!lit || lit.dataset.i===String(w.rbTocIndexForPage(20));
+    return !!host && !!host.querySelector('canvas.pdfv-canvas') && onPage && tocSynced;
   })());
 
   /* 模组：txt 载入 → 搜索高亮 → 上/下一条循环 → 清掉高亮

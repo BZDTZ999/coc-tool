@@ -19,9 +19,11 @@ function applyZoomLabel(){
 }
 function mapZoomTo(z){
   var m=currentMap(); if(!m) return;
+  var keep=mapViewCenterRatio();
   mapZoom=Math.max(0.35,Math.min(3,z));
   m.zoom=mapZoom;
   saveStateQuiet(); drawMapCanvas(); applyZoomLabel();
+  restoreMapView(keep);                      /* 缩放后还看着原来那块地方，不会跳回左上角 */
 }
 function zoomBy(d){ mapZoomTo((mapZoom||1)+d); }
 function zoomReset(){ mapZoomTo(1); }
@@ -30,6 +32,24 @@ function zoomFit(){
   var L=mapLogicalSize(m);
   var z=Math.max(0.35,Math.min(2.2,(wr.clientWidth-6)/L.w));
   mapZoomTo(z);
+  centerMapView();
+}
+/* 地图视图居中：画布比框大就滚到正中间（比框小的话由 CSS 的 margin:auto 居中），
+   打开 / 切换地图、缩放、旋转之后都调一次 —— 以前总停在左上角，右边一大片空白。 */
+function mapViewCenterRatio(){
+  var wr=$('mapWrap'); if(!wr) return null;
+  var sw=wr.scrollWidth||1, sh=wr.scrollHeight||1;
+  return {x:(wr.scrollLeft+wr.clientWidth/2)/sw, y:(wr.scrollTop+wr.clientHeight/2)/sh};
+}
+function restoreMapView(c){
+  var wr=$('mapWrap'); if(!wr||!c) return;
+  wr.scrollLeft=Math.max(0,Math.round(c.x*(wr.scrollWidth||1)-wr.clientWidth/2));
+  wr.scrollTop=Math.max(0,Math.round(c.y*(wr.scrollHeight||1)-wr.clientHeight/2));
+}
+function centerMapView(){
+  var wr=$('mapWrap'); if(!wr) return;
+  wr.scrollLeft=Math.max(0,(wr.scrollWidth-wr.clientWidth)/2);
+  wr.scrollTop=Math.max(0,(wr.scrollHeight-wr.clientHeight)/2);
 }
 /* 旋转 90°，两种模式：
    mode='all'     整体旋转 —— 底图、地点、摆件与文字一起转；
@@ -43,6 +63,7 @@ function rotateMap(deg, mode){
   saveStateQuiet();
   if(typeof fsResize==='function'){ try{ fsResize(); }catch(e){} }
   drawMapCanvas();
+  centerMapView();
   toast('地图已旋转 '+m.rot+'°（'+(m.rotUpright?'只有地图转，文字保持水平':'整体旋转，文字一起转')+'）');
 }
 /* 全屏时用图标切换地图：循环到下一张 */
@@ -193,6 +214,7 @@ function renderMapsShell(){
   renderMapVehicles();
   renderPropPalette();
   drawMapCanvas();
+  centerMapView();                            /* 打开 / 切换地图 → 居中显示（不再停在左上角） */
   renderMapLists();
   renderRoutePanel();
   var cvc=$('mapCanvas'); if(cvc) cvc.style.cursor=(mapTool==='add')?'crosshair':(mapTool==='move'?'move':'grab');
