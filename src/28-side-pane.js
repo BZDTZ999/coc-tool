@@ -88,6 +88,8 @@ function initSidePane(){
   }
   applySidePane();
   renderSidePane();
+  /* 开机就把「窗口任意位置拖入文件 / 文件夹」挂上：先拖文件再打开右半屏也照样能收 */
+  moduleBindWindowDrop();
 }
 /* 需要「窗口够宽」才分栏：窄屏时右半屏改为整块显示在下方 */
 function sidePaneNarrow(){ return window.innerWidth < 900; }
@@ -350,7 +352,7 @@ function renderModulePane(pane){
     '</div></div>';
   var body=moduleBodyHTML(m);
   var drop='<div class="sp-drop" id="spDrop">⬇ 把模组文件或<b>整个文件夹</b>拖到这里（PDF · Word · 图片 · txt/md'+
-    (moduleFiles.length?'，可以继续加':'')+'）</div>';
+    (moduleFiles.length?'，可以继续加':'')+'）——拖到窗口里任何地方都行</div>';
   pane.innerHTML=head+moduleTabsHTML()+'<div class="sp-body'+(m&&m.kind==='pdf'?' sp-body-fill':'')+'">'+body+drop+'</div>'+
     '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple style="display:none" onchange="onModulePick(event)">'+
     '<input type="file" id="moduleFolderInput" webkitdirectory directory multiple style="display:none" onchange="onModulePick(event)">';
@@ -480,35 +482,97 @@ function moduleFont(d){
   cur=Math.max(11, Math.min(24, cur));
   el.dataset.fs=cur; el.style.fontSize=cur+'px';
 }
+/* ---------- 拖放：文件 / 整个文件夹拖到窗口里任何地方都收（在模组栏里打开，不跳新标签页） ----------
+   要点：dragover 与 drop 都必须 preventDefault，否则浏览器会按默认动作处理 ——
+   PDF / 图片会跳到一个新标签页、docx 会静默下载（用户反馈过这个）。 */
+var MODULE_FILE_RE=/\.(pdf|docx|png|jpe?g|gif|webp|bmp|svg|avif|txt|md|markdown|csv|log)$/i;
+var CARD_FILE_RE=/\.(xlsx|xls)$/i;
+function moduleDragHasFiles(e){
+  var dt=e.dataTransfer; if(!dt) return false;
+  var types=dt.types;
+  if(types && types.length){ for(var i=0;i<types.length;i++) if(types[i]==='Files') return true; }
+  return !!(dt.files && dt.files.length);
+}
+function moduleDragNames(dt){
+  var fs=(dt&&dt.files)?[].slice.call(dt.files):[];
+  return fs.map(function(f){ return String((f&&f.name)||''); }).filter(Boolean);
+}
+/* 这串是不是「给模组栏的」：模组能看的格式算我们的；人物卡 .xlsx 不算（那是左边导入框的活） */
+function moduleDragIsOurs(dt){
+  var names=moduleDragNames(dt);
+  if(!names.length) return true;                                   /* 读不到名字（多半是文件夹）→ 按我们的处理 */
+  if(names.every(function(n){ return CARD_FILE_RE.test(n); })) return false;
+  if(sidePaneIsOpen('module')) return true;
+  return names.every(function(n){ return MODULE_FILE_RE.test(n); });
+}
+function moduleDragHint(on){
+  var el=$('spDragHint');
+  if(on){
+    if(!el){
+      el=document.createElement('div');
+      el.id='spDragHint'; el.className='sp-draghint';
+      el.textContent='松手就把这些文件放进「📖 模组」';
+      document.body.appendChild(el);
+    }
+    el.classList.add('on');
+  } else if(el) el.classList.remove('on');
+}
+function openModulePane(){
+  var c=sidePaneCfg();
+  if(c.open && c.kind==='module') return;
+  c.open=true; c.kind='module';
+  saveStateQuiet(); applySidePane(); renderNav();
+}
+/* 真正处理一次拖入：这里必须 preventDefault，不然浏览器会自己去开新标签页 / 下载 */
+function moduleHandleFileDrop(e){
+  var dt=e.dataTransfer;
+  if(e.preventDefault) e.preventDefault();
+  if(e.stopPropagation) e.stopPropagation();
+  moduleDragHint(false);
+  var z=$('spDrop'); if(z) z.classList.remove('on');
+  if(!dt) return;
+  openModulePane();
+  moduleDropLoad(dt, function(n){
+    if(n) toast(n>1?('已加入 '+n+' 个文件'):'模组已载入');
+    else toast('没读到文件（可能是空的文件夹或这个格式不支持）');
+  });
+}
 function moduleBindDrop(){
   var z=$('spDrop');
-  var on=function(e){ e.preventDefault(); if(z) z.classList.add('on'); };
-  var off=function(e){ e.preventDefault(); if(z) z.classList.remove('on'); };
-  var drop=function(e){
-    var dt=e.dataTransfer;
-    if(e.stopPropagation) e.stopPropagation();
-    if(z) z.classList.remove('on');
-    moduleDropLoad(dt, function(n){
-      if(n) toast(n>1?('已加入 '+n+' 个文件'):'模组已载入');
-      else toast('没读到文件（可能是空的文件夹或这个格式不支持）');
-    });
-  };
   if(z && !z.dataset.bound){
     z.dataset.bound='1';
-    ['dragenter','dragover'].forEach(function(ev){ z.addEventListener(ev, on); });
-    ['dragleave'].forEach(function(ev){ z.addEventListener(ev, off); });
-    z.addEventListener('drop', drop);
-  }
-  /* 整条右半屏都能接住拖进来的文件夹，不用对准那一条 */
-  var pane=$('sidePane');
-  if(pane && !pane.dataset.dropBound){
-    pane.dataset.dropBound='1';
     ['dragenter','dragover'].forEach(function(ev){
-      pane.addEventListener(ev, function(e){ if(sidePaneIsOpen('module')) on(e); });
+      z.addEventListener(ev, function(e){ if(moduleDragHasFiles(e)){ e.preventDefault(); z.classList.add('on'); moduleDragHint(true); } });
     });
-    pane.addEventListener('dragleave', function(e){ if(e.target===pane) off(e); });
-    pane.addEventListener('drop', function(e){ if(sidePaneIsOpen('module')) drop(e); });
+    z.addEventListener('dragleave', function(){ z.classList.remove('on'); });
+    z.addEventListener('drop', function(e){ moduleHandleFileDrop(e); });
   }
+  moduleBindWindowDrop();
+}
+/* 整个窗口都是拖入区：拖到左半边 / 顶栏也算，免得浏览器跳走 */
+function moduleBindWindowDrop(){
+  if(document.__spWinDrop) return;
+  document.__spWinDrop=1;
+  var over=function(e){
+    if(!moduleDragHasFiles(e) || !moduleDragIsOurs(e.dataTransfer)) return;
+    e.preventDefault();
+    if(e.dataTransfer) try{ e.dataTransfer.dropEffect='copy'; }catch(err){}
+    moduleDragHint(true);
+  };
+  document.addEventListener('dragenter', over, true);
+  document.addEventListener('dragover', over, true);
+  document.addEventListener('dragleave', function(e){
+    if(e.target===document.documentElement || e.target===document.body || !e.relatedTarget) moduleDragHint(false);
+  }, true);
+  /* drop 用冒泡：页面里别的拖入区（人物卡 .xlsx）先跑，它 preventDefault 过就不抢 */
+  document.addEventListener('drop', function(e){
+    moduleDragHint(false);
+    if(!moduleDragHasFiles(e) || e.defaultPrevented) return;
+    if(!moduleDragIsOurs(e.dataTransfer)) return;
+    moduleHandleFileDrop(e);
+  });
+  document.addEventListener('dragend', function(){ moduleDragHint(false); }, true);
+  window.addEventListener('blur', function(){ moduleDragHint(false); });
 }
 
 /* ---- .docx → HTML：docx 就是个 zip，自己解压 + 自己排版 ----

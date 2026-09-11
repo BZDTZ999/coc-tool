@@ -976,6 +976,8 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-imgdoc{text-align:center;padding:10px}
 .sp-imgdoc .sp-img{cursor:zoom-in}
 .sp-imgdoc.zoom .sp-img{max-width:none;margin:0 auto;cursor:zoom-out}
+.sp-draghint{position:fixed;left:50%;top:18px;transform:translateX(-50%) translateY(-140%);z-index:99;pointer-events:none;padding:8px 16px;border-radius:999px;border:1px solid var(--gold);background:rgba(20,22,28,.94);color:var(--gold);font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.45);transition:transform .14s ease}
+.sp-draghint.on{transform:translateX(-50%) translateY(0)}
 .sp-doc{flex:1 1 auto;overflow:auto;padding:4px 14px 20px;font-size:14px;line-height:1.85;word-break:break-word}
 .sp-doc h1{font-size:1.35em;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:4px}
 .sp-doc h2{font-size:1.2em;color:var(--gold)}
@@ -3146,7 +3148,7 @@ function scaffoldSections(){
     <h4>✏️ 编辑调查员</h4><p>点小卡右下角 ✏️：属性、护甲（可挑参考防具预置）、HP/SAN/MP、技能（高于基础值的算「已加点」排上面，其余收进折叠区）、武器、背包 / 随身用品、剧情道具、法术、资产、背景、经历都在这里改。武器「类型」可从卡里「武器列表」下拉选，选完技能 / 伤害 / 射程 / 弹匣会自动填好。</p>
     <h4>⬇ 导出人物卡</h4><p>小卡右下角 ⬇ 导出卡：先按“最初导入那张卡”算出这次团的变化，写进卡里的「调查员经历」（模组名用顶部「🎪 本次团名」，技能变化写进「成长」列），再把整张卡填进<b>你导入时用的那张模板</b>下载，文件名是 团名-角色名.xlsx。卡里原本的公式都会保留：武器“选类型自动算”、成功率按使用技能取值（查不到该技能时保留公式 + 原卡数值，不留空、不乱码）、信用评级、本职★ 查表、<b>属性雷达图</b>；自定义子技能名按卡里「类别 + 具体名」两格分段写回；卡右上角「任意特长」照原样读写（详情卡里不单独列出）；中式职业扩展那张卡的本职技能按它自己的职业表算。</p>
     <h4>📊 属性雷达图</h4><p>点小卡右下角 ✏️ 打开详情，属性 3×3 右边就是雷达图（力量 / 体质 / 体型 / 敏捷 / 外貌 / 智力 / 意志 / 教育 / 幸运），和卡里「附表」那张九维图同一套数，改属性会实时重画。</p>
-    <h4>📖 模组（右半屏）</h4><p>菜单栏点「📖 模组」：左边照常带团，右半边用来放模组。支持 <b>PDF</b>、<b>Word（.docx）</b>、<b>图片</b>（png / jpg / gif / webp…）、<b>txt / md</b>。可以「⬆ 添加文件」一次选多个、点「📁 文件夹」整个文件夹加进来，或者直接把文件 / 文件夹拖到右半屏里；加进去的会在顶上排成一排<b>标签页</b>，点一下换一份，标签上的 ✕ 把那份移出去，多文件模组不用再来回换。Word 会连着表格 / 图片 / 标题一起排成网页看（还能调字号），上方搜索框回车可高亮命中、↑ ↓ 逐条跳转；PDF 用浏览器自带阅读器（可缩放、可搜）；图片点一下在「适应窗口 / 原始大小」之间切。文件存在本机浏览器里（刷新后还在），不会上传。中间的细条可拖动调整左右宽度，双击回一半一半。</p>
+    <h4>📖 模组（右半屏）</h4><p>菜单栏点「📖 模组」：左边照常带团，右半边用来放模组。支持 <b>PDF</b>、<b>Word（.docx）</b>、<b>图片</b>（png / jpg / gif / webp…）、<b>txt / md</b>。可以「⬆ 添加文件」一次选多个、点「📁 文件夹」整个文件夹加进来，或者直接把文件 / 文件夹<b>拖到窗口里任何地方</b>（会自动打开模组栏，拖拽时顶上提示「松手就把这些文件放进模组」）；加进去的会在顶上排成一排<b>标签页</b>，点一下换一份，标签上的 ✕ 把那份移出去，多文件模组不用再来回换。Word 会连着表格 / 图片 / 标题一起排成网页看（还能调字号），上方搜索框回车可高亮命中、↑ ↓ 逐条跳转；PDF 用浏览器自带阅读器（可缩放、可搜）；图片点一下在「适应窗口 / 原始大小」之间切。文件存在本机浏览器里（刷新后还在），不会上传。中间的细条可拖动调整左右宽度，双击回一半一半。</p>
     <h4>📚 规则书（右半屏）</h4><p>菜单栏点「📚 规则书」：整套 COC7 核心规则书按<b>原版 PDF</b>放在右半屏，表格 / 颜色 / 流程图和纸书一模一样；左边有 <b>书签目录</b>（点条目直接跳页）和 <b>全文搜索</b>（输入关键词回车，命中页会列出来，点一下就跳过去），目录可以「☰ 收起目录 / 展开目录」。</p>
     <h4>🏷 便签标签</h4><p>调查员页最左侧可自定义标签（emoji、任意长度、可改色、可删）。点选标签再点小卡即可贴上，也能直接把标签拖到小卡上；便签可挪到别的卡，点 ✕ 移除，每张小卡最多 6 个。</p>
     <h4>👤 NPC 与敌人</h4><p>先选<b>类别</b>（人类 / 动物 / 神话生物，默认「全部」），再选<b>具体条目</b>，设数量后生成 —— 属性按规则书的骰式现掷（如 CON 2D6×5），所以每次生成都是新的随机值；神话生物已按规则书预填标志性法术。之后还能改阵营与数值。四列小卡（盟友 / 中立 / 敌人 / 其他）可拖拽排序，列名点标题就能改。</p>
@@ -8528,6 +8530,8 @@ function initSidePane(){
   }
   applySidePane();
   renderSidePane();
+  /* 开机就把「窗口任意位置拖入文件 / 文件夹」挂上：先拖文件再打开右半屏也照样能收 */
+  moduleBindWindowDrop();
 }
 /* 需要「窗口够宽」才分栏：窄屏时右半屏改为整块显示在下方 */
 function sidePaneNarrow(){ return window.innerWidth < 900; }
@@ -8790,7 +8794,7 @@ function renderModulePane(pane){
     '</div></div>';
   var body=moduleBodyHTML(m);
   var drop='<div class="sp-drop" id="spDrop">⬇ 把模组文件或<b>整个文件夹</b>拖到这里（PDF · Word · 图片 · txt/md'+
-    (moduleFiles.length?'，可以继续加':'')+'）</div>';
+    (moduleFiles.length?'，可以继续加':'')+'）——拖到窗口里任何地方都行</div>';
   pane.innerHTML=head+moduleTabsHTML()+'<div class="sp-body'+(m&&m.kind==='pdf'?' sp-body-fill':'')+'">'+body+drop+'</div>'+
     '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple style="display:none" onchange="onModulePick(event)">'+
     '<input type="file" id="moduleFolderInput" webkitdirectory directory multiple style="display:none" onchange="onModulePick(event)">';
@@ -8920,35 +8924,97 @@ function moduleFont(d){
   cur=Math.max(11, Math.min(24, cur));
   el.dataset.fs=cur; el.style.fontSize=cur+'px';
 }
+/* ---------- 拖放：文件 / 整个文件夹拖到窗口里任何地方都收（在模组栏里打开，不跳新标签页） ----------
+   要点：dragover 与 drop 都必须 preventDefault，否则浏览器会按默认动作处理 ——
+   PDF / 图片会跳到一个新标签页、docx 会静默下载（用户反馈过这个）。 */
+var MODULE_FILE_RE=/\.(pdf|docx|png|jpe?g|gif|webp|bmp|svg|avif|txt|md|markdown|csv|log)$/i;
+var CARD_FILE_RE=/\.(xlsx|xls)$/i;
+function moduleDragHasFiles(e){
+  var dt=e.dataTransfer; if(!dt) return false;
+  var types=dt.types;
+  if(types && types.length){ for(var i=0;i<types.length;i++) if(types[i]==='Files') return true; }
+  return !!(dt.files && dt.files.length);
+}
+function moduleDragNames(dt){
+  var fs=(dt&&dt.files)?[].slice.call(dt.files):[];
+  return fs.map(function(f){ return String((f&&f.name)||''); }).filter(Boolean);
+}
+/* 这串是不是「给模组栏的」：模组能看的格式算我们的；人物卡 .xlsx 不算（那是左边导入框的活） */
+function moduleDragIsOurs(dt){
+  var names=moduleDragNames(dt);
+  if(!names.length) return true;                                   /* 读不到名字（多半是文件夹）→ 按我们的处理 */
+  if(names.every(function(n){ return CARD_FILE_RE.test(n); })) return false;
+  if(sidePaneIsOpen('module')) return true;
+  return names.every(function(n){ return MODULE_FILE_RE.test(n); });
+}
+function moduleDragHint(on){
+  var el=$('spDragHint');
+  if(on){
+    if(!el){
+      el=document.createElement('div');
+      el.id='spDragHint'; el.className='sp-draghint';
+      el.textContent='松手就把这些文件放进「📖 模组」';
+      document.body.appendChild(el);
+    }
+    el.classList.add('on');
+  } else if(el) el.classList.remove('on');
+}
+function openModulePane(){
+  var c=sidePaneCfg();
+  if(c.open && c.kind==='module') return;
+  c.open=true; c.kind='module';
+  saveStateQuiet(); applySidePane(); renderNav();
+}
+/* 真正处理一次拖入：这里必须 preventDefault，不然浏览器会自己去开新标签页 / 下载 */
+function moduleHandleFileDrop(e){
+  var dt=e.dataTransfer;
+  if(e.preventDefault) e.preventDefault();
+  if(e.stopPropagation) e.stopPropagation();
+  moduleDragHint(false);
+  var z=$('spDrop'); if(z) z.classList.remove('on');
+  if(!dt) return;
+  openModulePane();
+  moduleDropLoad(dt, function(n){
+    if(n) toast(n>1?('已加入 '+n+' 个文件'):'模组已载入');
+    else toast('没读到文件（可能是空的文件夹或这个格式不支持）');
+  });
+}
 function moduleBindDrop(){
   var z=$('spDrop');
-  var on=function(e){ e.preventDefault(); if(z) z.classList.add('on'); };
-  var off=function(e){ e.preventDefault(); if(z) z.classList.remove('on'); };
-  var drop=function(e){
-    var dt=e.dataTransfer;
-    if(e.stopPropagation) e.stopPropagation();
-    if(z) z.classList.remove('on');
-    moduleDropLoad(dt, function(n){
-      if(n) toast(n>1?('已加入 '+n+' 个文件'):'模组已载入');
-      else toast('没读到文件（可能是空的文件夹或这个格式不支持）');
-    });
-  };
   if(z && !z.dataset.bound){
     z.dataset.bound='1';
-    ['dragenter','dragover'].forEach(function(ev){ z.addEventListener(ev, on); });
-    ['dragleave'].forEach(function(ev){ z.addEventListener(ev, off); });
-    z.addEventListener('drop', drop);
-  }
-  /* 整条右半屏都能接住拖进来的文件夹，不用对准那一条 */
-  var pane=$('sidePane');
-  if(pane && !pane.dataset.dropBound){
-    pane.dataset.dropBound='1';
     ['dragenter','dragover'].forEach(function(ev){
-      pane.addEventListener(ev, function(e){ if(sidePaneIsOpen('module')) on(e); });
+      z.addEventListener(ev, function(e){ if(moduleDragHasFiles(e)){ e.preventDefault(); z.classList.add('on'); moduleDragHint(true); } });
     });
-    pane.addEventListener('dragleave', function(e){ if(e.target===pane) off(e); });
-    pane.addEventListener('drop', function(e){ if(sidePaneIsOpen('module')) drop(e); });
+    z.addEventListener('dragleave', function(){ z.classList.remove('on'); });
+    z.addEventListener('drop', function(e){ moduleHandleFileDrop(e); });
   }
+  moduleBindWindowDrop();
+}
+/* 整个窗口都是拖入区：拖到左半边 / 顶栏也算，免得浏览器跳走 */
+function moduleBindWindowDrop(){
+  if(document.__spWinDrop) return;
+  document.__spWinDrop=1;
+  var over=function(e){
+    if(!moduleDragHasFiles(e) || !moduleDragIsOurs(e.dataTransfer)) return;
+    e.preventDefault();
+    if(e.dataTransfer) try{ e.dataTransfer.dropEffect='copy'; }catch(err){}
+    moduleDragHint(true);
+  };
+  document.addEventListener('dragenter', over, true);
+  document.addEventListener('dragover', over, true);
+  document.addEventListener('dragleave', function(e){
+    if(e.target===document.documentElement || e.target===document.body || !e.relatedTarget) moduleDragHint(false);
+  }, true);
+  /* drop 用冒泡：页面里别的拖入区（人物卡 .xlsx）先跑，它 preventDefault 过就不抢 */
+  document.addEventListener('drop', function(e){
+    moduleDragHint(false);
+    if(!moduleDragHasFiles(e) || e.defaultPrevented) return;
+    if(!moduleDragIsOurs(e.dataTransfer)) return;
+    moduleHandleFileDrop(e);
+  });
+  document.addEventListener('dragend', function(){ moduleDragHint(false); }, true);
+  window.addEventListener('blur', function(){ moduleDragHint(false); });
 }
 
 /* ---- .docx → HTML：docx 就是个 zip，自己解压 + 自己排版 ----

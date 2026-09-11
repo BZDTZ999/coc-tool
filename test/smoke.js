@@ -1448,7 +1448,7 @@ const ready = new Promise((res) => {
       !!pane.querySelector('#spDrop') && !!$('moduleFileInput') && !!$('moduleFolderInput') &&
       (($('moduleFileInput').getAttribute('accept')||'').indexOf('image/*')>=0) &&
       $('moduleFolderInput').hasAttribute('webkitdirectory') &&
-      pane.dataset.dropBound==='1';
+      !!d.__spWinDrop;
   })());
   ok('模组：点标签换一份 / ✕ 移出一份 / 全部清除后回到空状态', (function(){
     var pane=$('sidePane');
@@ -1527,6 +1527,39 @@ const ready = new Promise((res) => {
     var cleaned=w.moduleFiles.length===0 && !pane.querySelector('#spTabs');
     if(!modPaneWasOpen) w.toggleSidePane('module');
     return okDir && cleaned;
+  })());
+
+  /* 拖放必须被接住：以前漏了 drop 的 preventDefault，浏览器就会自己去开新标签页 / 下载 */
+  ok('模组：拖进来的文件被接住（preventDefault），右半屏没开也会自动打开', (function(){
+    var paneWasOpen=w.sidePaneIsOpen('module');
+    if(paneWasOpen) w.closeSidePane();
+    var dt={files:[new w.File(['%PDF-1.4'], '拖进来的.pdf', {type:'application/pdf'})], items:null, types:null};
+    var prevented=0, stopped=0;
+    w.moduleHandleFileDrop({dataTransfer:dt, preventDefault:function(){ prevented++; }, stopPropagation:function(){ stopped++; }});
+    var added=w.moduleFiles.map(function(f){ return f.name; }).indexOf('拖进来的.pdf')>=0;
+    var opened=w.sidePaneIsOpen('module') && !!$('spTabs');
+    w.moduleClear();
+    if(!paneWasOpen) w.closeSidePane();
+    return prevented===1 && stopped===1 && added && opened;
+  })());
+  ok('模组：人物卡 .xlsx 不归模组栏管；拖拽时有「松手放进模组」提示', (function(){
+    var wasOpen=w.sidePaneIsOpen('module');
+    if(wasOpen) w.closeSidePane();
+    var xlsx={files:[new w.File(['x'], '我的卡.xlsx', {type:''})]};
+    var png={files:[new w.File(['x'], '地图.png', {type:'image/png'})]};
+    var pdf={files:[new w.File(['x'], '模组.pdf', {type:'application/pdf'})]};
+    var dir={files:[]};
+    var notOurs=!w.moduleDragIsOurs(xlsx);
+    var imgOurs=w.moduleDragIsOurs(png) && w.moduleDragIsOurs(pdf) && w.moduleDragIsOurs(dir);
+    if(wasOpen) w.openModulePane();
+    w.moduleDragHint(true);
+    var el=d.getElementById('spDragHint');
+    var shown=!!el && el.classList.contains('on') && /放进/.test(el.textContent);
+    w.moduleDragHint(false);
+    var hidden=!!el && !el.classList.contains('on');
+    /* 右边开着时 .xlsx 也不算我们的（让左边导入框自己接） */
+    var stillNotOurs=!w.moduleDragIsOurs(xlsx);
+    return notOurs && imgOurs && shown && hidden && stillNotOurs;
   })());
 
   /* 载具/地图自愈：老存档把 vehicles 存成空数组、地图删光时不能整个空掉 */
