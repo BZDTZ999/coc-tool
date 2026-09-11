@@ -1636,6 +1636,29 @@ const ready = new Promise((res) => {
     return gone.every(function(t){ return all.indexOf(t)<0; });
   })());
 
+  ok('NPC 小卡：老存档（只有 template、没有 note）也回查出模板备注', (function(){
+    $('npcTplCat').value=''; w.npcTplOptions(); $('npcTplSel').value='警察';
+    var before=S.actors.length;
+    w.genNpcFromTpl();
+    var npc=S.actors[S.actors.length-1];
+    /* 模拟老版本存下来的角色：清掉 note，只留 template */
+    npc.note=''; npc.notes=''; npc.template='人类·警察';
+    w.renderNpcs();
+    var el=$('npcList').querySelector('.npcmini[data-id="'+npc.id+'"] .npc-note');
+    var hit=!!el && el.textContent.indexOf('警用左轮与警棍')>=0;
+    /* 真的什么都没有时就不占地方，不渲染空行 */
+    var bare=w.npcMiniHTML({id:'y',kind:'npc',name:'空白',side:'中立',count:1,attrs:{},hp:{cur:1,max:1},san:{cur:1,max:1},mp:{cur:1,max:1},skills:[],spells:[],weapons:[],inv:[],bagItems:[]});
+    var noEmpty=bare.indexOf('npc-note')<0;
+    S.actors.length=before; w.closeActorModal(); w.renderNpcs();
+    return hit && noEmpty;
+  })());
+
+  ok('静态检查：src 里没有「漏 var 的全局赋值」（离线版严格模式会整段挂掉）', (function(){
+    var bad=require('./scan-undef')();
+    if (bad.length) console.log('   -> ' + bad.map(function(b){return b.file+':'+b.line+' '+b.name;}).join(', '));
+    return bad.length===0;
+  })());
+
   console.log('\n==== RESULT: ' + passed + ' passed, ' + failures.length + ' failed ====');
   if (failures.length){ console.log('FAILURES:\n - ' + failures.join('\n - ')); process.exit(1); }
   process.exit(0);

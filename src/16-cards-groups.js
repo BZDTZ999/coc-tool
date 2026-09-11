@@ -114,9 +114,21 @@ function npcGroupIdx(a){
 function npcGroupLabel(k){
   return (state.ui&&state.ui.npcGroups&&state.ui.npcGroups[k])||['盟友','中立','敌人','其他'][k];
 }
+/* 小卡上的备注：KP 在详情卡里自己填的优先；没填就用模板提示（老存档只有 template，按模板名回查一条）。 */
+function npcNoteOf(a){
+  var txt=(a&&(a.notes||a.note))||'';
+  if(!txt && a && a.template){
+    var key=String(a.template).split('·').pop();
+    var list=(typeof NPC_TPL!=='undefined'&&NPC_TPL)?NPC_TPL:[];
+    var t=list.filter(function(x){return x.name===key;})[0];
+    if(t) txt=t.note||'';
+  }
+  return String(txt||'');
+}
 function npcMiniHTML(a){
   var s=sideOf(a);
   var spellCount=(a.spells||[]).length;
+  var note=npcNoteOf(a).slice(0,46);
   return `<div class="npcmini" data-id="${a.id}" draggable="true" ondragstart="npcDragStart(event)" ondragover="event.preventDefault()" ondrop="npcDrop(event)" title="可拖拽排序">
     <div class="row" style="gap:6px;align-items:flex-start">
       ${avatarView(a,'sm')}
@@ -125,7 +137,7 @@ function npcMiniHTML(a){
           <b class="nm" style="font-size:12.5px">${esc(a.name)}</b>
           <span class="sidebadge side-${esc(s)}">${esc(s)}</span>
         </div>
-        <div class="sub npc-note" style="font-size:11px">${esc((a.notes||a.note||'').slice(0,46))}</div>
+        ${note?('<div class="sub npc-note" style="font-size:11px">'+esc(note)+'</div>'):''}
       </div>
     </div>
     <div class="row" style="gap:4px;margin-top:5px;align-items:center">

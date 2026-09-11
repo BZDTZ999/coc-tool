@@ -233,6 +233,11 @@ coc-tool/
   （例：`06` 里用 `function(){ initApp(); }` 包一层再挂 `DOMContentLoaded`）。
 - 加功能就新建 `src/NN-xxx.js` 按编号命名，`build.js` 会自动拼入；`npm run check` 会拦住重复的顶层函数名，
   也会检查 `offline.html` 是否与 `src` 同步。
+- **顶层变量一定要写 `var` / `const`**：离线版全部模块挤在同一个 `<script>` 里，整段处于严格模式，
+  漏一个 `var`（例如写成 `NPC_TPL = [...]`）就会抛 `ReferenceError` 让**整段脚本当场停住**，
+  后面模块的顶层代码统统不执行 —— 症状是「`index.html` 好好的，`offline.html` 一堆功能全炸」。
+  `npm run check` / `npm test` 里的静态扫描（`test/scan-undef.js`）专门拦这个；
+  jsdom 比浏览器宽容（会自动建全局），所以只看 `npm test` 是发现不了的。
 
 ### 改东西时的几条经验
 - **改 UI 文案 / 按钮**：文案在 `src/08-panel-shell.js`（骨架与内置说明）、`src/17-actor-modal-v3.js`（详情弹窗）、
@@ -254,7 +259,7 @@ coc-tool/
 - **改样式**：`src/style.css`；自定义背景配色由 `src/21-theme-bg.js` 推导，新增颜色尽量用现有变量。
 
 ### 测试与真实卡
-- `npm test` 用 jsdom 无头跑回归（当前 284 项），覆盖：导入真实卡 / 4 张卡各自导出并读回 / 导出 xlsx 的格子与公式 /
+- `npm test` 用 jsdom 无头跑回归（当前 286 项），覆盖：导入真实卡 / 4 张卡各自导出并读回 / 导出 xlsx 的格子与公式 /
   武器类型与成功率 / 背包与资产表 / NPC 模板 / 地图多场景与工具筛选 / 战斗同步 / SAN 检定 / 骰子台 / 经历外框 /
   全屏 / 便签标签 / 欢迎弹窗 / 雷达图 / 可折叠栏 / 地图与战斗的二级菜单栏 / **.docx 解析（标题 / 表格 / 图片 / 分页）** /
   右半屏模组与规则书（含模组搜索高亮、规则书目录收起与搜索跳页）/ 武器「名字空只选类型」也能读 /

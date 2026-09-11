@@ -18,7 +18,9 @@ function rollDiceExpr(expr){
   var sum=0; for(var i=0;i<n;i++) sum+=Math.floor(Math.random()*faces)+1;
   return (sum+mod)*mul;
 }
-NPC_TPL = [
+/* 注意：这里必须带 var —— 离线单文件版把全部模块拼进同一个 <script>，整段处于严格模式，
+   漏了 var 会抛 ReferenceError 让整段脚本停在这里，后面所有功能全挂（在线多文件版有各自的 script 才看不出来）。 */
+var NPC_TPL = [
   /* ===== 人类：普通人与行当 ===== */
   {name:'市民', race:'人类', side:'中立', avatar:'🧔', def:2,
    attrs:npcAttrs({}),

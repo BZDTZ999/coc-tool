@@ -3,11 +3,13 @@
    1) 每个 src/*.js 模块都语法正确；
    2) 顶层 function 名全局唯一（防止再出现“后定义覆盖前定义”的重复代码）；
    3) offline.html（离线单文件）内嵌的正是当前 src 模块拼接结果；
-   4) index.html（在线多文件版）按序引用 src/*.js、样式与解析器，无占位符残留。 */
+   4) index.html（在线多文件版）按序引用 src/*.js、样式与解析器，无占位符残留；
+   5) 没有「漏 var 的全局赋值」—— 离线单文件版整段处于严格模式，漏一个就会让整段脚本当场停住。 */
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
 const acorn = require('acorn');
+const scanUndef = require('./scan-undef');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
@@ -81,5 +83,13 @@ function main(){
     idx = i;
   }
   console.log('index.html(web) references', order.length, 'scripts in order; size', Buffer.byteLength(web), 'bytes');
+
+  // 5) 未声明的全局赋值（离线单文件严格模式杀手）
+  const undef = scanUndef();
+  if (undef.length){
+    undef.forEach(u => console.error('未声明就赋值: ' + u.file + ':' + u.line + '  ' + u.name + '（离线版会整段报错）'));
+    process.exit(1);
+  }
+  console.log('no undeclared global assignment');
 }
 main();
