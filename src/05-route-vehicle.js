@@ -372,6 +372,7 @@ function wipeData(){
   /* 背景图片也存在 IndexedDB 里，一起清掉 */
   try{ if(typeof bgImageClear==='function') bgImageClear(); }catch(e){}
   try{ if(typeof closeSidePane==='function') closeSidePane(); }catch(e){}
+  try{ if(typeof kpResetAll==='function') kpResetAll(); }catch(e){}
   state=defaultState();
   saveStateQuiet();
   switchTab('surveyors');

@@ -1879,12 +1879,18 @@ const ready = new Promise((res) => {
   ok('清空全部本地数据：连上传的模组（IndexedDB）与右半屏一起清掉', (function(){
     var stSave=w.state, boxSave=w.confirmBox, delSave=w.idbDel, clearSave=w.moduleClear, closeSave=w.closeSidePane;
     var called=[];
+    w.kpState.mine=[{id:'x',t:'测试素材',tags:{}}];
+    w.kpState.lines=[{i:'kp1',t:'测试描写。',d:'air',lock:false}];
     w.confirmBox=function(){ return true; };
     w.idbDel=function(k){ called.push('del:'+k); };
     w.moduleClear=function(){ called.push('clear'); };
     w.closeSidePane=function(){ called.push('close'); };
     var r=false;
-    try{ w.wipeData(); r=called.indexOf('clear')>=0 && called.indexOf('del:module')>=0 && called.indexOf('close')>=0; }catch(e){ r=false; }
+    try{
+      w.wipeData();
+      r=called.indexOf('clear')>=0 && called.indexOf('del:module')>=0 && called.indexOf('close')>=0 &&
+        (w.kpState.mine||[]).length===0 && (w.kpState.lines||[]).length===0;
+    }catch(e){ r=false; }
     w.state=stSave; w.confirmBox=boxSave; w.idbDel=delSave; w.moduleClear=clearSave; w.closeSidePane=closeSave;
     w.saveStateQuiet(); w.switchTab('surveyors');
     return r;
@@ -2014,10 +2020,10 @@ const ready = new Promise((res) => {
     if(!w.sidePaneIsOpen('extras')) w.toggleSidePane('extras');
     setTimeout(done, 400);
   });
-  ok('更多小玩意儿：和模组/规则书一样占右半屏，里面两个工具页签', (function(){
+  ok('更多小玩意儿：和模组/规则书一样占右半屏，里面三个工具页签', (function(){
     var pane=$('sidePane'), tabs=pane.querySelectorAll('#xpTabs .xp-tab');
-    return w.sidePaneIsOpen('extras') && tabs.length===2 &&
-      /跑团随机/.test(tabs[0].textContent) && /天文/.test(tabs[1].textContent) &&
+    return w.sidePaneIsOpen('extras') && tabs.length===3 &&
+      /跑团随机/.test(tabs[0].textContent) && /天文/.test(tabs[1].textContent) && /KP正在瞎编/.test(tabs[2].textContent) &&
       !!pane.querySelector('#rtNames') && !!pane.querySelector('#rtNpc') && !!pane.querySelector('#rtPlaces');
   })());
   ok('跑团随机：中文/英文（带中文翻译）/日文（带假名）三种名字，单次与批量都行', (function(){
@@ -2112,6 +2118,284 @@ const ready = new Promise((res) => {
     w.skyState.cityId='london';
     return r.every(Boolean);
   })());
+
+  /* ---------- ✍️ KP正在瞎编！（🧰 更多小玩意儿③）：本地素材 + 标签解析 + 规则组合 ---------- */
+  await new Promise(function(done){ w.xpSetTool('kp'); setTimeout(done, 200); });
+  ok('KP正在瞎编！：挂在「更多小玩意儿」下当第三个工具，不新增一级导航', (function(){
+    var tabs=d.querySelectorAll('#xpTabs .xp-tab'), on=d.querySelector('#xpTabs .xp-tab.on');
+    return tabs.length===3 && !!on && on.getAttribute('data-v')==='kp' &&
+      !!d.getElementById('kpText') && d.querySelectorAll('#nav button').length===9;
+  })());
+  ok('KP：默认界面只有「一句话输入 + 生成 + 快捷标签」，更多设置是收起的', (function(){
+    var body=$('xpBody');
+    return !!body.querySelector('#kpText') && !!body.querySelector('.kp-quick') &&
+      body.querySelectorAll('.kp-quick .xp-chip').length>=35 &&
+      !!body.querySelector('.kp-advbox') && !body.querySelector('.kp-in1') && !!body.querySelector('.kp-resbox');
+  })());
+  ok('KP：快捷标签能点、能取消、能删单个、能清空全部', (function(){
+    w.kpClear();
+    w.kpTag('mood','oppressive'); w.kpTag('mood','eerie');
+    var two=(w.kpState.quick.mood||[]).length===2;
+    w.kpTag('mood','eerie');
+    var one=(w.kpState.quick.mood||[]).length===1;
+    w.kpState.text='废弃医院';
+    var items=w.kpCondItems(w.kpResolve());
+    w.kpDropItem('c','mood','oppressive');
+    var dropped=!(w.kpState.quick.mood||[]).length;
+    w.kpClear();
+    return two && one && dropped && (w.kpState.quick.mood||[]).length===0 &&
+      items.length>=2 && items.some(function(it){ return it.txt==='废弃医院' && it.k==='c'; });
+  })());
+  ok('KP：一键场景生成（点场景标签直接出结果）', (function(){
+    w.kpClear();
+    w.kpState.text='废弃医院，深夜暴雨';
+    var before=(w.kpResolve().cond.weather||[])[0];
+    w.kpDropItem('c','weather','storm');
+    var gone=!(w.kpResolve().cond.weather||[]).length;
+    /* 从一句话里认出来的也要删得掉：删完再解析一遍，它不能自己冒回来 */
+    w.kpState.text='废弃医院，深夜暴雨';
+    var stays=!(w.kpResolve().cond.weather||[]).length;
+    w.kpClear();
+    var cleared=Object.keys(w.kpState.mute||{}).length===0;
+    if(!(before==='storm' && gone && stays && cleared)) console.log('   -> before='+before+' gone='+gone+' stays='+stays+' cleared='+cleared);
+    return before==='storm' && gone && stays && cleared;
+  })());
+  ok('KP：一键场景生成（点场景标签直接出结果）', (function(){
+    w.kpClear();
+    w.kpTagGen('scene','hospital');
+    var t=w.kpState.lines.map(function(l){ return l.t; }).join('');
+    return w.kpState.lines.length>=3 && t.indexOf('医院')>=0 && t.length>40;
+  })());
+  ok('KP：一句话解析出 场景 / 时间 / 天气 / 氛围（中文自然表达）', (function(){
+    var p=w.kpParseText('凌晨三点，外面下着瓢泼大雨，废弃病院里特别阴冷。');
+    return w.kpHasIn(p.cond.scene,'hospital') && w.kpHasIn(p.cond.time,'night') &&
+      w.kpHasIn(p.cond.weather,'storm') && w.kpHasIn(p.cond.mood,'eerie');
+  })());
+  ok('KP：同义词都落到同一个内部标签（医馆/疗养院→医院，夕阳西下→黄昏，浓雾→大雾…）', (function(){
+    var bad=[];
+    ['医馆','医疗中心','病栋','疗养院','废弃病院'].forEach(function(x){ if(!w.kpHasIn(w.kpParseText(x).cond.scene,'hospital')) bad.push(x); });
+    ['黄昏','夕阳西下','薄暮'].forEach(function(x){ if(!w.kpHasIn(w.kpParseText(x).cond.time,'dusk')) bad.push(x); });
+    ['浓雾','雾气弥漫'].forEach(function(x){ if(!w.kpHasIn(w.kpParseText(x).cond.weather,'fog')) bad.push(x); });
+    ['窒息','令人喘不过气','沉闷'].forEach(function(x){ if(!w.kpHasIn(w.kpParseText(x).cond.mood,'oppressive')) bad.push(x); });
+    ['鸦雀无声','死寂'].forEach(function(x){ if(!w.kpHasIn(w.kpParseText(x).cond.mood,'silent')) bad.push(x); });
+    if(bad.length) console.log('   -> 没认出来的词: ' + bad.join(','));
+    return bad.length===0;
+  })());
+  ok('KP：怪物中英别名都指向同一个怪物对象（深潜者 / Deep One / 鱼人）', (function(){
+    return w.kpParseText('深潜者').cond.creature[0]==='deepone' &&
+      w.kpParseText('前面有一只 Deep One').cond.creature[0]==='deepone' &&
+      w.kpParseText('水里冒出两个鱼人').cond.creature[0]==='deepone' &&
+      w.kpParseText('修格斯').cond.creature[0]==='shoggoth' &&
+      w.kpParseText('一群食尸鬼').cond.creature[0]==='ghoul';
+  })());
+  ok('KP：否定——「不要出现怪物」是禁止，「不要马上出现怪物」是延迟，两者不是一回事', (function(){
+    var a=w.kpParseText('废弃医院，深夜暴雨，要有一点超自然感，但不要出现具体怪物。');
+    var b=w.kpParseText('不要马上出现怪物');
+    var g=w.kpParseText('不希望它立刻攻击');
+    return a.forbidden.creature===true && !a.delay.creature && !a.cond.creature &&
+      w.kpHasIn(a.cond.supernatural,'low') && a.cond.scene[0]==='hospital' &&
+      b.delay.creature===true && !b.forbidden.creature &&
+      w.kpParseText('不要写血腥').forbidden.blood===true &&
+      w.kpParseText('尽量不要出现超自然现象').forbidden.supernatural===true &&
+      w.kpParseText('这次不要写声音').forbidden.sound===true &&
+      w.kpParseText('别出现怪物').forbidden.creature===true &&
+      w.kpParseText('没有怪物').forbidden.creature===true &&
+      g.delay.attack===true && !g.forbidden.attack;
+  })());
+  ok('KP：互斥标签会覆盖并提示，不会静默共存（深夜 ↔ 白天）', (function(){
+    w.kpClear();
+    w.kpState.quick.time='night';
+    w.kpTag('time','day');
+    var onlyDay=(w.kpState.quick.time==='day');
+    w.kpState.text='深夜';
+    var r=w.kpResolve();
+    var conflict=r.notes.some(function(n){ return /冲突/.test(n); });
+    var single=(r.cond.time||[]).length===1 && r.cond.time[0]==='day';
+    w.kpClear();
+    return onlyDay && single && conflict;
+  })());
+  ok('KP：不是所有矛盾都算冲突（白天+黑暗 / 平静+紧张 / 暴雨+压抑 / 寂静+雨声 都能并存）', (function(){
+    function keep(quick,pairs){
+      w.kpClear(); w.kpState.quick=quick;
+      var r=w.kpResolve();
+      var okk=pairs.every(function(p){ return w.kpHasIn(r.cond[p[0]],p[1]); });
+      if(!okk || r.notes.length) console.log('   -> ' + JSON.stringify(quick) + ' => ' + JSON.stringify(r.cond) + ' notes=' + JSON.stringify(r.notes));
+      return okk && r.notes.length===0;
+    }
+    return keep({time:'day',light:['dark']},[['time','day'],['light','dark']]) &&
+      keep({mood:['calm','tense']},[['mood','calm'],['mood','tense']]) &&
+      keep({weather:'storm',mood:['oppressive']},[['weather','storm'],['mood','oppressive']]) &&
+      keep({mood:['silent'],weather:'rain'},[['mood','silent'],['weather','rain']]);
+  })());
+  ok('KP：禁止怪物时结果里绝对没有怪物，只给异常 / 温度 / 灯光 / 痕迹', (function(){
+    w.kpClear();
+    w.kpState.text='废弃医院，深夜暴雨，要有一点超自然感，但不要出现具体怪物。';
+    w.kpState.length='mid';
+    w.kpGen();
+    var L=w.kpState.lines||[], t=L.map(function(l){ return l.t; }).join('');
+    var monsterDim=L.some(function(l){ return l.d.indexOf('c-')===0; });
+    var nameHit=w.KP_CREATURES.some(function(c){ return t.indexOf(c.n)>=0; });
+    return L.length>=3 && !monsterDim && !nameHit && t.indexOf('怪')<0 &&
+      /不要出现怪物/.test(w.kpState.hint||'') && L[0].t.indexOf('废弃医院')>=0;
+  })());
+  ok('KP：素材不够时按层降级并给轻量提示，不弹窗、也不偷偷换掉核心条件', (function(){
+    w.kpClear(); w.kpState.length='mid'; w.kpGen();
+    var noCond=/没给条件/.test(w.kpState.hint||'') && w.kpState.lines.length>=3;
+    w.kpClear(); w.kpState.text='压抑'; w.kpState.length='mid'; w.kpGen();
+    var t=w.kpState.lines.map(function(l){ return l.t; }).join('');
+    return noCond && /没有具体场景/.test(w.kpState.hint||'') && t.indexOf('压抑')>=0 && w.kpState.lines.length>=2;
+  })());
+  ok('KP：更多设置默认收起，点开才有细调项；自定义要求也走同一套解析', (function(){
+    var body=$('xpBody');
+    w.kpToggleAdv();
+    var opened=!!$('kpRestr') && d.querySelectorAll('.kp-advbox .xp-chip').length>40;
+    w.kpToggleAdv();
+    var closed=!$('kpRestr');
+    w.kpClear();
+    w.kpState.restriction='不要出现怪物，要有一点超自然感';
+    var r=w.kpResolve();
+    var viaRestr=r.forbidden.creature===true && w.kpHasIn(r.cond.supernatural,'low') &&
+      w.kpCondItems(r).some(function(it){ return it.k==='r'; });
+    w.kpClear();
+    return opened && closed && viaRestr;
+  })());
+  ok('KP：更多设置里的条件（物体 / 描写重点）跟文本、快捷标签共用同一套生成', (function(){
+    w.kpClear();
+    w.kpState.quick.scene='house';
+    w.kpSetAdv('object','mirror');
+    w.kpSetAdv('focus','sound');
+    w.kpState.length='mid';
+    w.kpGen();
+    var t=w.kpState.lines.map(function(l){ return l.t; }).join('');
+    var r=w.kpResolve();
+    return t.indexOf('镜')>=0 && w.kpHasIn(r.cond.object,'mirror') && w.kpHasIn(r.cond.focus,'sound');
+  })());
+  ok('KP：我的素材——自动认标签、保存、参与生成、删除', (function(){
+    w.kpClear();
+    w.kpState.mine=[];
+    var src='深夜的废弃医院里，走廊尽头传来一阵若有若无的脚步声。';
+    var tags=w.kpMineTags(src);
+    w.kpState.draft={t:src, tags:tags};
+    w.kpMineSave();
+    var saved=(w.kpState.mine||[]).length===1;
+    var mineId=w.kpState.mine[0].id;
+    w.kpClear();
+    w.kpState.text='废弃医院'; w.kpState.length='mid';
+    var hit=w.kpMinePick(w.kpResolve().cond).length===1;
+    w.kpGen();
+    var used=w.kpState.lines.some(function(l){ return l.t===w.kpTidy(src); });
+    w.kpMineDel(mineId);
+    return saved && tags.scene==='hospital' && tags.time==='night' && hit && used && (w.kpState.mine||[]).length===0;
+  })());
+  ok('KP：再来一段 / 继续 / 扩写 / 长度调整都动结果不动设置', (function(){
+    w.kpClear();
+    w.kpState.text='废弃医院，深夜暴雨，压抑。';
+    w.kpState.length='short';
+    w.kpGen();
+    var n0=w.kpState.lines.length;
+    var t0=w.kpState.lines.map(function(l){ return l.t; }).join('');
+    w.kpAgain();
+    var t1=w.kpState.lines.map(function(l){ return l.t; }).join('');
+    w.kpContinue();
+    var n1=w.kpState.lines.length;
+    w.kpExpand();
+    var n2=w.kpState.lines.length;
+    w.kpSetLen('long');
+    var n3=w.kpState.lines.length;
+    w.kpSetLen('short');
+    var n4=w.kpState.lines.length;
+    if(!(n0===3 && t1!==t0 && n1>n0 && n2>n1 && n3>=8 && n4===3))
+      console.log('   -> n0='+n0+' diff='+(t1!==t0)+' n1='+n1+' n2='+n2+' n3='+n3+' n4='+n4);
+    return n0===3 && t1!==t0 && n1>n0 && n2>n1 && n3>=8 && n4===3;
+  })());
+  ok('KP：锁定句子——连着重新生成 6 次，锁定的那句一字不变', (function(){
+    w.kpClear();
+    w.kpState.text='废弃医院，深夜暴雨。'; w.kpState.length='mid';
+    w.kpGen();
+    var keep=w.kpState.lines[1].t;
+    w.kpState.lines[1].lock=true;
+    var hit=0;
+    for(var i=0;i<6;i++){ w.kpAgain(); if(w.kpState.lines.some(function(l){ return l.t===keep; })) hit++; }
+    var onlyOne=w.kpState.lines.filter(function(l){ return l.lock; }).length===1;
+    w.kpUnlockAll();
+    var cleared=w.kpState.lines.every(function(l){ return !l.lock; });
+    return hit===6 && onlyOne && cleared;
+  })());
+  ok('KP：「继续」保留上下文——上一段医院，下一段不会突然变森林', (function(){
+    w.kpClear();
+    w.kpState.text='废弃医院，深夜暴雨，压抑。'; w.kpState.length='short';
+    w.kpGen();
+    var before=(w.kpState.ctx.cond.scene||[])[0];
+    var n0=w.kpState.lines.length;
+    w.kpContinue();
+    var grew=w.kpState.lines.length>n0;
+    var same=(w.kpState.ctx.cond.scene||[])[0]===before;
+    var forest=w.kpState.lines.some(function(l){ return /森林|树林|林地|密林/.test(l.t); });
+    return before==='hospital' && same && grew && !forest;
+  })());
+  ok('KP：「扩写」只在后面加细节，不动已经写出来的句子', (function(){
+    w.kpClear();
+    w.kpState.text='教堂'; w.kpState.length='short';
+    w.kpGen();
+    var before=w.kpState.lines.map(function(l){ return l.t; });
+    w.kpExpand();
+    var after=w.kpState.lines.map(function(l){ return l.t; });
+    return after.length>before.length && before.every(function(t,i){ return after[i]===t; });
+  })());
+  ok('KP：复制把整段结果拷出来（走现有复制通道）', (function(){
+    var clip='';
+    try{ Object.defineProperty(w.navigator,'clipboard',{value:{writeText:function(t){ clip=String(t); return Promise.resolve(); }},configurable:true}); }catch(e){}
+    w.kpCopy();
+    var want=w.kpState.lines.map(function(l){ return l.t; }).join('');
+    return !!clip && clip===want && clip.length>20;
+  })());
+  ok('KP：怪物素材每个都有 15 个描写维度、每维 2 条，不同怪物不是同一套模板', (function(){
+    var allFull=w.KP_CREATURES.every(function(c){
+      return w.KP_CDIM_KEYS.every(function(k){ return (c.c[k]||[]).length===2; });
+    });
+    var overlap=null;
+    w.KP_CDIM_KEYS.forEach(function(k){
+      var a=w.kpFindCreature('deepone').c[k]||[], b=w.kpFindCreature('migo').c[k]||[];
+      a.forEach(function(x){ if(b.indexOf(x)>=0) overlap=k; });
+    });
+    return w.KP_CREATURES.length>=8 && w.KP_CDIM_KEYS.length===15 && allFull && !overlap;
+  })());
+  ok('KP：怪物描写用各自的素材（深潜者 ≠ 米·戈 ≠ 修格斯）', (function(){
+    function gen(v){
+      w.kpClear(); w.kpSetTab('creature'); w.kpState.creature=v; w.kpState.length='mid'; w.kpGen();
+      return {t:w.kpState.lines.map(function(l){ return l.t; }).join(''),
+              allCreature:w.kpState.lines.every(function(l){ return l.d.indexOf('c-')===0; })};
+    }
+    var a=gen('deepone'), b=gen('migo'), c=gen('shoggoth');
+    w.kpSetTab('scene'); w.kpClear();
+    return a.t.length>30 && b.t.length>30 && c.t.length>30 && a.allCreature && b.allCreature &&
+      a.t!==b.t && b.t!==c.t && a.t!==c.t;
+  })());
+  ok('KP：「不要马上出现怪物」= 延迟——它存在，但这一段不露面', (function(){
+    w.kpClear();
+    w.kpState.quick.creature='deepone';
+    w.kpToggleBan('delay','creature');
+    w.kpState.length='mid';
+    w.kpGen();
+    var r=w.kpResolve();
+    var dims=w.kpState.lines.map(function(l){ return l.d; });
+    var noFace=dims.indexOf('c-first')<0 && dims.indexOf('c-look')<0 && dims.indexOf('c-act')<0;
+    var allowed=dims.every(function(x){ return x==='delay'||x==='c-env'||x==='c-observe'; });
+    w.kpState.delay={}; w.kpClear();
+    return r.delay.creature===true && r.forbidden.creature!==true && noFace && allowed && w.kpState.lines.length===0;
+  })());
+  ok('KP：素材库是纯数据（启动时不做任何计算），场景 / 怪物 / 通用素材都是短句 + 标签', (function(){
+    var src=fs.readFileSync(path.join(__dirname,'..','src','34-kp-desc-data.js'),'utf8');
+    var sceneLines=0;
+    w.KP_SCENES.forEach(function(s){ Object.keys(s.L).forEach(function(k){ sceneLines+=s.L[k].length; }); });
+    var hasBank=!!(w.KP_UNIV.bank.event.length && w.KP_UNIV.bank.hook.length && w.KP_UNIV.bank.trace.length);
+    if(!(sceneLines>=140 && w.KP_SCENES.length>=12)) console.log('   -> scenes='+w.KP_SCENES.length+' lines='+sceneLines);
+    return w.KP_SCENES.length>=12 && w.KP_CREATURES.length>=8 && sceneLines>=140 && hasBank &&
+      w.KP_UNIV.bank.delay.length>0 && w.KP_UNIV.light.moon && w.KP_UNIV.emotion.fear &&
+      src.indexOf('function')<0 && src.indexOf('http')<0;
+  })());
+  w.kpClear();
+
   await new Promise(function(done){
     if(!w.sidePaneIsOpen('extras')) w.toggleSidePane('extras');
     w.xpSetTool('random');

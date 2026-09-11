@@ -1,14 +1,17 @@
 /* ---------- 🧰 更多小玩意儿：右半屏的第三个面板（模组 / 规则书 / 更多小玩意儿） ----------
-   进去先选工具，两个工具各自记状态，来回切不丢：① 跑团随机（名字 / NPC / 地点） ② 天文·天象。 */
+   进去先选工具，三个工具各自记状态，来回切不丢：
+   ① 跑团随机（名字 / NPC / 地点） ② 天文·天象 ③ KP正在瞎编！（本地描写素材）。 */
 'use strict';
-var XP_TOOLS=[['random','🎲 跑团随机','随机名字 / NPC / 地点，KP 临场取材'],['sky','🌙 天文·天象','选日期和地点，看当天的月相与日月出没']];
+var XP_TOOLS=[['random','🎲 跑团随机','随机名字 / NPC / 地点，KP 临场取材'],
+  ['sky','🌙 天文·天象','选日期和地点，看当天的月相与日月出没'],
+  ['kp','✍️ KP正在瞎编！','一句话或几个标签，写出一段能直接念的描写（本地素材，不联网）']];
 var xpTool='random';
 function xpToolOf(c){
   var t=(c&&c.tool)||xpTool;
-  return (t==='sky')?'sky':'random';
+  return (t==='sky'||t==='kp')?t:'random';
 }
 function xpSetTool(t){
-  xpTool=(t==='sky')?'sky':'random';
+  xpTool=(t==='sky'||t==='kp')?t:'random';
   var c=sidePaneCfg(); c.tool=xpTool;
   saveStateQuiet();
   renderSidePane();
@@ -21,7 +24,9 @@ function xpRefresh(){
   if(xpTool==='sky' && !skyState.out && !skyState.err) skyRun();
 }
 function xpBodyHTML(){
-  return (xpTool==='sky')?skyPaneHTML():rtPaneHTML();
+  if(xpTool==='sky') return skyPaneHTML();
+  if(xpTool==='kp') return kpPaneHTML();
+  return rtPaneHTML();
 }
 function renderExtrasPane(pane){
   xpRestoreTool();
@@ -40,5 +45,5 @@ function renderExtrasPane(pane){
 /* 记住上次用的是哪个工具 */
 function xpRestoreTool(){
   var c=sidePaneCfg();
-  if(c.tool==='sky' || c.tool==='random') xpTool=c.tool;
+  if(c.tool==='sky' || c.tool==='kp' || c.tool==='random') xpTool=c.tool;
 }
