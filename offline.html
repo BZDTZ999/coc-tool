@@ -967,7 +967,12 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-body-fill{overflow:hidden}
 .sp-body-fill .sp-frame{flex:1 1 auto;height:auto;min-height:240px}
 /* 标签页这一条固定高度：正文很长时（Word / txt）不能让 flex 把它压扁（以前会从 39px 缩到 24px，标签只剩一条细缝） */
-.sp-tabs{flex:0 0 auto;min-height:39px;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);scrollbar-width:thin}
+.sp-tabs{flex:0 0 39px;height:39px;min-height:39px;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);scrollbar-width:thin}
+/* 横向滚动条压到 6px 并且不占额外高度：标签再多这一条也始终是 39px */
+.sp-tabs::-webkit-scrollbar{height:6px}
+.sp-tabs::-webkit-scrollbar-track{background:transparent}
+.sp-tabs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:3px}
+.sp-tabs::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.3)}
 .sp-tab{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;height:26px;max-width:240px;padding:0 5px 0 9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03);color:var(--ink);font-size:12px;line-height:1;cursor:pointer;white-space:nowrap;cursor:grab}
 .sp-tab.dragging{opacity:.45}
 .sp-tab.dropbefore{box-shadow:-3px 0 0 var(--gold)}
