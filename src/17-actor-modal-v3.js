@@ -10,6 +10,26 @@ function onSideEdit(sel){
   }
   currentActorModal.side=sel.value;
 }
+/* 「9%/4%/1%」「9%」「9」这类写法里的第一个数字（信用评级成功率）；填别的文字返回 null。 */
+var creditRawOnOpen='';   // 打开详情卡时「信用评级」原文：只有真的改过它，才去同步「信用评级」技能
+/* 改信用评级时，把「信用评级」技能的成功率一起改成那个数（用户要的“自动计算”）。 */
+function onCreditInput(inp){
+  var n=creditNumber(inp&&inp.value); if(n==null) return;
+  var chips=document.querySelectorAll('#am-skills .skillchip, #am-default-skills .skillchip');
+  for(var i=0;i<chips.length;i++){
+    var nm=chips[i].querySelector('.sk-name'), tot=chips[i].querySelector('.sk-total');
+    if(nm && tot && /信用评级/.test(nm.value)){ tot.value=Math.max(0,Math.round(n)); return; }
+  }
+}
+function creditNumber(text){
+  var t=String(text==null?'':text).trim();
+  if(!t) return null;
+  var m=t.match(/-?\d+(?:\.\d+)?/);
+  if(!m) return null;
+  /* 只认“纯数字 / 百分数 / 百分数用斜杠连起来”这几种，避免把说明文字里的数字当评级 */
+  if(!/^\s*-?\d+(?:\.\d+)?\s*%?\s*([\/／]\s*-?\d+(?:\.\d+)?\s*%?\s*)*$/.test(t)) return null;
+  return parseFloat(m[0]);
+}
 function openActorModal(id, kind){
   var a=null;
   if(id){ a=state.actors.filter(function(x){return x.id===id;})[0]; }
@@ -31,6 +51,7 @@ function openActorModal(id, kind){
   if(typeof migrateBagToInv==='function') migrateBagToInv(a);
   if(a.kind==='npc' && a.side==='调查员') a.side='盟友';
   currentActorModal=a; editingActorId=a.id;
+  creditRawOnOpen=String(a.credit||'');
   var mask=$('actorModal');
   var skillRows=(a.skills||[]).map(function(s){
     var p=skillChipParts(s.name,s.total,s.base);
@@ -154,7 +175,7 @@ function openActorModal(id, kind){
       <div class="row">
         <label>现金<input type="number" id="am-cash" value="${a.cash||0}" style="width:120px"></label>
         <label>货币<input type="text" id="am-currency" value="${esc(a.currency||'美元')}" style="width:120px"></label>
-        <label>信用评级<input type="text" id="am-credit" value="${esc(a.credit||'')}" placeholder="如 5%/2%/1%" style="width:150px" title="导出时写进人物卡的「信用评级」格"></label>
+        <label>信用评级<input type="text" id="am-credit" value="${esc(a.credit||'')}" placeholder="如 5%/2%/1%" style="width:150px" oninput="onCreditInput(this)" title="改这里 → 卡里「信用评级」技能的成功率会自动跟着改（导出时也写回卡里）"></label>
         <label>其他资产<input type="text" id="am-other-assets" value="${esc(a.otherAssets||'')}" placeholder="如 50" style="width:110px"></label>
       </div>
       <div class="row" style="margin-top:6px">
@@ -168,6 +189,7 @@ function openActorModal(id, kind){
       <label style="margin-top:6px">资产详述<textarea rows="2" id="am-assets-detail">${esc(a.assetsDetail||'')}</textarea></label>
       ${a.kind==='pc'?'<h4 class="sectiontitle">📜 背景故事（拆条 + 正文小段）</h4>':''}
       ${a.kind==='pc'?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">'+histHTML+'</div>':'<div class="vdiv"></div><label>背景备注<textarea id="am-hist-appearance" rows="2" style="display:none"></textarea><textarea rows="2" id="am-npc-back">'+esc(a.notes||a.note||'')+'</textarea></label>'}
+      <label style="margin-top:8px" title="人物卡右上角「任意特长」那几格（自由文本，一格一条）">任意特长（每行一条）<textarea rows="2" id="am-traits">${esc((a.customTraits||[]).join('\n'))}</textarea></label>
       ${a.kind==='pc'?'<label style="margin-top:8px">背景故事正文（小段文字）<textarea rows="4" id="am-backstory">'+esc(a.backstory||'')+'</textarea></label>':''}
       ${a.kind==='pc'?'<div style="margin-top:10px"><h4 class="sectiontitle">🗂 调查员经历（1 段 = 多跑过 1 个团）</h4>'
         +'<div id="am-campaigns">'+(campaignRows||'')+'</div>'
@@ -253,6 +275,19 @@ function collectFromModal(){
     }
     a.skills.push(o);
   });
+  /* 「任意特长」：每行一条，写回卡右上角那几格 */
+  if($('am-traits')) a.customTraits=String($('am-traits').value||'').split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
+  /* 信用评级改了 → 卡里「信用评级」技能的成功率跟着走（卡上「x%/y%/z%」就是由它算出来的）。
+     只认数字（如 9 / 9% / 9%/4%/1% 取 9），写的是别的文字就只存文本、不动技能。 */
+  if($('am-credit') && String($('am-credit').value||'').trim()!==String(creditRawOnOpen||'').trim()){
+    var cn=creditNumber($('am-credit').value);
+    if(cn!=null){
+      var hitSkill=null;
+      a.skills.forEach(function(k){ if(!hitSkill && /信用评级/.test(String(k.name||''))) hitSkill=k; });
+      if(hitSkill) hitSkill.total=Math.max(0,Math.round(cn));
+      else a.skills.push({name:'信用评级',total:Math.max(0,Math.round(cn)),base:0});
+    }
+  }
   a.weapons=[];
   m.querySelectorAll('#am-weapons .wrow').forEach(function(li){
     var w={name:li.querySelector('.w-name').value.trim(),skill:li.querySelector('.w-skill').value.trim()||'斗殴',
@@ -352,10 +387,11 @@ function doImport(){
     mov:p.derived.mov||8, db:p.derived.db||'0', build:p.derived.build||'0',
     armor:{value:num(p.derived.armorValue)||0,type:p.derived.armorType||''},
     occId:p.basic.occId||'',
-    skills:p.skills.map(function(s){return {name:s.name,total:s.total,base:s.base,
+    skills:p.skills.map(function(s){return {name:s.name,name1:s.name1,name2:s.name2,total:s.total,base:s.base,
       occPts:s.occPts,intPts:s.intPts,mark:s.mark,occ:s.occ,slot:s.slot};}),
     weapons:p.weapons.map(function(w){ var cap=num(w.ammoCap); return {name:w.name,type:w.type||'',skill:w.skill||'',
       damage:w.damage||'',range:w.range||'',pierce:w.pierce||'',attacks:w.attacks||'',ammo:(w.ammo==null?'':String(w.ammo)),
+      success:num(w.success)||0,
       ammoCap:cap,ammoCur:cap,jam:w.jam||'',note:''}; }),
     inv:p.items.map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:'',slot:''};})
         .concat((p.bagItems||[]).map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:'',slot:'bag'};})),
@@ -366,6 +402,7 @@ function doImport(){
     assetsTable:{ vehicle:(p.assets&&p.assets.table&&p.assets.table.vehicle)||'', residence:(p.assets&&p.assets.table&&p.assets.table.residence)||'',
       luxury:(p.assets&&p.assets.table&&p.assets.table.luxury)||'', stocks:(p.assets&&p.assets.table&&p.assets.table.stocks)||'',
       other:(p.assets&&p.assets.table&&p.assets.table.other)||'' },
+    customTraits:(p.customTraits||[]).slice(),   // 卡右上角「任意特长」那几格（自由文本）
     history:history, backstory:p.backstory.text||'',
     campaigns:(p.campaigns||[]).map(function(c){ return {module:(c&&c.module)||'',note:(c&&c.note)||''}; }),
     notes:'', count:1, template:'', note:'',

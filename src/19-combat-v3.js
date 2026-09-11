@@ -366,6 +366,7 @@ function ensureV2Data(){
     if(!a.campaigns) a.campaigns=[];
     if(!Array.isArray(a.tags)) a.tags=[];
   });
+  if(typeof healMapsAndVehicles==='function') healMapsAndVehicles();   // 空地图/空载具自愈（见 02-data-store.js）
   if(!state.maps) state.maps=[];
   state.maps.forEach(function(m){ m.iso=false; if(m.zoom==null) m.zoom=1; });
   if(!state.vehicles) state.vehicles=defaultVehicles();

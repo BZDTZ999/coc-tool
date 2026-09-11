@@ -715,12 +715,17 @@ body.fs-combat #tab-combat #combatLogCard{display:none!important}
 body.fs-combat #tab-combat #combatStageCard{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin:0;width:100%}
 body.fs-combat #tab-combat #combatStageCard .battlecanvas-wrap{flex:1 1 auto;min-height:0;overflow:hidden}
 body.fs-combat #tab-combat #combatMemberCard{flex:0 0 auto;max-height:38%;overflow:auto;margin:0}
-body.fs-combat #tab-combat #activePanel{display:none!important}
+/* 选中角色后的详情：不管全屏与否都悬浮在屏幕最左边（以前只有全屏才浮，普通模式下挤在场景下面不好用）。
+   只在「战斗页当前可见」时浮出来，切到别的页会自动收起显示。 */
+#tab-combat #activePanel{display:none!important}
+body.comb-has-active #tab-combat.active #activePanel,
 body.fs-combat.comb-has-active #tab-combat #activePanel{display:block!important;position:fixed;left:10px;right:auto;top:12px;bottom:88px;
   width:min(380px,40vw);z-index:66;overflow:auto;margin:0}
 
 /* ---- 全屏时「半个屏幕」的悬浮栏目（四项互斥，只能开一个） ---- */
 body.fs-map .floatpanel,body.fs-combat .floatpanel{left:10px;right:auto;transform:none;width:min(760px,50vw)}
+/* 普通模式（未全屏）选中战斗成员时，详情浮层同样贴左边；窄屏铺满 */
+@media(max-width:900px){ body.comb-has-active #tab-combat.active #activePanel{width:auto;left:8px;right:8px;bottom:74px} }
 body.fs-map .floatpanel.script-on,body.fs-combat .floatpanel.script-on{width:min(880px,52vw);height:min(80vh,860px)}
 body.fs-map .floatpanel.script-on .floatbody,body.fs-combat .floatpanel.script-on .floatbody{height:calc(min(80vh,860px) - 50px)}
 body.fs-map .floatpanel.dice-on,body.fs-combat .floatpanel.dice-on{width:min(760px,50vw)}
@@ -922,6 +927,10 @@ body.bgcustom #mapWrap,body.bgcustom .battlecanvas-wrap{isolation:isolate}
 /* ================= 左右分栏：右半屏（📖 模组 / 📚 规则书） ================= */
 .splitwrap{display:flex;align-items:flex-start;gap:0;min-width:0}
 .splitleft{flex:1 1 auto;min-width:0}
+/* 右半屏打开、拖细分栏时，左半边不能有内容顶出屏幕（战斗场景/地图会跟着重新量尺寸，
+   这里再兜一道底：超出的部分裁在左半边里，不会把整页挤得往左跑）。 */
+body.sideopen .splitleft{overflow:hidden}
+body.sideopen .battlecanvas-wrap{overflow:hidden}
 body.sideopen main{max-width:min(1900px, 98vw)}
 .splitbar{flex:none;width:9px;align-self:stretch;margin:0 4px;border-radius:6px;cursor:col-resize;
   background:linear-gradient(180deg,transparent,var(--line) 12%,var(--line) 88%,transparent);opacity:.75}
@@ -938,7 +947,11 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-empty p{margin:6px 0}
 .sp-drop{margin:8px;padding:8px 10px;border:2px dashed var(--line);border-radius:10px;text-align:center;color:var(--muted);font-size:12px}
 .sp-drop.on{border-color:var(--acc);color:var(--gold);background:rgba(227,196,127,.08)}
-.sp-filebar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.sp-filebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.sp-find{flex-wrap:wrap;gap:4px;align-items:center}
+.sp-find input{width:150px}
+.sp-hit{background:rgba(227,196,127,.32);color:inherit;border-radius:3px}
+.sp-hit.on{background:var(--gold);color:#1a1e2b}
 .sp-fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--gold)}
 .sp-frame{width:100%;height:calc(100vh - 210px);min-height:360px;border:0;background:#fff}
 .sp-doc{flex:1 1 auto;overflow:auto;padding:4px 14px 20px;font-size:14px;line-height:1.85;word-break:break-word}
@@ -1182,7 +1195,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
   function parseWorkbook(wb) {
     var result = {
       ok:false, sheet:null, basic:{}, attrs:{}, derived:{}, skills:[], weapons:[],
-      items:[], bagItems:[], assets:{}, spells:[], backstory:{ sections:{}, text:'' }, story:[], campaigns:[], warnings:[]
+      items:[], bagItems:[], assets:{}, spells:[], customTraits:[], backstory:{ sections:{}, text:'' }, story:[], campaigns:[], warnings:[]
     };
     if (!wb || !wb.Sheets || !wb.SheetNames || !wb.SheetNames.length) {
       result.warnings.push('无法读取该文件，请确认是有效的 .xlsx。');
@@ -1260,7 +1273,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         /* 顺序：名称 / 成功率 / 初始 / 职业 / 兴趣 / 成功标 / 本职（★） / 名称后半格
            左半技能的「技能名称」是两格合并的（F:G 是「格斗：」「射击：」「技艺①」这类大类，
            H:I 才是「斗殴」「手枪」「符篆」），只读 F 会得到「格斗：」这种半截名字。 */
-        [['F','R','J','N','P','B','D','H'],['AB','AN','AF','AJ','AL','X','Z',null]].forEach(function (g) {
+        /* 右半的自定义子技能名（如「驾驶：」后面的「摩托」）写在 AD 列，
+           卡里 AF 列的成功率公式会去比 AD —— 不读 AD 就丢了自定义技能名。 */
+        [['F','R','J','N','P','B','D','H'],['AB','AN','AF','AJ','AL','X','Z','AD']].forEach(function (g) {
           var nm1 = clean(row[colIdx(g[0])]);
           if (!nm1) return;
           var nm2 = g[7] ? clean(row[colIdx(g[7])]) : '';
@@ -1317,10 +1332,18 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         var rawText = (rawName === null || rawName === undefined) ? '' : String(rawName).replace(/\s+/g, ' ').trim();
         if (/^(资产|信用评级|随身|装备|背景)/.test(rawText)) break;   // 武器表结束
         var nm = clean(rawName);
-        if (!nm) continue;                                            // 空行 / 「无」占位行
+        var wType = raw(row[colIdx('G')]);
+        /* 这两种卡里「武器名称」是自由填的，很多玩家（例如「实验司机」那张）只选了「类型」，
+           名称那格空着 —— 以前直接 continue，于是整行武器读不到。名字空但类型有内容时照样读，
+           用类型当显示名。名字是「无/——」这类占位符的（模板第一行「无 | 肉搏」）跳过。 */
+        if (!nm) {
+          if (!wType) continue;
+          if (/^(无|——|—|×|-|\/|\.)$/.test(rawText)) continue;
+          nm = wType;
+        }
         var ammoTxt = raw(row[colIdx('AG')]);
         weapons.push({
-          name: nm, type: raw(row[colIdx('G')]),
+          name: nm, type: wType,
           skill: raw(row[colIdx('M')]),
           success: num(row[colIdx('Q')]),
           damage: raw(row[colIdx('W')]),
@@ -1333,6 +1356,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
       }
     }
     result.weapons = weapons;
+
+    /* —— 任意特长（人物卡右上角「你现在有这么多 / 任意特长」下面的 6 个框：
+       BA18/BJ18、BA19/BJ19、BA20/BJ20；BA 与 BJ 两列各 3 行，都是合并格）。
+       这是玩家自己写的自由文本（比如「考古学」「钓鱼」），原卡用它记自由点数花在哪。
+       以前工具完全没读，导出的卡里这段就空了。 */
+    var customTraits = [];
+    [['BA',18],['BJ',18],['BA',19],['BJ',19],['BA',20],['BJ',20]].forEach(function (t) {
+      var v = clean(cellV(ws, t[1], t[0]));
+      if (v) customTraits.push(v);
+    });
+    result.customTraits = customTraits;
 
     // —— 随身物品（「物品名称」列，表头 78 行，数据 79..95） ——
     var items = [];
@@ -1721,9 +1755,18 @@ function loadState(){
     state.activeMapId = state.maps[0].id;
     saveStateQuiet();
   }
-  if (!state.vehicles) state.vehicles = defaultVehicles();
   if (!state.combat) state.combat = {round:0,phase:'行动',participants:[],log:[]};
   if (!state.clockStart) state.clockStart = Date.now();
+  healMapsAndVehicles();
+}
+/* 自愈：老存档可能把 vehicles 存成空数组、或把地图删光（maps 空且 activeMapId 悬空），
+   那样「载具·时间速度」的默认速度表、地点/道路编辑就会整个空掉。这里补回默认值。 */
+function healMapsAndVehicles(){
+  if (!Array.isArray(state.vehicles) || !state.vehicles.length) state.vehicles = defaultVehicles();
+  if (!Array.isArray(state.maps)) state.maps = [];
+  if (!state.maps.length) state.maps.push(makeDemoMap());
+  var okId = state.maps.some(function(m){ return m && m.id === state.activeMapId; });
+  if (!okId) state.activeMapId = state.maps[0] ? state.maps[0].id : null;
 }
 function saveStateQuiet(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
 
@@ -2263,7 +2306,16 @@ function legAllowed(leg, vehId){
 function distBetween(m,a,b){ return Math.sqrt(Math.pow(m.points[a].x-m.points[b].x,2)+Math.pow(m.points[a].y-m.points[b].y,2))*(m.kmPerPx||0.01); }
 function renderMapLists(){
   var m=currentMap(); var pc=$('mapPointsCard'), lc=$('mapLegsCard');
-  if(!pc||!lc||!m){ if(pc)pc.innerHTML=''; if(lc)lc.innerHTML=''; return; }
+  if(!pc||!lc) return;
+  /* 没有地图时不要把两块编辑区清空（看起来像“功能没了”），给一句提示 + 一个新建入口。 */
+  if(!m){
+    var noMap='<details class="card ccard" open><summary>📍 地点</summary><div class="hint" style="padding:6px">当前还没有地图：'+
+      '<button class="small primary" onclick="newMap()">＋ 新建地图</button> 或在上面的「🗺 地图」里载入一张预设地图，'+
+      '建好后地点与道路就能在这里编辑。</div></details>';
+    pc.innerHTML=noMap;
+    lc.innerHTML='<details class="card ccard" open><summary>🛤 道路 / 路径</summary><div class="hint" style="padding:6px">先有地图，再在两个地点之间加路。</div></details>';
+    return;
+  }
   pc.innerHTML='<details class="card ccard" data-coll="pts"'+(MAP_COLL&&MAP_COLL.pts?' open':'')+'><summary>📍 地点（'+m.points.length+'）</summary><div>'+
     (m.points.length?m.points.map(function(pt,i){
       return `<div class="listitem row" style="gap:6px">
@@ -2529,9 +2581,6 @@ function hpBar(c){
   return `<div style="display:flex;align-items:center;gap:6px"><div class="bar hp" style="width:70px"><i style="width:${pct}%"></i></div><span class="num">${c.hp.cur}/${c.hp.max}</span></div>`;
 }
 
-var combTargetId=null;
-
-function combSelectTarget(cid){ combTargetId=cid; toast('已将目标设为 '+combActiveName(cid)); renderActivePanel(); renderCombatRoster(); }
 function combActiveName(cid){ var c=combById(cid); return c?c.name:''; }
 function combById(cid){ return state.combat.participants.filter(function(c){return c.id===cid;})[0]||null; }
 function activeComb(){ return combById(combActiveId); }
@@ -2584,13 +2633,9 @@ function combatAttackRoll(){
     var w=c.weapons[wi];
     if((w.ammoCur||0)<=0){ toast('「'+w.name+'」没有弹药，先装填'); return; }
   }
-  var tgtSel=$('ap-target');
-  var tid=(tgtSel&&tgtSel.value)?tgtSel.value:combTargetId;
-  var t=combById(tid);
-  if(!t){
-    t=state.combat.participants.filter(function(x){return x.id!==c.id && x.state!=='死亡'&&x.state!=='离场';})[0]||null;
-    if(!t){ toast('没有可攻击的目标'); return; }
-  }
+  /* 目标按钮已经去掉（战斗里不再手动选目标）：默认打对面第一个还站着的成员。 */
+  var t=state.combat.participants.filter(function(x){return x.id!==c.id && x.state!=='死亡'&&x.state!=='离场';})[0]||null;
+  if(!t){ toast('没有可攻击的目标'); return; }
   var skillName=weapon.skill||'斗殴';
   var skillVal=25;
   (c.skills||[]).forEach(function(s){ if(s.name===skillName) skillVal=s.total; });
@@ -2727,8 +2772,12 @@ function restoreBackup(ev){
 }
 function wipeData(){
   if(!confirmBox('真的要清空全部数据吗？建议先导出备份。')) return;
-  if(!confirmBox('再次确认：所有调查员/NPC/地图/战斗记录将删除。')) return;
+  if(!confirmBox('再次确认：所有调查员/NPC/地图/战斗记录、上传的模组都会删除。')) return;
   try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  /* 上传的模组存在 IndexedDB 里（不是 localStorage），要单独清掉，否则「清空」后右半屏还留着旧模组。 */
+  try{ if(typeof moduleClear==='function') moduleClear(); }catch(e){}
+  try{ if(typeof idbDel==='function') idbDel('module'); }catch(e){}
+  try{ if(typeof closeSidePane==='function') closeSidePane(); }catch(e){}
   state=defaultState();
   saveStateQuiet();
   switchTab('surveyors');
@@ -3111,19 +3160,19 @@ function scaffoldSections(){
       <button class="small primary" onclick="openWelcome()">📥 支持的人物卡（4 种）/ 下载空白卡</button>
       <span class="hint">第一次打开会自动弹这个说明，这里可以随时重看。</span>
     </div>
-    <h4>📥 导入调查员卡</h4><p>把受支持的 4 种卡中任意一张填好的 .xlsx 拖进「调查员」页的虚线框（或点击选择），解析后直接入库。姓名 / 玩家 / 职业 / 属性 / 全部技能 / 武器表 / 随身物品（卡右侧「背包格」那一列也并进同一张清单）/ 法术 / 现金与资产表 / 背景 9 条 + 正文 / 调查员经历都会读进来。</p>
-    <h4>✏️ 编辑调查员</h4><p>点小卡右下角 ✏️：属性、护甲（可挑参考防具预置）、HP/SAN/MP、技能（高于基础值的算「已加点」排上面，其余收进折叠区）、武器、背包 / 随身用品、剧情道具、法术、资产、背景、经历都在这里改。武器「类型」可从卡里「武器列表」下拉选，选完技能 / 伤害 / 射程 / 弹匣会自动填好。</p>
-    <h4>⬇ 导出人物卡</h4><p>小卡右下角 ⬇ 导出卡：先按“最初导入那张卡”算出这次团的变化，写进卡里的「调查员经历」（模组名用顶部「🎪 本次团名」，技能变化写进「成长」列），再把整张卡填进<b>你导入时用的那张模板</b>下载，文件名是 团名-角色名.xlsx。卡里原本的公式都会保留：武器“选类型自动算”、成功率按使用技能取值、本职★ 查表、<b>属性雷达图</b>；中式职业扩展那张卡的本职技能按它自己的职业表算。</p>
+    <h4>📥 导入调查员卡</h4><p>把受支持的 4 种卡中任意一张填好的 .xlsx 拖进「调查员」页的虚线框（或点击选择），解析后直接入库。姓名 / 玩家 / 职业 / 属性 / 全部技能 / 武器表 / 随身物品（卡右侧「背包格」那一列也并进同一张清单）/ 法术 / 现金与资产表 / 背景 9 条 + 正文 / 卡右上角「任意特长」/ 调查员经历都会读进来。武器行「只选了类型、名字留空」也照样读（用类型当显示名）。</p>
+    <h4>✏️ 编辑调查员</h4><p>点小卡右下角 ✏️：属性、护甲（可挑参考防具预置）、HP/SAN/MP、技能（高于基础值的算「已加点」排上面，其余收进折叠区）、武器、背包 / 随身用品、剧情道具、法术、资产、背景、任意特长（每行一条，写回卡右上角那几格）、经历都在这里改。武器「类型」可从卡里「武器列表」下拉选，选完技能 / 伤害 / 射程 / 弹匣会自动填好；改「信用评级」时技能里的「信用评级」成功率会跟着一起改。</p>
+    <h4>⬇ 导出人物卡</h4><p>小卡右下角 ⬇ 导出卡：先按“最初导入那张卡”算出这次团的变化，写进卡里的「调查员经历」（模组名用顶部「🎪 本次团名」，技能变化写进「成长」列），再把整张卡填进<b>你导入时用的那张模板</b>下载，文件名是 团名-角色名.xlsx。卡里原本的公式都会保留：武器“选类型自动算”、成功率按使用技能取值（查不到该技能时保留公式 + 原卡数值，不留空、不乱码）、信用评级查表、本职★ 查表、<b>属性雷达图</b>；自定义子技能名按卡里「类别 + 具体名」两格分段写回；中式职业扩展那张卡的本职技能按它自己的职业表算。</p>
     <h4>📊 属性雷达图</h4><p>点小卡右下角 ✏️ 打开详情，属性 3×3 右边就是雷达图（力量 / 体质 / 体型 / 敏捷 / 外貌 / 智力 / 意志 / 教育 / 幸运），和卡里「附表」那张九维图同一套数，改属性会实时重画。</p>
-    <h4>📖 模组（右半屏）</h4><p>菜单栏点「📖 模组」：左边照常带团，右半边用来放模组。支持 Word（.docx）、PDF、txt / md，直接拖进去就行。Word 会连着表格 / 图片 / 标题一起排成网页看（还能调字号），PDF 用浏览器自带阅读器（可缩放、可搜）。文件存在本机浏览器里（刷新后还在），不会上传。中间的细条可拖动调整左右宽度，双击回一半一半。</p>
-    <h4>📚 规则书（右半屏）</h4><p>菜单栏点「📚 规则书」：整套 COC7 核心规则书（318 页）按<b>原版 PDF</b>放在右半屏，表格 / 颜色 / 流程图和纸书一模一样，带 <b>书签目录</b>（点条目直接跳页）和 <b>全文搜索</b>（输入关键词回车，命中页会列出来，点一下就跳过去）。</p>
+    <h4>📖 模组（右半屏）</h4><p>菜单栏点「📖 模组」：左边照常带团，右半边用来放模组。支持 Word（.docx）、PDF、txt / md，直接拖进去就行。Word 会连着表格 / 图片 / 标题一起排成网页看（还能调字号），上方搜索框回车可高亮命中、↑ ↓ 逐条跳转；PDF 用浏览器自带阅读器（可缩放、可搜）。文件存在本机浏览器里（刷新后还在），不会上传。中间的细条可拖动调整左右宽度，双击回一半一半。</p>
+    <h4>📚 规则书（右半屏）</h4><p>菜单栏点「📚 规则书」：整套 COC7 核心规则书（318 页）按<b>原版 PDF</b>放在右半屏，表格 / 颜色 / 流程图和纸书一模一样，正文里 PDF 自带的目录 / 页码 / Ctrl+F 都能用；左边还有 <b>书签目录</b>（点条目直接跳页）和 <b>全文搜索</b>（输入关键词回车，命中页会列出来，点一下就跳过去），目录可以「☰ 收起目录 / 展开目录」。</p>
     <h4>🏷 便签标签</h4><p>调查员页最左侧可自定义标签（emoji、任意长度、可改色、可删）。点选标签再点小卡即可贴上，也能直接把标签拖到小卡上；便签可挪到别的卡，点 ✕ 移除，每张小卡最多 6 个。</p>
     <h4>👤 NPC 与敌人</h4><p>选模板（神话生物已按规则书预填标志性法术）→ 设数量 → 生成，之后还能改阵营与数值。四列小卡（盟友 / 中立 / 敌人 / 其他）可拖拽排序，列名点标题就能改。</p>
-    <h4>🗺️ 地图与路线</h4><p>上面一条二级菜单栏：🗺 地图（切地图 / 载入预设 / 缩放 / 比例尺 / 换底图）· 🧍 地图角色 · 🧩 摆件素材 · 🚗 载具·时间速度（点开就用，再点收起，一次只开一个），下面整幅地图占满宽度，再往下是路线时间计算 / 地点 / 道路路径。三个工具：🖱 拖动地点（相连道路的 km 实时重算）· 🧍 移动角色/摆件（只挪角色和素材，不动地点与道路）· 📍 添加地点。比例尺「1格 = __ km」→ 设；切换预设地图时里程已按当前比例尺算好。</p>
-    <h4>⚔️ 战斗</h4><p>上面一条二级菜单栏：👥 添加角色（把调查员 / NPC / 临时成员加入战斗）· ⚔️ 战斗桌（本次战斗标题 / 下一轮 / 清空，点开就用、再点收起），下面战斗场景占满宽度，再往下依次是选中角色的详情、战斗成员表、行动日志。成员自动左右排布（可拖动）；改 HP/SAN/MP/护甲或实时增删武器 / 道具 / 法术都会同步回角色档案与小卡，也可点「↻ 同步档案」。状态徽标与 🎨 场景道具素材库都在这一页。</p>
+    <h4>🗺️ 地图与路线</h4><p>上面一条二级菜单栏：🗺 地图（切地图 / 载入预设 / 缩放 / 比例尺 / 换底图）· 🧍 地图角色 · 🧩 摆件素材 · 🚗 载具·时间速度（点开就用，再点收起，一次只开一个），下面整幅地图占满宽度，再往下是路线时间计算 / 地点 / 道路路径（一张地图都没有时也还在，会提示你「＋ 新建地图」）。三个工具：🖱 拖动地点（相连道路的 km 实时重算）· 🧍 移动角色/摆件（只挪角色和素材，不动地点与道路）· 📍 添加地点。比例尺「1格 = __ km」→ 设；切换预设地图时里程已按当前比例尺算好。</p>
+    <h4>⚔️ 战斗</h4><p>上面一条二级菜单栏：👥 添加角色（把调查员 / NPC / 临时成员加入战斗）· ⚔️ 战斗桌（本次战斗标题 / 下一轮 / 清空，点开就用、再点收起），下面战斗场景占满宽度，再往下依次是战斗成员表、行动日志；点角色后详情浮在屏幕最左侧。成员自动左右排布（可拖动）；攻击不用先选目标，直接打对面第一个还站着的成员；改 HP/SAN/MP/护甲或实时增删武器 / 道具 / 法术都会同步回角色档案与小卡，也可点「↻ 同步档案」。状态徽标与 🎨 场景道具素材库都在这一页。</p>
     <h4>🎲 骰子与 SAN 检定</h4><p>顶部「📜 剧本/笔记」「🎲 骰子」是悬浮栏目，不切页面、一次只开一个。骰子可指定角色与技能（技能按数值从高到低排，已加点带 ☆），1D100 自动给出普通 / 困难 / 极难 / 大成功 / 大失败；SAN 页可做理智检定、损失掷骰、INT 判定与疯狂症状，损失会自动写回角色。</p>
-    <h4>⛶ 场景全屏</h4><p>地图 / 战斗场景都有「⛶ 全屏」（Esc 或右下角 ↩ 返回退出）。全屏后右下角只剩图标菜单，其中 📋调查员 / 👤NPC与敌人 / 📜剧本笔记 / 🎲骰子 是压在场景上的半屏浮层，一次只开一个。战斗全屏时点角色，详情在屏幕最左侧；地图全屏时工具栏缩到左下角。</p>
-    <h4>💾 数据</h4><p>数据只存本机浏览器。请常用右上角「⬇ 备份数据」导出 JSON 定期存档；本工具不上传任何数据。</p>
+    <h4>⛶ 场景全屏</h4><p>地图 / 战斗场景都有「⛶ 全屏」（Esc 或右下角 ↩ 返回退出）。全屏后右下角只剩图标菜单，其中 📋调查员 / 👤NPC与敌人 / 📜剧本笔记 / 🎲骰子 是压在场景上的半屏浮层，一次只开一个。战斗里点角色，详情都浮在屏幕最左侧（普通模式也一样）；地图全屏时工具栏缩到左下角。</p>
+    <h4>💾 数据</h4><p>数据只存本机浏览器。请常用右上角「⬇ 备份数据」导出 JSON 定期存档；本工具不上传任何数据。「⚠️ 清空全部本地数据」会连上传的模组一起清掉。</p>
     <div class="vdiv"></div>
     <button class="danger" onclick="wipeData()">⚠️ 清空全部本地数据</button>
   </div></div>`
@@ -3635,8 +3684,11 @@ function vehAssignName(id){
 }
 function renderMapVehicles(){
   var box=$('mapVehicles'); if(!box) return;
-  var m=currentMap(); if(!m){ box.innerHTML=''; return; }
-  var onMapActors=(m.tokens||[]).map(function(t){return t.actorId;});
+  /* 载具速度表是全局的（不属于某张地图），没有地图也要能看/改 —— 以前这里要求 currentMap()，
+     地图一旦被删光，整个列表就空白了。 */
+  var m=currentMap();
+  if(!Array.isArray(state.vehicles)) state.vehicles=defaultVehicles();
+  var onMapActors=((m&&m.tokens)||[]).map(function(t){return t.actorId;});
   var actorsOnMap=state.actors.filter(function(a){return onMapActors.indexOf(a.id)>=0;});
   box.innerHTML=`<div class="smallgrid">`+state.vehicles.map(function(v,i){
     var opts='<option value="">— 不指定 —</option>'+actorsOnMap.map(function(a){
@@ -4275,7 +4327,7 @@ function combatClear(){
   (state.combat.participants||[]).slice().forEach(function(c){ if(typeof combSyncParticipant==='function') combSyncParticipant(c,{quiet:true}); });
   state.combat.participants=[]; state.combat.round=0;
   state.combat.scene={bg:(state.combat.scene&&state.combat.scene.bg)||null,pos:{},props:[]};
-  combActiveId=null; combTargetId=null;
+  combActiveId=null;
   saveState(); renderCombatShell(); renderActivePanel();
 }
 function renderCombatRoster(){
@@ -4301,7 +4353,6 @@ function renderCombatRoster(){
       <td class="num" style="font-size:11px">${c.mp&&c.mp.max?c.mp.cur+'/'+c.mp.max:'—'}</td>
       <td><span class="badge ${cls}">${esc(st)}</span></td>
       <td class="combactns" style="text-align:right">
-        <button class="small" title="设为攻击目标" onclick="event.stopPropagation();combSelectTarget('${c.id}')">🎯</button>
         <button class="small danger" title="移出战斗" onclick="event.stopPropagation();combatRemove('${c.id}')">移出</button></td>
     </tr>`;
   }).join('');
@@ -4768,6 +4819,26 @@ function onSideEdit(sel){
   }
   currentActorModal.side=sel.value;
 }
+/* 「9%/4%/1%」「9%」「9」这类写法里的第一个数字（信用评级成功率）；填别的文字返回 null。 */
+var creditRawOnOpen='';   // 打开详情卡时「信用评级」原文：只有真的改过它，才去同步「信用评级」技能
+/* 改信用评级时，把「信用评级」技能的成功率一起改成那个数（用户要的“自动计算”）。 */
+function onCreditInput(inp){
+  var n=creditNumber(inp&&inp.value); if(n==null) return;
+  var chips=document.querySelectorAll('#am-skills .skillchip, #am-default-skills .skillchip');
+  for(var i=0;i<chips.length;i++){
+    var nm=chips[i].querySelector('.sk-name'), tot=chips[i].querySelector('.sk-total');
+    if(nm && tot && /信用评级/.test(nm.value)){ tot.value=Math.max(0,Math.round(n)); return; }
+  }
+}
+function creditNumber(text){
+  var t=String(text==null?'':text).trim();
+  if(!t) return null;
+  var m=t.match(/-?\d+(?:\.\d+)?/);
+  if(!m) return null;
+  /* 只认“纯数字 / 百分数 / 百分数用斜杠连起来”这几种，避免把说明文字里的数字当评级 */
+  if(!/^\s*-?\d+(?:\.\d+)?\s*%?\s*([\/／]\s*-?\d+(?:\.\d+)?\s*%?\s*)*$/.test(t)) return null;
+  return parseFloat(m[0]);
+}
 function openActorModal(id, kind){
   var a=null;
   if(id){ a=state.actors.filter(function(x){return x.id===id;})[0]; }
@@ -4789,6 +4860,7 @@ function openActorModal(id, kind){
   if(typeof migrateBagToInv==='function') migrateBagToInv(a);
   if(a.kind==='npc' && a.side==='调查员') a.side='盟友';
   currentActorModal=a; editingActorId=a.id;
+  creditRawOnOpen=String(a.credit||'');
   var mask=$('actorModal');
   var skillRows=(a.skills||[]).map(function(s){
     var p=skillChipParts(s.name,s.total,s.base);
@@ -4912,7 +4984,7 @@ function openActorModal(id, kind){
       <div class="row">
         <label>现金<input type="number" id="am-cash" value="${a.cash||0}" style="width:120px"></label>
         <label>货币<input type="text" id="am-currency" value="${esc(a.currency||'美元')}" style="width:120px"></label>
-        <label>信用评级<input type="text" id="am-credit" value="${esc(a.credit||'')}" placeholder="如 5%/2%/1%" style="width:150px" title="导出时写进人物卡的「信用评级」格"></label>
+        <label>信用评级<input type="text" id="am-credit" value="${esc(a.credit||'')}" placeholder="如 5%/2%/1%" style="width:150px" oninput="onCreditInput(this)" title="改这里 → 卡里「信用评级」技能的成功率会自动跟着改（导出时也写回卡里）"></label>
         <label>其他资产<input type="text" id="am-other-assets" value="${esc(a.otherAssets||'')}" placeholder="如 50" style="width:110px"></label>
       </div>
       <div class="row" style="margin-top:6px">
@@ -4926,6 +4998,7 @@ function openActorModal(id, kind){
       <label style="margin-top:6px">资产详述<textarea rows="2" id="am-assets-detail">${esc(a.assetsDetail||'')}</textarea></label>
       ${a.kind==='pc'?'<h4 class="sectiontitle">📜 背景故事（拆条 + 正文小段）</h4>':''}
       ${a.kind==='pc'?'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px">'+histHTML+'</div>':'<div class="vdiv"></div><label>背景备注<textarea id="am-hist-appearance" rows="2" style="display:none"></textarea><textarea rows="2" id="am-npc-back">'+esc(a.notes||a.note||'')+'</textarea></label>'}
+      <label style="margin-top:8px" title="人物卡右上角「任意特长」那几格（自由文本，一格一条）">任意特长（每行一条）<textarea rows="2" id="am-traits">${esc((a.customTraits||[]).join('\n'))}</textarea></label>
       ${a.kind==='pc'?'<label style="margin-top:8px">背景故事正文（小段文字）<textarea rows="4" id="am-backstory">'+esc(a.backstory||'')+'</textarea></label>':''}
       ${a.kind==='pc'?'<div style="margin-top:10px"><h4 class="sectiontitle">🗂 调查员经历（1 段 = 多跑过 1 个团）</h4>'
         +'<div id="am-campaigns">'+(campaignRows||'')+'</div>'
@@ -5011,6 +5084,19 @@ function collectFromModal(){
     }
     a.skills.push(o);
   });
+  /* 「任意特长」：每行一条，写回卡右上角那几格 */
+  if($('am-traits')) a.customTraits=String($('am-traits').value||'').split(/\r?\n/).map(function(x){return x.trim();}).filter(Boolean);
+  /* 信用评级改了 → 卡里「信用评级」技能的成功率跟着走（卡上「x%/y%/z%」就是由它算出来的）。
+     只认数字（如 9 / 9% / 9%/4%/1% 取 9），写的是别的文字就只存文本、不动技能。 */
+  if($('am-credit') && String($('am-credit').value||'').trim()!==String(creditRawOnOpen||'').trim()){
+    var cn=creditNumber($('am-credit').value);
+    if(cn!=null){
+      var hitSkill=null;
+      a.skills.forEach(function(k){ if(!hitSkill && /信用评级/.test(String(k.name||''))) hitSkill=k; });
+      if(hitSkill) hitSkill.total=Math.max(0,Math.round(cn));
+      else a.skills.push({name:'信用评级',total:Math.max(0,Math.round(cn)),base:0});
+    }
+  }
   a.weapons=[];
   m.querySelectorAll('#am-weapons .wrow').forEach(function(li){
     var w={name:li.querySelector('.w-name').value.trim(),skill:li.querySelector('.w-skill').value.trim()||'斗殴',
@@ -5110,10 +5196,11 @@ function doImport(){
     mov:p.derived.mov||8, db:p.derived.db||'0', build:p.derived.build||'0',
     armor:{value:num(p.derived.armorValue)||0,type:p.derived.armorType||''},
     occId:p.basic.occId||'',
-    skills:p.skills.map(function(s){return {name:s.name,total:s.total,base:s.base,
+    skills:p.skills.map(function(s){return {name:s.name,name1:s.name1,name2:s.name2,total:s.total,base:s.base,
       occPts:s.occPts,intPts:s.intPts,mark:s.mark,occ:s.occ,slot:s.slot};}),
     weapons:p.weapons.map(function(w){ var cap=num(w.ammoCap); return {name:w.name,type:w.type||'',skill:w.skill||'',
       damage:w.damage||'',range:w.range||'',pierce:w.pierce||'',attacks:w.attacks||'',ammo:(w.ammo==null?'':String(w.ammo)),
+      success:num(w.success)||0,
       ammoCap:cap,ammoCur:cap,jam:w.jam||'',note:''}; }),
     inv:p.items.map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:'',slot:''};})
         .concat((p.bagItems||[]).map(function(it){return {name:it.name,qty:it.qty,effect:'',amount:'',note:'',slot:'bag'};})),
@@ -5124,6 +5211,7 @@ function doImport(){
     assetsTable:{ vehicle:(p.assets&&p.assets.table&&p.assets.table.vehicle)||'', residence:(p.assets&&p.assets.table&&p.assets.table.residence)||'',
       luxury:(p.assets&&p.assets.table&&p.assets.table.luxury)||'', stocks:(p.assets&&p.assets.table&&p.assets.table.stocks)||'',
       other:(p.assets&&p.assets.table&&p.assets.table.other)||'' },
+    customTraits:(p.customTraits||[]).slice(),   // 卡右上角「任意特长」那几格（自由文本）
     history:history, backstory:p.backstory.text||'',
     campaigns:(p.campaigns||[]).map(function(c){ return {module:(c&&c.module)||'',note:(c&&c.note)||''}; }),
     notes:'', count:1, template:'', note:'',
@@ -5314,7 +5402,12 @@ function renderMapsShell(){
   var sel=$('mapSel'); if(!sel) return;
   sel.innerHTML=state.maps.map(function(m){return '<option value="'+m.id+'"'+(m.id===state.activeMapId?' selected':'')+'>'+esc(m.name)+'</option>';}).join('')||'<option value="">(无场景)</option>';
   if(sel.value!==(state.activeMapId||'')) sel.value=state.activeMapId||'';
-  if(!state.maps.length){ var mh=$('mapHint'); if(mh) mh.textContent='请先“新建场景”。'; return; }
+  if(!state.maps.length){
+    var mh=$('mapHint');
+    if(mh) mh.innerHTML='还没有地图：点上面「🗺 地图」新建或载入一张预设地图。';
+    renderMapActorsBox(); renderMapVehicles(); renderPropPalette(); renderMapLists(); renderRoutePanel();
+    return;
+  }
   var m=currentMap(); if(!m) return;
   var sc=$('mapScale'); if(sc) sc.value=Math.round(((m.kmPerPx||0.02)*MAP_GRID_PX)*10000)/10000;
   /* 室内地图不显示比例尺 */
@@ -5791,6 +5884,7 @@ function ensureV2Data(){
     if(!a.campaigns) a.campaigns=[];
     if(!Array.isArray(a.tags)) a.tags=[];
   });
+  if(typeof healMapsAndVehicles==='function') healMapsAndVehicles();   // 空地图/空载具自愈（见 02-data-store.js）
   if(!state.maps) state.maps=[];
   state.maps.forEach(function(m){ m.iso=false; if(m.zoom==null) m.zoom=1; });
   if(!state.vehicles) state.vehicles=defaultVehicles();
@@ -7637,7 +7731,22 @@ function cardWritesFor(a, tplRows){
 
   /* 资产：现金 / 货币 / 信用评级 / 其他资产 + 其他资产表（行 75、行 76 合计） */
   N('O62',num(a.cash)); S('S62',a.currency||'美元');
-  S('B62',(a.credit==null||a.credit==='')?tplCell(62,'B'):String(a.credit));
+  /* 信用评级：卡上这格本来是公式（=附表!Z223 → “成功率%/困难%/极难%”）。如果玩家填的就是这种
+     “x%/y%/z%”，就别用死文本把公式顶掉 —— 保留公式、只更新显示值，这样在 Excel 里改
+     「信用评级」技能的熟练度，这格会跟着自动算。填了别的自由文本才原样写进去。 */
+  var creditTxt=(a.credit==null||a.credit==='')?tplCell(62,'B'):String(a.credit);
+  if(/^\s*\d+\s*%?\s*(\/|／)\s*\d+/.test(String(a.credit||'')) || /^\s*\d+\s*%?\s*$/.test(String(a.credit||''))){
+    W.push({ref:'B62',val:creditTxt,num:false,keepF:true});
+  } else S('B62',creditTxt);
+
+  /* 任意特长：人物卡右上角那 6 个框（BA/BJ 两列 × 18~20 行），一格一条。 */
+  var traits=(a.customTraits||[]).map(function(x){ return String(x==null?'':x).replace(/\s+/g,' ').trim(); }).filter(Boolean);
+  if(!traits.length) traits=[];
+  [['BA',18],['BJ',18],['BA',19],['BJ',19],['BA',20],['BJ',20]].forEach(function(t,i){
+    var v=traits[i]||'';
+    var cur=tplCell(t[1],t[0]);
+    if(v!==cur) S(t[0]+t[1],v);
+  });
   S('L62',(a.otherAssets==null||a.otherAssets==='')?tplCell(62,'L'):String(a.otherAssets));
   S('L63',(a.assetsDetail==null||a.assetsDetail==='')?tplCell(63,'L'):String(a.assetsDetail));
   /* 其他资产表（交通工具 / 住所 / 奢侈品 / 股票证券 / 其他）：现在允许填任意字符（“一辆别克”“1200 元”“祖宅”都行）。
@@ -7693,15 +7802,19 @@ function cardWritesFor(a, tplRows){
        导出去要分段写回，不然会出现「格斗：斗殴 斗殴」这种重复。 */
     var nmFull=String(s.name==null?'':s.name);
     var tplName=String(tplSkillAt[pp.key]||'');
-    var tplName2=(col==='F')?String(tplCell(row,'H')||''):'';
-    var nm1=nmFull, nm2='';
+    /* 技能名在卡上是两格：左半「类别」F + 「具体名」H（格斗：/斗殴），
+       右半「类别」AB + 「具体名」AD（驾驶：/摩托）。两半都要分段写回，
+       不然自定义子技能（技艺①、驾驶：摩托…）会被整段塞进类别格里，卡里的公式就对不上了。 */
+    var nm2Col=(col==='F')?'H':'AD';
+    var tplName2=String(tplCell(row,nm2Col)||'');
+    var nm1=nmFull, nm2='', nmSplit=false;
     if(tplName && nmFull!==tplName && nmFull.indexOf(tplName)===0){          // 模板那格是「格斗：」，我们叫「格斗：斗殴」
-      nm1=tplName; nm2=nmFull.slice(tplName.length).replace(/^[\s：:]+/,'').trim();
+      nm1=tplName; nm2=nmFull.slice(tplName.length).replace(/^[\s：:]+/,'').trim(); nmSplit=true;
     } else if(s.name2 && String(s.name2)!==''){                              // 导入时就分好的两段
-      nm2=String(s.name2); nm1=(s.name1!=null&&String(s.name1)!=='')?String(s.name1):nmFull;
+      nm2=String(s.name2); nm1=(s.name1!=null&&String(s.name1)!=='')?String(s.name1):nmFull; nmSplit=true;
     }
     if(tplName!==nm1) S(G.n+row, nm1);
-    if(col==='F' && tplName2!==nm2) S('H'+row, nm2);
+    if(nmSplit && tplName2!==nm2) S(nm2Col+row, nm2);
     var total=num(s.total);
     var b=(s.base!=null && s.base!=='')?num(s.base):skillBaseOf(s.name);
     if(b!=null && num(tplCell(row,G.b))!==b) N(G.b+row, b);
@@ -7798,10 +7911,20 @@ function cardWritesFor(a, tplRows){
           putF(col+r, shown, false, true, wV(idx));
         } else S(col+r, own);
       });
-      /* 成功率：按使用技能在本卡技能表里查（左半 H→F，右半 AB），改技能数值自动跟着变 */
-      putF('Q'+r, totNum===null?'':totNum, totNum!==null, false, wQ());
-      putF('S'+r, totNum===null?'':Math.floor(totNum/2), totNum!==null, true, 'IF($Q'+r+'="","",INT($Q'+r+'/2))');
-      putF('U'+r, totNum===null?'':Math.floor(totNum/5), totNum!==null, true, 'IF($Q'+r+'="","",INT($Q'+r+'/5))');
+      /* 成功率：按使用技能在本卡技能表里查（左半 H→F，右半 AB），改技能数值自动跟着变。
+         使用技能不在本卡技能表里时（如「鞭子」这种武器表里的技能），保留卡上原有的查表公式、
+         只把原卡的数值写进去当显示值 —— 这样在 Excel 里换「类型」它照样会重算，不留空、不报错。 */
+      var succ=(totNum!==null) ? totNum : (num(w.success)>0 ? Math.round(num(w.success)) : null);
+      if(totNum!==null){
+        putF('Q'+r, succ, true, false, wQ());
+      } else if(succ!==null){
+        if(tplF(r,'Q')) W.push({ref:'Q'+r,val:succ,num:true,keepF:true});
+        else N('Q'+r, succ);
+      } else {
+        putF('Q'+r, '', false, false, wQ());
+      }
+      putF('S'+r, succ===null?'':Math.floor(succ/2), succ!==null, true, 'IF($Q'+r+'="","",INT($Q'+r+'/2))');
+      putF('U'+r, succ===null?'':Math.floor(succ/5), succ!==null, true, 'IF($Q'+r+'="","",INT($Q'+r+'/5))');
     } else {
       /* 空槽：名字/类型清掉，但**保留模板的公式**（只把显示值清空）——
          以后直接在 Excel 里选个类型，伤害那些还是会自动出来。 */
@@ -8256,6 +8379,20 @@ function applySidePane(){
   } else {
     pane.style.flexBasis=''; if(left) left.style.flexBasis='';
   }
+  sidePaneResizeScenes();
+}
+/* 左半边变窄/变宽后，地图与战斗场景要按新宽度重新量一次尺寸，
+   否则画布还留着旧宽度，会顶出左半边（用户反馈过：开着模组拖分栏，战斗场景跑到屏幕外）。 */
+var _sideSceneRaf=0;
+function sidePaneResizeScenes(){
+  if(_sideSceneRaf) return;
+  var run=function(){
+    _sideSceneRaf=0;
+    try{ if(typeof drawBattleScene==='function') drawBattleScene(); }catch(e){}
+    try{ if(typeof drawMapCanvas==='function' && typeof currentMap==='function' && currentMap()) drawMapCanvas(); }catch(e){}
+  };
+  if(typeof requestAnimationFrame==='function') _sideSceneRaf=requestAnimationFrame(run);
+  else run();
 }
 function initSidePane(){
   var pane=$('sidePane'), bar=$('splitBar');
@@ -8424,15 +8561,17 @@ function renderModulePane(pane){
       '<p class="hint">想左右调宽度：拖中间那条细线，双击回到一半一半。</p></div>';
   } else if(m.kind==='pdf'){
     body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📄 '+esc(m.name)+'</span>'+
-         '<span class="hint">'+moduleSizeText(m.size)+' · PDF 可用右上角工具缩放/搜索</span></div>'+
+         '<span class="hint">'+moduleSizeText(m.size)+' · PDF 用阅读器自带的搜索（Ctrl/⌘+F）与缩放</span></div>'+
          '<iframe class="sp-frame" src="'+esc(m.url)+'" title="模组 PDF"></iframe>';
   } else if(m.kind==='docx'){
     body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📝 '+esc(m.name)+'</span>'+
+         moduleFindBarHTML()+
          '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
          '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
          '<div class="sp-doc" id="spDoc">'+moduleDocxHTML(m.text)+'</div>';
   } else {
     body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📄 '+esc(m.name)+'</span>'+
+         moduleFindBarHTML()+
          '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
          '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
          '<div class="sp-doc" id="spDoc"><pre class="sp-pre">'+esc(m.text)+'</pre></div>';
@@ -8441,6 +8580,64 @@ function renderModulePane(pane){
   pane.innerHTML=head+'<div class="sp-body">'+body+drop+'</div>'+
     '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown" style="display:none" onchange="onModulePick(event)">';
   moduleBindDrop();
+}
+/* ---- Word / 文本模组：搜索 + 高亮 + 上/下一条跳转 ---- */
+function moduleFindBarHTML(){
+  return '<span class="row sp-find"><input type="text" id="modSearch" placeholder="在模组里搜索（回车）"'+
+    ' onkeydown="if(event.key===\'Enter\')moduleFind()">'+
+    '<button class="small" onclick="moduleFind()" title="搜索并高亮">🔍</button>'+
+    '<button class="small ghost" onclick="moduleFindStep(-1)" title="上一处">↑</button>'+
+    '<button class="small ghost" onclick="moduleFindStep(1)" title="下一处">↓</button>'+
+    '<span class="hint" id="modFindInfo"></span></span>';
+}
+var modHits=[], modHitIdx=-1;
+function moduleSetFindInfo(t){ var el=$('modFindInfo'); if(el) el.textContent=t||''; }
+function moduleClearHits(){
+  var doc=$('spDoc'); if(!doc){ modHits=[]; modHitIdx=-1; return; }
+  var marks=doc.querySelectorAll('mark.sp-hit');
+  for(var i=0;i<marks.length;i++){
+    var m=marks[i], p=m.parentNode;
+    if(!p) continue;
+    p.replaceChild(document.createTextNode(m.textContent), m);
+    if(p.normalize) p.normalize();
+  }
+  modHits=[]; modHitIdx=-1;
+  moduleSetFindInfo('');
+}
+function moduleFind(){
+  var doc=$('spDoc'); if(!doc) return;
+  var inp=$('modSearch'); var q=((inp&&inp.value)||'').trim();
+  moduleClearHits();
+  if(!q) return;
+  var walker=document.createTreeWalker(doc, (window.NodeFilter&&window.NodeFilter.SHOW_TEXT)||4, null);
+  var nodes=[], n;
+  while((n=walker.nextNode())){ if(n.nodeValue && n.nodeValue.trim()) nodes.push(n); }
+  var lower=q.toLowerCase();
+  nodes.forEach(function(node){
+    var txt=node.nodeValue||''; var low=txt.toLowerCase();
+    if(low.indexOf(lower)<0) return;
+    var frag=document.createDocumentFragment(), pos=0, idx;
+    while((idx=low.indexOf(lower,pos))>=0){
+      if(idx>pos) frag.appendChild(document.createTextNode(txt.slice(pos,idx)));
+      var mk=document.createElement('mark');
+      mk.className='sp-hit'; mk.textContent=txt.slice(idx, idx+q.length);
+      frag.appendChild(mk); modHits.push(mk);
+      pos=idx+q.length;
+    }
+    if(pos<txt.length) frag.appendChild(document.createTextNode(txt.slice(pos)));
+    node.parentNode.replaceChild(frag, node);
+  });
+  if(!modHits.length){ moduleSetFindInfo('没找到「'+q+'」'); return; }
+  modHitIdx=-1; moduleFindStep(1);
+}
+function moduleFindStep(d){
+  if(!modHits.length){ moduleFind(); return; }
+  if(modHitIdx<0) modHitIdx=(d<0?0:0);
+  else modHitIdx=(modHitIdx+d+modHits.length)%modHits.length;
+  for(var i=0;i<modHits.length;i++) modHits[i].classList.toggle('on', i===modHitIdx);
+  var m=modHits[modHitIdx];
+  if(m && m.scrollIntoView){ try{ m.scrollIntoView({block:'center'}); }catch(e){ try{ m.scrollIntoView(); }catch(e2){} } }
+  moduleSetFindInfo((modHitIdx+1)+' / '+modHits.length);
 }
 function moduleFont(d){
   var el=$('spDoc'); if(!el) return;
@@ -8831,7 +9028,7 @@ function renderRulebookPane(pane){
   pane.innerHTML='<div class="sp-head"><b>📚 规则书</b>'+
     '<span class="hint">'+(rulebookData? '原版 · 全书 '+rbPageCount()+' 页 · 目录 '+((rulebookData.toc||[]).length)+' 条':'正在加载…')+'</span>'+
     '<div class="row sp-tools">'+
-      '<button class="small ghost" id="rbTocBtn" onclick="rbToggleToc()" title="展开/收起目录与搜索">☰ 目录</button>'+
+      '<button class="small ghost" id="rbTocBtn" onclick="rbToggleToc()" title="展开/收起左侧目录与搜索">☰ 收起目录</button>'+
       '<button class="small ghost" onclick="rbZoomBy(-1)" title="缩小">A－</button>'+
       '<button class="small ghost" onclick="rbZoomBy(1)" title="放大">A＋</button>'+
       '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
@@ -8848,12 +9045,13 @@ function renderRulebookPane(pane){
           '<button class="small ghost" onclick="rbGoto(rulebookPage-1)">‹ 上一页</button>'+
           '<span class="rb-pageno"><input type="number" id="rbPageInput" value="'+rulebookPage+'" min="1" onchange="rbGoto(parseInt(this.value,10))"> / <span id="rbPageMax">'+rbPageCount()+'</span></span>'+
           '<button class="small ghost" onclick="rbGoto(rulebookPage+1)">下一页 ›</button>'+
-          '<span class="hint" id="rbHint">左侧目录 / 搜索定位，正文用浏览器阅读器看原版</span>'+
+          '<span class="hint" id="rbHint">正文就是原版 PDF：阅读器自带的目录 / 页码 / Ctrl+F 都能用；左边目录搜索点一下也会跳页</span>'+
           '<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗ 新窗口</button>'+
         '</div>'+
         '<iframe class="rb-frame" id="rbFrame" title="COC7th 核心规则书"></iframe>'+
       '</div>'+
     '</div>';
+  rbApplyToc();
   ensureRulebook(function(){
     rbRenderToc();
     rbPaintFrame();
@@ -8872,14 +9070,47 @@ function rbPaintFrame(){
   }
   f.setAttribute('src',src);
 }
+/* 跳到某一页：同一份 PDF 只改 #page= 时，部分浏览器（已加载完的阅读器）不会重新定位，
+   于是「点目录/搜索命中不动」。这时整块换成一个新 iframe 最稳（blob 已缓存，重开很快）。 */
+function rbJump(p){
+  var src=rbFrameSrc(p); if(!src) return;
+  var f=$('rbFrame'); if(!f) return;
+  var cur=(f.getAttribute('src')||'');
+  var sameDoc=!!cur && cur.split('#')[0]===src.split('#')[0];
+  if(!sameDoc){ f.setAttribute('src',src); return; }
+  var nf=document.createElement('iframe');
+  nf.className=f.className; nf.id='rbFrame'; nf.title=f.title||'COC7th 核心规则书';
+  nf.setAttribute('src',src);
+  f.parentNode.replaceChild(nf, f);
+}
 function rbOpenTab(){
   var base=rulebookPdf(); if(!base){ toast('规则书 PDF 还没加载好'); return; }
   window.open(base+'#page='+rulebookPage, '_blank');
 }
-function rbToggleToc(){ var el=$('rbSide'); if(el) el.classList.toggle('hide'); }
+/* 目录/搜索面板可收起（记在本机），按钮文字跟着状态走，一眼能看出是开还是关。 */
+function rbTocHidden(){
+  if(!state) return false;
+  if(!state.ui) state.ui={};
+  return !!state.ui.rbTocHide;
+}
+function rbTocBtnLabel(){
+  return rbTocHidden() ? '☰ 展开目录' : '☰ 收起目录';
+}
+function rbApplyToc(){
+  var el=$('rbSide'); if(!el) return;
+  el.classList.toggle('hide', rbTocHidden());
+  var b=$('rbTocBtn'); if(b) b.textContent=rbTocBtnLabel();
+}
+function rbToggleToc(){
+  if(!state) return;
+  if(!state.ui) state.ui={};
+  state.ui.rbTocHide=!rbTocHidden();
+  saveStateQuiet();
+  rbApplyToc();
+}
 function rbZoomBy(d){
   rbZoom=Math.max(50,Math.min(200,rbZoom+d*10));
-  rbPaintFrame();
+  rbJump(rulebookPage);
 }
 function rbRenderToc(){
   var box=$('rbToc'); if(!box) return;
@@ -8899,8 +9130,7 @@ function rbGoto(p){
   var n=rbPageCount()||1;
   rulebookPage=Math.max(1,Math.min(n, p|0 || 1));
   var inp=$('rbPageInput'); if(inp) inp.value=rulebookPage;
-  var f=$('rbFrame'), src=rbFrameSrc(rulebookPage);
-  if(f && src) f.setAttribute('src', src);
+  rbJump(rulebookPage);
   var side=$('rbSide');
   if(side){
     var items=side.querySelectorAll('.rb-tocitem');

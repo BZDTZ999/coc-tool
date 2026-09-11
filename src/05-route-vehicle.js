@@ -173,9 +173,6 @@ function hpBar(c){
   return `<div style="display:flex;align-items:center;gap:6px"><div class="bar hp" style="width:70px"><i style="width:${pct}%"></i></div><span class="num">${c.hp.cur}/${c.hp.max}</span></div>`;
 }
 
-var combTargetId=null;
-
-function combSelectTarget(cid){ combTargetId=cid; toast('已将目标设为 '+combActiveName(cid)); renderActivePanel(); renderCombatRoster(); }
 function combActiveName(cid){ var c=combById(cid); return c?c.name:''; }
 function combById(cid){ return state.combat.participants.filter(function(c){return c.id===cid;})[0]||null; }
 function activeComb(){ return combById(combActiveId); }
@@ -228,13 +225,9 @@ function combatAttackRoll(){
     var w=c.weapons[wi];
     if((w.ammoCur||0)<=0){ toast('「'+w.name+'」没有弹药，先装填'); return; }
   }
-  var tgtSel=$('ap-target');
-  var tid=(tgtSel&&tgtSel.value)?tgtSel.value:combTargetId;
-  var t=combById(tid);
-  if(!t){
-    t=state.combat.participants.filter(function(x){return x.id!==c.id && x.state!=='死亡'&&x.state!=='离场';})[0]||null;
-    if(!t){ toast('没有可攻击的目标'); return; }
-  }
+  /* 目标按钮已经去掉（战斗里不再手动选目标）：默认打对面第一个还站着的成员。 */
+  var t=state.combat.participants.filter(function(x){return x.id!==c.id && x.state!=='死亡'&&x.state!=='离场';})[0]||null;
+  if(!t){ toast('没有可攻击的目标'); return; }
   var skillName=weapon.skill||'斗殴';
   var skillVal=25;
   (c.skills||[]).forEach(function(s){ if(s.name===skillName) skillVal=s.total; });
@@ -371,8 +364,12 @@ function restoreBackup(ev){
 }
 function wipeData(){
   if(!confirmBox('真的要清空全部数据吗？建议先导出备份。')) return;
-  if(!confirmBox('再次确认：所有调查员/NPC/地图/战斗记录将删除。')) return;
+  if(!confirmBox('再次确认：所有调查员/NPC/地图/战斗记录、上传的模组都会删除。')) return;
   try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  /* 上传的模组存在 IndexedDB 里（不是 localStorage），要单独清掉，否则「清空」后右半屏还留着旧模组。 */
+  try{ if(typeof moduleClear==='function') moduleClear(); }catch(e){}
+  try{ if(typeof idbDel==='function') idbDel('module'); }catch(e){}
+  try{ if(typeof closeSidePane==='function') closeSidePane(); }catch(e){}
   state=defaultState();
   saveStateQuiet();
   switchTab('surveyors');

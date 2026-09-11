@@ -47,9 +47,18 @@ function loadState(){
     state.activeMapId = state.maps[0].id;
     saveStateQuiet();
   }
-  if (!state.vehicles) state.vehicles = defaultVehicles();
   if (!state.combat) state.combat = {round:0,phase:'行动',participants:[],log:[]};
   if (!state.clockStart) state.clockStart = Date.now();
+  healMapsAndVehicles();
+}
+/* 自愈：老存档可能把 vehicles 存成空数组、或把地图删光（maps 空且 activeMapId 悬空），
+   那样「载具·时间速度」的默认速度表、地点/道路编辑就会整个空掉。这里补回默认值。 */
+function healMapsAndVehicles(){
+  if (!Array.isArray(state.vehicles) || !state.vehicles.length) state.vehicles = defaultVehicles();
+  if (!Array.isArray(state.maps)) state.maps = [];
+  if (!state.maps.length) state.maps.push(makeDemoMap());
+  var okId = state.maps.some(function(m){ return m && m.id === state.activeMapId; });
+  if (!okId) state.activeMapId = state.maps[0] ? state.maps[0].id : null;
 }
 function saveStateQuiet(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
 

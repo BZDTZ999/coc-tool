@@ -707,12 +707,17 @@ body.fs-combat #tab-combat #combatLogCard{display:none!important}
 body.fs-combat #tab-combat #combatStageCard{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;margin:0;width:100%}
 body.fs-combat #tab-combat #combatStageCard .battlecanvas-wrap{flex:1 1 auto;min-height:0;overflow:hidden}
 body.fs-combat #tab-combat #combatMemberCard{flex:0 0 auto;max-height:38%;overflow:auto;margin:0}
-body.fs-combat #tab-combat #activePanel{display:none!important}
+/* 选中角色后的详情：不管全屏与否都悬浮在屏幕最左边（以前只有全屏才浮，普通模式下挤在场景下面不好用）。
+   只在「战斗页当前可见」时浮出来，切到别的页会自动收起显示。 */
+#tab-combat #activePanel{display:none!important}
+body.comb-has-active #tab-combat.active #activePanel,
 body.fs-combat.comb-has-active #tab-combat #activePanel{display:block!important;position:fixed;left:10px;right:auto;top:12px;bottom:88px;
   width:min(380px,40vw);z-index:66;overflow:auto;margin:0}
 
 /* ---- 全屏时「半个屏幕」的悬浮栏目（四项互斥，只能开一个） ---- */
 body.fs-map .floatpanel,body.fs-combat .floatpanel{left:10px;right:auto;transform:none;width:min(760px,50vw)}
+/* 普通模式（未全屏）选中战斗成员时，详情浮层同样贴左边；窄屏铺满 */
+@media(max-width:900px){ body.comb-has-active #tab-combat.active #activePanel{width:auto;left:8px;right:8px;bottom:74px} }
 body.fs-map .floatpanel.script-on,body.fs-combat .floatpanel.script-on{width:min(880px,52vw);height:min(80vh,860px)}
 body.fs-map .floatpanel.script-on .floatbody,body.fs-combat .floatpanel.script-on .floatbody{height:calc(min(80vh,860px) - 50px)}
 body.fs-map .floatpanel.dice-on,body.fs-combat .floatpanel.dice-on{width:min(760px,50vw)}
@@ -914,6 +919,10 @@ body.bgcustom #mapWrap,body.bgcustom .battlecanvas-wrap{isolation:isolate}
 /* ================= 左右分栏：右半屏（📖 模组 / 📚 规则书） ================= */
 .splitwrap{display:flex;align-items:flex-start;gap:0;min-width:0}
 .splitleft{flex:1 1 auto;min-width:0}
+/* 右半屏打开、拖细分栏时，左半边不能有内容顶出屏幕（战斗场景/地图会跟着重新量尺寸，
+   这里再兜一道底：超出的部分裁在左半边里，不会把整页挤得往左跑）。 */
+body.sideopen .splitleft{overflow:hidden}
+body.sideopen .battlecanvas-wrap{overflow:hidden}
 body.sideopen main{max-width:min(1900px, 98vw)}
 .splitbar{flex:none;width:9px;align-self:stretch;margin:0 4px;border-radius:6px;cursor:col-resize;
   background:linear-gradient(180deg,transparent,var(--line) 12%,var(--line) 88%,transparent);opacity:.75}
@@ -930,7 +939,11 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-empty p{margin:6px 0}
 .sp-drop{margin:8px;padding:8px 10px;border:2px dashed var(--line);border-radius:10px;text-align:center;color:var(--muted);font-size:12px}
 .sp-drop.on{border-color:var(--acc);color:var(--gold);background:rgba(227,196,127,.08)}
-.sp-filebar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.sp-filebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 10px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+.sp-find{flex-wrap:wrap;gap:4px;align-items:center}
+.sp-find input{width:150px}
+.sp-hit{background:rgba(227,196,127,.32);color:inherit;border-radius:3px}
+.sp-hit.on{background:var(--gold);color:#1a1e2b}
 .sp-fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--gold)}
 .sp-frame{width:100%;height:calc(100vh - 210px);min-height:360px;border:0;background:#fff}
 .sp-doc{flex:1 1 auto;overflow:auto;padding:4px 14px 20px;font-size:14px;line-height:1.85;word-break:break-word}

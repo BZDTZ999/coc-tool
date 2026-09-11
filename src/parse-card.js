@@ -95,7 +95,7 @@
   function parseWorkbook(wb) {
     var result = {
       ok:false, sheet:null, basic:{}, attrs:{}, derived:{}, skills:[], weapons:[],
-      items:[], bagItems:[], assets:{}, spells:[], backstory:{ sections:{}, text:'' }, story:[], campaigns:[], warnings:[]
+      items:[], bagItems:[], assets:{}, spells:[], customTraits:[], backstory:{ sections:{}, text:'' }, story:[], campaigns:[], warnings:[]
     };
     if (!wb || !wb.Sheets || !wb.SheetNames || !wb.SheetNames.length) {
       result.warnings.push('无法读取该文件，请确认是有效的 .xlsx。');
@@ -173,7 +173,9 @@
         /* 顺序：名称 / 成功率 / 初始 / 职业 / 兴趣 / 成功标 / 本职（★） / 名称后半格
            左半技能的「技能名称」是两格合并的（F:G 是「格斗：」「射击：」「技艺①」这类大类，
            H:I 才是「斗殴」「手枪」「符篆」），只读 F 会得到「格斗：」这种半截名字。 */
-        [['F','R','J','N','P','B','D','H'],['AB','AN','AF','AJ','AL','X','Z',null]].forEach(function (g) {
+        /* 右半的自定义子技能名（如「驾驶：」后面的「摩托」）写在 AD 列，
+           卡里 AF 列的成功率公式会去比 AD —— 不读 AD 就丢了自定义技能名。 */
+        [['F','R','J','N','P','B','D','H'],['AB','AN','AF','AJ','AL','X','Z','AD']].forEach(function (g) {
           var nm1 = clean(row[colIdx(g[0])]);
           if (!nm1) return;
           var nm2 = g[7] ? clean(row[colIdx(g[7])]) : '';
@@ -230,10 +232,18 @@
         var rawText = (rawName === null || rawName === undefined) ? '' : String(rawName).replace(/\s+/g, ' ').trim();
         if (/^(资产|信用评级|随身|装备|背景)/.test(rawText)) break;   // 武器表结束
         var nm = clean(rawName);
-        if (!nm) continue;                                            // 空行 / 「无」占位行
+        var wType = raw(row[colIdx('G')]);
+        /* 这两种卡里「武器名称」是自由填的，很多玩家（例如「实验司机」那张）只选了「类型」，
+           名称那格空着 —— 以前直接 continue，于是整行武器读不到。名字空但类型有内容时照样读，
+           用类型当显示名。名字是「无/——」这类占位符的（模板第一行「无 | 肉搏」）跳过。 */
+        if (!nm) {
+          if (!wType) continue;
+          if (/^(无|——|—|×|-|\/|\.)$/.test(rawText)) continue;
+          nm = wType;
+        }
         var ammoTxt = raw(row[colIdx('AG')]);
         weapons.push({
-          name: nm, type: raw(row[colIdx('G')]),
+          name: nm, type: wType,
           skill: raw(row[colIdx('M')]),
           success: num(row[colIdx('Q')]),
           damage: raw(row[colIdx('W')]),
@@ -246,6 +256,17 @@
       }
     }
     result.weapons = weapons;
+
+    /* —— 任意特长（人物卡右上角「你现在有这么多 / 任意特长」下面的 6 个框：
+       BA18/BJ18、BA19/BJ19、BA20/BJ20；BA 与 BJ 两列各 3 行，都是合并格）。
+       这是玩家自己写的自由文本（比如「考古学」「钓鱼」），原卡用它记自由点数花在哪。
+       以前工具完全没读，导出的卡里这段就空了。 */
+    var customTraits = [];
+    [['BA',18],['BJ',18],['BA',19],['BJ',19],['BA',20],['BJ',20]].forEach(function (t) {
+      var v = clean(cellV(ws, t[1], t[0]));
+      if (v) customTraits.push(v);
+    });
+    result.customTraits = customTraits;
 
     // —— 随身物品（「物品名称」列，表头 78 行，数据 79..95） ——
     var items = [];

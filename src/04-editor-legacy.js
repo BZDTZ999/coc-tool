@@ -139,7 +139,16 @@ function legAllowed(leg, vehId){
 function distBetween(m,a,b){ return Math.sqrt(Math.pow(m.points[a].x-m.points[b].x,2)+Math.pow(m.points[a].y-m.points[b].y,2))*(m.kmPerPx||0.01); }
 function renderMapLists(){
   var m=currentMap(); var pc=$('mapPointsCard'), lc=$('mapLegsCard');
-  if(!pc||!lc||!m){ if(pc)pc.innerHTML=''; if(lc)lc.innerHTML=''; return; }
+  if(!pc||!lc) return;
+  /* 没有地图时不要把两块编辑区清空（看起来像“功能没了”），给一句提示 + 一个新建入口。 */
+  if(!m){
+    var noMap='<details class="card ccard" open><summary>📍 地点</summary><div class="hint" style="padding:6px">当前还没有地图：'+
+      '<button class="small primary" onclick="newMap()">＋ 新建地图</button> 或在上面的「🗺 地图」里载入一张预设地图，'+
+      '建好后地点与道路就能在这里编辑。</div></details>';
+    pc.innerHTML=noMap;
+    lc.innerHTML='<details class="card ccard" open><summary>🛤 道路 / 路径</summary><div class="hint" style="padding:6px">先有地图，再在两个地点之间加路。</div></details>';
+    return;
+  }
   pc.innerHTML='<details class="card ccard" data-coll="pts"'+(MAP_COLL&&MAP_COLL.pts?' open':'')+'><summary>📍 地点（'+m.points.length+'）</summary><div>'+
     (m.points.length?m.points.map(function(pt,i){
       return `<div class="listitem row" style="gap:6px">

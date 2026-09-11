@@ -170,7 +170,12 @@ function renderMapsShell(){
   var sel=$('mapSel'); if(!sel) return;
   sel.innerHTML=state.maps.map(function(m){return '<option value="'+m.id+'"'+(m.id===state.activeMapId?' selected':'')+'>'+esc(m.name)+'</option>';}).join('')||'<option value="">(无场景)</option>';
   if(sel.value!==(state.activeMapId||'')) sel.value=state.activeMapId||'';
-  if(!state.maps.length){ var mh=$('mapHint'); if(mh) mh.textContent='请先“新建场景”。'; return; }
+  if(!state.maps.length){
+    var mh=$('mapHint');
+    if(mh) mh.innerHTML='还没有地图：点上面「🗺 地图」新建或载入一张预设地图。';
+    renderMapActorsBox(); renderMapVehicles(); renderPropPalette(); renderMapLists(); renderRoutePanel();
+    return;
+  }
   var m=currentMap(); if(!m) return;
   var sc=$('mapScale'); if(sc) sc.value=Math.round(((m.kmPerPx||0.02)*MAP_GRID_PX)*10000)/10000;
   /* 室内地图不显示比例尺 */

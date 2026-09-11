@@ -256,8 +256,11 @@ function vehAssignName(id){
 }
 function renderMapVehicles(){
   var box=$('mapVehicles'); if(!box) return;
-  var m=currentMap(); if(!m){ box.innerHTML=''; return; }
-  var onMapActors=(m.tokens||[]).map(function(t){return t.actorId;});
+  /* 载具速度表是全局的（不属于某张地图），没有地图也要能看/改 —— 以前这里要求 currentMap()，
+     地图一旦被删光，整个列表就空白了。 */
+  var m=currentMap();
+  if(!Array.isArray(state.vehicles)) state.vehicles=defaultVehicles();
+  var onMapActors=((m&&m.tokens)||[]).map(function(t){return t.actorId;});
   var actorsOnMap=state.actors.filter(function(a){return onMapActors.indexOf(a.id)>=0;});
   box.innerHTML=`<div class="smallgrid">`+state.vehicles.map(function(v,i){
     var opts='<option value="">— 不指定 —</option>'+actorsOnMap.map(function(a){

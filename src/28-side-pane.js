@@ -41,6 +41,20 @@ function applySidePane(){
   } else {
     pane.style.flexBasis=''; if(left) left.style.flexBasis='';
   }
+  sidePaneResizeScenes();
+}
+/* 左半边变窄/变宽后，地图与战斗场景要按新宽度重新量一次尺寸，
+   否则画布还留着旧宽度，会顶出左半边（用户反馈过：开着模组拖分栏，战斗场景跑到屏幕外）。 */
+var _sideSceneRaf=0;
+function sidePaneResizeScenes(){
+  if(_sideSceneRaf) return;
+  var run=function(){
+    _sideSceneRaf=0;
+    try{ if(typeof drawBattleScene==='function') drawBattleScene(); }catch(e){}
+    try{ if(typeof drawMapCanvas==='function' && typeof currentMap==='function' && currentMap()) drawMapCanvas(); }catch(e){}
+  };
+  if(typeof requestAnimationFrame==='function') _sideSceneRaf=requestAnimationFrame(run);
+  else run();
 }
 function initSidePane(){
   var pane=$('sidePane'), bar=$('splitBar');
@@ -209,15 +223,17 @@ function renderModulePane(pane){
       '<p class="hint">想左右调宽度：拖中间那条细线，双击回到一半一半。</p></div>';
   } else if(m.kind==='pdf'){
     body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📄 '+esc(m.name)+'</span>'+
-         '<span class="hint">'+moduleSizeText(m.size)+' · PDF 可用右上角工具缩放/搜索</span></div>'+
+         '<span class="hint">'+moduleSizeText(m.size)+' · PDF 用阅读器自带的搜索（Ctrl/⌘+F）与缩放</span></div>'+
          '<iframe class="sp-frame" src="'+esc(m.url)+'" title="模组 PDF"></iframe>';
   } else if(m.kind==='docx'){
     body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📝 '+esc(m.name)+'</span>'+
+         moduleFindBarHTML()+
          '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
          '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
          '<div class="sp-doc" id="spDoc">'+moduleDocxHTML(m.text)+'</div>';
   } else {
     body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📄 '+esc(m.name)+'</span>'+
+         moduleFindBarHTML()+
          '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
          '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
          '<div class="sp-doc" id="spDoc"><pre class="sp-pre">'+esc(m.text)+'</pre></div>';
@@ -226,6 +242,64 @@ function renderModulePane(pane){
   pane.innerHTML=head+'<div class="sp-body">'+body+drop+'</div>'+
     '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown" style="display:none" onchange="onModulePick(event)">';
   moduleBindDrop();
+}
+/* ---- Word / 文本模组：搜索 + 高亮 + 上/下一条跳转 ---- */
+function moduleFindBarHTML(){
+  return '<span class="row sp-find"><input type="text" id="modSearch" placeholder="在模组里搜索（回车）"'+
+    ' onkeydown="if(event.key===\'Enter\')moduleFind()">'+
+    '<button class="small" onclick="moduleFind()" title="搜索并高亮">🔍</button>'+
+    '<button class="small ghost" onclick="moduleFindStep(-1)" title="上一处">↑</button>'+
+    '<button class="small ghost" onclick="moduleFindStep(1)" title="下一处">↓</button>'+
+    '<span class="hint" id="modFindInfo"></span></span>';
+}
+var modHits=[], modHitIdx=-1;
+function moduleSetFindInfo(t){ var el=$('modFindInfo'); if(el) el.textContent=t||''; }
+function moduleClearHits(){
+  var doc=$('spDoc'); if(!doc){ modHits=[]; modHitIdx=-1; return; }
+  var marks=doc.querySelectorAll('mark.sp-hit');
+  for(var i=0;i<marks.length;i++){
+    var m=marks[i], p=m.parentNode;
+    if(!p) continue;
+    p.replaceChild(document.createTextNode(m.textContent), m);
+    if(p.normalize) p.normalize();
+  }
+  modHits=[]; modHitIdx=-1;
+  moduleSetFindInfo('');
+}
+function moduleFind(){
+  var doc=$('spDoc'); if(!doc) return;
+  var inp=$('modSearch'); var q=((inp&&inp.value)||'').trim();
+  moduleClearHits();
+  if(!q) return;
+  var walker=document.createTreeWalker(doc, (window.NodeFilter&&window.NodeFilter.SHOW_TEXT)||4, null);
+  var nodes=[], n;
+  while((n=walker.nextNode())){ if(n.nodeValue && n.nodeValue.trim()) nodes.push(n); }
+  var lower=q.toLowerCase();
+  nodes.forEach(function(node){
+    var txt=node.nodeValue||''; var low=txt.toLowerCase();
+    if(low.indexOf(lower)<0) return;
+    var frag=document.createDocumentFragment(), pos=0, idx;
+    while((idx=low.indexOf(lower,pos))>=0){
+      if(idx>pos) frag.appendChild(document.createTextNode(txt.slice(pos,idx)));
+      var mk=document.createElement('mark');
+      mk.className='sp-hit'; mk.textContent=txt.slice(idx, idx+q.length);
+      frag.appendChild(mk); modHits.push(mk);
+      pos=idx+q.length;
+    }
+    if(pos<txt.length) frag.appendChild(document.createTextNode(txt.slice(pos)));
+    node.parentNode.replaceChild(frag, node);
+  });
+  if(!modHits.length){ moduleSetFindInfo('没找到「'+q+'」'); return; }
+  modHitIdx=-1; moduleFindStep(1);
+}
+function moduleFindStep(d){
+  if(!modHits.length){ moduleFind(); return; }
+  if(modHitIdx<0) modHitIdx=(d<0?0:0);
+  else modHitIdx=(modHitIdx+d+modHits.length)%modHits.length;
+  for(var i=0;i<modHits.length;i++) modHits[i].classList.toggle('on', i===modHitIdx);
+  var m=modHits[modHitIdx];
+  if(m && m.scrollIntoView){ try{ m.scrollIntoView({block:'center'}); }catch(e){ try{ m.scrollIntoView(); }catch(e2){} } }
+  moduleSetFindInfo((modHitIdx+1)+' / '+modHits.length);
 }
 function moduleFont(d){
   var el=$('spDoc'); if(!el) return;
@@ -616,7 +690,7 @@ function renderRulebookPane(pane){
   pane.innerHTML='<div class="sp-head"><b>📚 规则书</b>'+
     '<span class="hint">'+(rulebookData? '原版 · 全书 '+rbPageCount()+' 页 · 目录 '+((rulebookData.toc||[]).length)+' 条':'正在加载…')+'</span>'+
     '<div class="row sp-tools">'+
-      '<button class="small ghost" id="rbTocBtn" onclick="rbToggleToc()" title="展开/收起目录与搜索">☰ 目录</button>'+
+      '<button class="small ghost" id="rbTocBtn" onclick="rbToggleToc()" title="展开/收起左侧目录与搜索">☰ 收起目录</button>'+
       '<button class="small ghost" onclick="rbZoomBy(-1)" title="缩小">A－</button>'+
       '<button class="small ghost" onclick="rbZoomBy(1)" title="放大">A＋</button>'+
       '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
@@ -633,12 +707,13 @@ function renderRulebookPane(pane){
           '<button class="small ghost" onclick="rbGoto(rulebookPage-1)">‹ 上一页</button>'+
           '<span class="rb-pageno"><input type="number" id="rbPageInput" value="'+rulebookPage+'" min="1" onchange="rbGoto(parseInt(this.value,10))"> / <span id="rbPageMax">'+rbPageCount()+'</span></span>'+
           '<button class="small ghost" onclick="rbGoto(rulebookPage+1)">下一页 ›</button>'+
-          '<span class="hint" id="rbHint">左侧目录 / 搜索定位，正文用浏览器阅读器看原版</span>'+
+          '<span class="hint" id="rbHint">正文就是原版 PDF：阅读器自带的目录 / 页码 / Ctrl+F 都能用；左边目录搜索点一下也会跳页</span>'+
           '<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗ 新窗口</button>'+
         '</div>'+
         '<iframe class="rb-frame" id="rbFrame" title="COC7th 核心规则书"></iframe>'+
       '</div>'+
     '</div>';
+  rbApplyToc();
   ensureRulebook(function(){
     rbRenderToc();
     rbPaintFrame();
@@ -657,14 +732,47 @@ function rbPaintFrame(){
   }
   f.setAttribute('src',src);
 }
+/* 跳到某一页：同一份 PDF 只改 #page= 时，部分浏览器（已加载完的阅读器）不会重新定位，
+   于是「点目录/搜索命中不动」。这时整块换成一个新 iframe 最稳（blob 已缓存，重开很快）。 */
+function rbJump(p){
+  var src=rbFrameSrc(p); if(!src) return;
+  var f=$('rbFrame'); if(!f) return;
+  var cur=(f.getAttribute('src')||'');
+  var sameDoc=!!cur && cur.split('#')[0]===src.split('#')[0];
+  if(!sameDoc){ f.setAttribute('src',src); return; }
+  var nf=document.createElement('iframe');
+  nf.className=f.className; nf.id='rbFrame'; nf.title=f.title||'COC7th 核心规则书';
+  nf.setAttribute('src',src);
+  f.parentNode.replaceChild(nf, f);
+}
 function rbOpenTab(){
   var base=rulebookPdf(); if(!base){ toast('规则书 PDF 还没加载好'); return; }
   window.open(base+'#page='+rulebookPage, '_blank');
 }
-function rbToggleToc(){ var el=$('rbSide'); if(el) el.classList.toggle('hide'); }
+/* 目录/搜索面板可收起（记在本机），按钮文字跟着状态走，一眼能看出是开还是关。 */
+function rbTocHidden(){
+  if(!state) return false;
+  if(!state.ui) state.ui={};
+  return !!state.ui.rbTocHide;
+}
+function rbTocBtnLabel(){
+  return rbTocHidden() ? '☰ 展开目录' : '☰ 收起目录';
+}
+function rbApplyToc(){
+  var el=$('rbSide'); if(!el) return;
+  el.classList.toggle('hide', rbTocHidden());
+  var b=$('rbTocBtn'); if(b) b.textContent=rbTocBtnLabel();
+}
+function rbToggleToc(){
+  if(!state) return;
+  if(!state.ui) state.ui={};
+  state.ui.rbTocHide=!rbTocHidden();
+  saveStateQuiet();
+  rbApplyToc();
+}
 function rbZoomBy(d){
   rbZoom=Math.max(50,Math.min(200,rbZoom+d*10));
-  rbPaintFrame();
+  rbJump(rulebookPage);
 }
 function rbRenderToc(){
   var box=$('rbToc'); if(!box) return;
@@ -684,8 +792,7 @@ function rbGoto(p){
   var n=rbPageCount()||1;
   rulebookPage=Math.max(1,Math.min(n, p|0 || 1));
   var inp=$('rbPageInput'); if(inp) inp.value=rulebookPage;
-  var f=$('rbFrame'), src=rbFrameSrc(rulebookPage);
-  if(f && src) f.setAttribute('src', src);
+  rbJump(rulebookPage);
   var side=$('rbSide');
   if(side){
     var items=side.querySelectorAll('.rb-tocitem');

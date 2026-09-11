@@ -61,7 +61,7 @@ function combatClear(){
   (state.combat.participants||[]).slice().forEach(function(c){ if(typeof combSyncParticipant==='function') combSyncParticipant(c,{quiet:true}); });
   state.combat.participants=[]; state.combat.round=0;
   state.combat.scene={bg:(state.combat.scene&&state.combat.scene.bg)||null,pos:{},props:[]};
-  combActiveId=null; combTargetId=null;
+  combActiveId=null;
   saveState(); renderCombatShell(); renderActivePanel();
 }
 function renderCombatRoster(){
@@ -87,7 +87,6 @@ function renderCombatRoster(){
       <td class="num" style="font-size:11px">${c.mp&&c.mp.max?c.mp.cur+'/'+c.mp.max:'—'}</td>
       <td><span class="badge ${cls}">${esc(st)}</span></td>
       <td class="combactns" style="text-align:right">
-        <button class="small" title="设为攻击目标" onclick="event.stopPropagation();combSelectTarget('${c.id}')">🎯</button>
         <button class="small danger" title="移出战斗" onclick="event.stopPropagation();combatRemove('${c.id}')">移出</button></td>
     </tr>`;
   }).join('');

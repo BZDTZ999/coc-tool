@@ -320,7 +320,6 @@ const ready = new Promise((res) => {
   const enemyPart = parts.filter(c=>c.actorId===enemy.id)[0];
   enemyPart.armor = 4;
   w.selectComb(myPart.id);
-  w.combTargetId = enemyPart.id;
   const hpBefore = enemyPart.hp.cur;
   try { w.combatAttackRoll(); ok('带护甲攻击检定不抛异常', true); } catch(e){ ok('带护甲攻击检定不抛异常', false, e.stack); }
   ok('护甲参与受击(HP 不回增)', enemyPart.hp.cur <= hpBefore);
@@ -1368,6 +1367,169 @@ const ready = new Promise((res) => {
       /body\.bgcustom \.tb2\.on/.test(cssText) &&
       /body\.bgcustom \.sp-tbl/.test(cssText) &&
       /--uic-b/.test(cssText);
+  })());
+
+
+  /* ---------- 本轮修复：规则书目录收起 / 模组搜索 / 载具与地图自愈 / 战斗详情浮层 / 清空含模组 ---------- */
+  ok('规则书：目录可收起（再点展开），状态记在本机', (function(){
+    w.toggleSidePane('rulebook');
+    var side=$('rbSide'), btn=$('rbTocBtn');
+    if(!side || !btn) return false;
+    w.rbToggleToc();
+    var hidden=side.classList.contains('hide') && /展开目录/.test(btn.textContent) && w.state.ui.rbTocHide===true;
+    w.rbToggleToc();
+    var shown=!side.classList.contains('hide') && /收起目录/.test(btn.textContent) && w.state.ui.rbTocHide===false;
+    return hidden && shown;
+  })());
+  ok('规则书：跳页换新 iframe（同份 PDF 改 #page 不生效的浏览器也能跳）', (function(){
+    var pane=$('sidePane'), before=pane.querySelector('#rbFrame');
+    w.rbGoto(20);
+    var after=pane.querySelector('#rbFrame');
+    return !!after && after!==before && /#page=20/.test(after.getAttribute('src')||'');
+  })());
+
+  /* 模组：txt 载入 → 搜索高亮 → 上/下一条循环 → 清掉高亮
+     （Word 模组走的是同一套 moduleFind/moduleFindStep/moduleClearHits，只是正文换成排好的 HTML） */
+  await new Promise(function(done){
+    w.toggleSidePane('module');
+    var f=new w.File(['第一条线索：失踪的牧师\n第二条线索：旧教堂的地窖\n线索再出现一次'], '线索.txt', {type:'text/plain'});
+    w.loadModuleFile(f, done);
+    setTimeout(done, 1500);
+  });
+  ok('模组：txt/Word 能搜索并高亮，上/下一条会循环并报「第几条」', (function(){
+    var doc=$('sidePane')?$('sidePane').querySelector('#spDoc'):null;
+    if(!doc || !$('modSearch')) return false;
+    $('modSearch').value='线索';
+    w.moduleFind();
+    var hits=doc.querySelectorAll('mark.sp-hit');
+    var n1=hits.length;
+    var info1=$('modFindInfo')?$('modFindInfo').textContent:'';
+    w.moduleFindStep(1);
+    var idx2=$('modFindInfo')?$('modFindInfo').textContent:'';
+    w.moduleFindStep(1); w.moduleFindStep(1);   // 绕回第 1 条
+    var wrapped=$('modFindInfo')?$('modFindInfo').textContent:'';
+    var onCount=doc.querySelectorAll('mark.sp-hit.on').length;
+    w.moduleClearHits();
+    var cleared=doc.querySelectorAll('mark.sp-hit').length===0 && doc.textContent.indexOf('第一条线索')>=0;
+    return n1===3 && /1 \/ 3/.test(info1) && /2 \/ 3/.test(idx2) && /1 \/ 3/.test(wrapped) && onCount===1 && cleared;
+  })());
+
+  /* 载具/地图自愈：老存档把 vehicles 存成空数组、地图删光时不能整个空掉 */
+  ok('存档自愈：载具空数组补回默认速度表、地图删光补一张示例图、悬空 activeMapId 修正', (function(){
+    var vSave=S.vehicles, mSave=S.maps, idSave=S.activeMapId;
+    S.vehicles=[]; S.maps=[]; S.activeMapId='ghost-map';
+    w.healMapsAndVehicles();
+    var r=S.vehicles.length>=10 && S.maps.length===1 && S.activeMapId===S.maps[0].id;
+    S.vehicles=vSave; S.maps=mSave; S.activeMapId=idSave; w.saveStateQuiet();
+    return r;
+  })());
+  ok('地图页：没有地图时地点/道路编辑区仍在（提示 + 「＋ 新建地图」入口）', (function(){
+    var mSave=S.maps, idSave=S.activeMapId, tabSave=S.activeTab;
+    var r=false;
+    try{
+      S.maps=[]; S.activeMapId=null;
+      w.switchTab('maps');
+      w.renderMapLists();
+      r=!!$('mapPointsCard') && $('mapPointsCard').innerHTML.indexOf('newMap()')>=0 &&
+        !!$('mapLegsCard') && $('mapLegsCard').innerHTML.length>0;
+    }catch(e){ r=false; }
+    S.maps=mSave; S.activeMapId=idSave; w.switchTab(tabSave||'surveyors');
+    return r;
+  })());
+  ok('地图页：载具·时间速度没有地图时也能看到默认速度表（不再是空白）', (function(){
+    var mSave=S.maps, idSave=S.activeMapId;
+    S.maps=[]; S.activeMapId=null;
+    w.renderMapVehicles();
+    var html=$('mapVehicles')?$('mapVehicles').innerHTML:'';
+    var r=/步行/.test(html) && /汽车/.test(html);
+    S.maps=mSave; S.activeMapId=idSave; w.renderMapVehicles();
+    return r;
+  })());
+
+  /* 战斗：目标按钮已弃用，攻击自动选对面第一个还站着的 */
+  w.switchTab('combat');
+  ok('战斗：🎯 目标按钮与 combTargetId 已移除（攻击自动打对面第一个存活者）', (function(){
+    var roster=$('combatBody')?$('combatBody').innerHTML:'';
+    return typeof w.combTargetId==='undefined' && typeof w.combSelectTarget!=='function' &&
+      roster.indexOf('combSelectTarget')<0 && roster.indexOf('🎯')<0;
+  })());
+  ok('战斗详情：普通模式也浮在屏幕左侧，切走/取消选中会收起', (function(){
+    var on=d.querySelectorAll('#activePanel').length>0 &&
+      /#tab-combat #activePanel\s*\{\s*display:\s*none/.test(cssText) &&
+      /body\.comb-has-active #tab-combat\.active #activePanel/.test(cssText) &&
+      !/body\.fs-combat #tab-combat #activePanel\s*\{\s*display:\s*none/.test(cssText);
+    var c=(S.combat.participants||[])[0];
+    if(!c) return on;
+    w.selectComb(c.id);
+    var opened=d.body.classList.contains('comb-has-active');
+    w.selectComb(null);
+    var closed=!d.body.classList.contains('comb-has-active');
+    return on && opened && closed;
+  })());
+
+  /* ---------- 人物卡：武器名空只有类型 / 自定义子技能分列 / 任意特长 / 信用评级联动 ---------- */
+  ok('导入：武器「名称空、只选了类型」的行也能读到（实验司机那种卡）', (function(){
+    var res=w.buildCardXlsx(expActor(), w.b64ToBytes(w.__COC_BLANK_CARD_B64));
+    var wb=w.XLSX.read(res.bytes,{type:'array'}), ws=wb.Sheets['人物卡'];
+    delete ws['B53']; ws['G53']={t:'s',v:'刀剑'};
+    var bytes=w.XLSX.write(wb,{bookType:'xlsx',type:'array'});
+    var p=w.CoCParser.parseWorkbook(w.XLSX.read(bytes,{type:'array'}));
+    return (p.weapons||[]).length>=1 && p.weapons[0].name==='刀剑' && p.weapons[0].type==='刀剑';
+  })());
+  ok('导出：武器成功率无技能可查时保留模板公式 + 原卡数值（不再是空的乱码）', (function(){
+    var a=expActor(); a.id='expW2';
+    a.weapons=[{name:'猎刀',type:'刀剑',skill:'鞭子',damage:'1D6',range:'接触',pierce:'—',attacks:'1',ammoCap:0,success:35}];
+    var ws=w.XLSX.read(w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes,{type:'array'}).Sheets['人物卡'];
+    return Number(ws['Q53'].v)===35 && !!ws['Q53'].f && String(ws['Q53'].f).length>0;
+  })());
+  ok('导出：自定义子技能名分格写回（左 F/H、右 AB/AD），不再是「驾驶：摩托」挤一格', (function(){
+    var a=expActor(); a.id='expSplit';
+    a.skills=[{name:'驾驶：摩托',name1:'驾驶：',name2:'摩托',total:40,base:20,slot:{r:16,c:'AB'}}];
+    var ws=w.XLSX.read(w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes,{type:'array'}).Sheets['人物卡'];
+    return String(ws['AB16'].v)==='驾驶：' && String(ws['AD16'].v)==='摩托';
+  })());
+  ok('任意特长：导出写进右上角 6 格（BA/BJ × 18~20），导入读得回来', (function(){
+    var a=expActor(); a.id='expTrait'; a.customTraits=['考古学','钓鱼'];
+    var bytes=w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes;
+    var ws=w.XLSX.read(bytes,{type:'array'}).Sheets['人物卡'];
+    var written=String(ws['BA18'].v)==='考古学' && String(ws['BJ18'].v)==='钓鱼';
+    var p=w.CoCParser.parseWorkbook(w.XLSX.read(bytes,{type:'array'}));
+    return written && (p.customTraits||[]).join(',')==='考古学,钓鱼';
+  })());
+  ok('信用评级：改这一格会同时改「信用评级」技能成功率，导出保留卡上公式', (function(){
+    var a=expActor(); a.id='expCredit';
+    a.skills=[{name:'信用评级',total:30,base:0}];
+    S.actors.push(a);
+    w.openActorModal(a.id,'pc');
+    var inp=$('am-credit'); inp.value='45%';
+    inp.dispatchEvent(new w.Event('input',{bubbles:true}));
+    var chip=[].slice.call(d.querySelectorAll('#am-skills .skillchip, #am-default-skills .skillchip'))
+      .filter(function(c){ var n=c.querySelector('.sk-name'); return n && n.value==='信用评级'; })[0];
+    var live=!!chip && Number(chip.querySelector('.sk-total').value)===45;
+    w.collectFromModal();
+    var saved=(a.skills||[]).filter(function(s){return s.name==='信用评级';})[0];
+    var inActor=!!saved && saved.total===45;
+    w.closeActorModal();
+    var ws=w.XLSX.read(w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes,{type:'array'}).Sheets['人物卡'];
+    var wrote=String(ws['B62'].v)==='45%' && !!ws['B62'].f;
+    S.actors=S.actors.filter(function(x){ return x.id!==a.id; });
+    w.saveStateQuiet();
+    return live && inActor && wrote;
+  })());
+
+  /* ---------- 清空本地数据：上传的模组也一起清 ---------- */
+  ok('清空全部本地数据：连上传的模组（IndexedDB）与右半屏一起清掉', (function(){
+    var stSave=w.state, boxSave=w.confirmBox, delSave=w.idbDel, clearSave=w.moduleClear, closeSave=w.closeSidePane;
+    var called=[];
+    w.confirmBox=function(){ return true; };
+    w.idbDel=function(k){ called.push('del:'+k); };
+    w.moduleClear=function(){ called.push('clear'); };
+    w.closeSidePane=function(){ called.push('close'); };
+    var r=false;
+    try{ w.wipeData(); r=called.indexOf('clear')>=0 && called.indexOf('del:module')>=0 && called.indexOf('close')>=0; }catch(e){ r=false; }
+    w.state=stSave; w.confirmBox=boxSave; w.idbDel=delSave; w.moduleClear=clearSave; w.closeSidePane=closeSave;
+    w.saveStateQuiet(); w.switchTab('surveyors');
+    return r;
   })());
 
   console.log('\n==== RESULT: ' + passed + ' passed, ' + failures.length + ' failed ====');

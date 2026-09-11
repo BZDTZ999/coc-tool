@@ -330,7 +330,22 @@ function cardWritesFor(a, tplRows){
 
   /* 资产：现金 / 货币 / 信用评级 / 其他资产 + 其他资产表（行 75、行 76 合计） */
   N('O62',num(a.cash)); S('S62',a.currency||'美元');
-  S('B62',(a.credit==null||a.credit==='')?tplCell(62,'B'):String(a.credit));
+  /* 信用评级：卡上这格本来是公式（=附表!Z223 → “成功率%/困难%/极难%”）。如果玩家填的就是这种
+     “x%/y%/z%”，就别用死文本把公式顶掉 —— 保留公式、只更新显示值，这样在 Excel 里改
+     「信用评级」技能的熟练度，这格会跟着自动算。填了别的自由文本才原样写进去。 */
+  var creditTxt=(a.credit==null||a.credit==='')?tplCell(62,'B'):String(a.credit);
+  if(/^\s*\d+\s*%?\s*(\/|／)\s*\d+/.test(String(a.credit||'')) || /^\s*\d+\s*%?\s*$/.test(String(a.credit||''))){
+    W.push({ref:'B62',val:creditTxt,num:false,keepF:true});
+  } else S('B62',creditTxt);
+
+  /* 任意特长：人物卡右上角那 6 个框（BA/BJ 两列 × 18~20 行），一格一条。 */
+  var traits=(a.customTraits||[]).map(function(x){ return String(x==null?'':x).replace(/\s+/g,' ').trim(); }).filter(Boolean);
+  if(!traits.length) traits=[];
+  [['BA',18],['BJ',18],['BA',19],['BJ',19],['BA',20],['BJ',20]].forEach(function(t,i){
+    var v=traits[i]||'';
+    var cur=tplCell(t[1],t[0]);
+    if(v!==cur) S(t[0]+t[1],v);
+  });
   S('L62',(a.otherAssets==null||a.otherAssets==='')?tplCell(62,'L'):String(a.otherAssets));
   S('L63',(a.assetsDetail==null||a.assetsDetail==='')?tplCell(63,'L'):String(a.assetsDetail));
   /* 其他资产表（交通工具 / 住所 / 奢侈品 / 股票证券 / 其他）：现在允许填任意字符（“一辆别克”“1200 元”“祖宅”都行）。
@@ -386,15 +401,19 @@ function cardWritesFor(a, tplRows){
        导出去要分段写回，不然会出现「格斗：斗殴 斗殴」这种重复。 */
     var nmFull=String(s.name==null?'':s.name);
     var tplName=String(tplSkillAt[pp.key]||'');
-    var tplName2=(col==='F')?String(tplCell(row,'H')||''):'';
-    var nm1=nmFull, nm2='';
+    /* 技能名在卡上是两格：左半「类别」F + 「具体名」H（格斗：/斗殴），
+       右半「类别」AB + 「具体名」AD（驾驶：/摩托）。两半都要分段写回，
+       不然自定义子技能（技艺①、驾驶：摩托…）会被整段塞进类别格里，卡里的公式就对不上了。 */
+    var nm2Col=(col==='F')?'H':'AD';
+    var tplName2=String(tplCell(row,nm2Col)||'');
+    var nm1=nmFull, nm2='', nmSplit=false;
     if(tplName && nmFull!==tplName && nmFull.indexOf(tplName)===0){          // 模板那格是「格斗：」，我们叫「格斗：斗殴」
-      nm1=tplName; nm2=nmFull.slice(tplName.length).replace(/^[\s：:]+/,'').trim();
+      nm1=tplName; nm2=nmFull.slice(tplName.length).replace(/^[\s：:]+/,'').trim(); nmSplit=true;
     } else if(s.name2 && String(s.name2)!==''){                              // 导入时就分好的两段
-      nm2=String(s.name2); nm1=(s.name1!=null&&String(s.name1)!=='')?String(s.name1):nmFull;
+      nm2=String(s.name2); nm1=(s.name1!=null&&String(s.name1)!=='')?String(s.name1):nmFull; nmSplit=true;
     }
     if(tplName!==nm1) S(G.n+row, nm1);
-    if(col==='F' && tplName2!==nm2) S('H'+row, nm2);
+    if(nmSplit && tplName2!==nm2) S(nm2Col+row, nm2);
     var total=num(s.total);
     var b=(s.base!=null && s.base!=='')?num(s.base):skillBaseOf(s.name);
     if(b!=null && num(tplCell(row,G.b))!==b) N(G.b+row, b);
@@ -491,10 +510,20 @@ function cardWritesFor(a, tplRows){
           putF(col+r, shown, false, true, wV(idx));
         } else S(col+r, own);
       });
-      /* 成功率：按使用技能在本卡技能表里查（左半 H→F，右半 AB），改技能数值自动跟着变 */
-      putF('Q'+r, totNum===null?'':totNum, totNum!==null, false, wQ());
-      putF('S'+r, totNum===null?'':Math.floor(totNum/2), totNum!==null, true, 'IF($Q'+r+'="","",INT($Q'+r+'/2))');
-      putF('U'+r, totNum===null?'':Math.floor(totNum/5), totNum!==null, true, 'IF($Q'+r+'="","",INT($Q'+r+'/5))');
+      /* 成功率：按使用技能在本卡技能表里查（左半 H→F，右半 AB），改技能数值自动跟着变。
+         使用技能不在本卡技能表里时（如「鞭子」这种武器表里的技能），保留卡上原有的查表公式、
+         只把原卡的数值写进去当显示值 —— 这样在 Excel 里换「类型」它照样会重算，不留空、不报错。 */
+      var succ=(totNum!==null) ? totNum : (num(w.success)>0 ? Math.round(num(w.success)) : null);
+      if(totNum!==null){
+        putF('Q'+r, succ, true, false, wQ());
+      } else if(succ!==null){
+        if(tplF(r,'Q')) W.push({ref:'Q'+r,val:succ,num:true,keepF:true});
+        else N('Q'+r, succ);
+      } else {
+        putF('Q'+r, '', false, false, wQ());
+      }
+      putF('S'+r, succ===null?'':Math.floor(succ/2), succ!==null, true, 'IF($Q'+r+'="","",INT($Q'+r+'/2))');
+      putF('U'+r, succ===null?'':Math.floor(succ/5), succ!==null, true, 'IF($Q'+r+'="","",INT($Q'+r+'/5))');
     } else {
       /* 空槽：名字/类型清掉，但**保留模板的公式**（只把显示值清空）——
          以后直接在 Excel 里选个类型，伤害那些还是会自动出来。 */
