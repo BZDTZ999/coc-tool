@@ -1418,6 +1418,118 @@ const ready = new Promise((res) => {
   })());
 
   /* 载具/地图自愈：老存档把 vehicles 存成空数组、地图删光时不能整个空掉 */
+  /* ---------- 模组：多文件（标签页 / 切换 / 单删 / 全清）+ 图片 + 老格式提示 ---------- */
+  var modRestoreURL=null;
+  var modPaneWasOpen=w.sidePaneIsOpen('module');
+  await new Promise(function(done){
+    if(!w.sidePaneIsOpen('module')) w.toggleSidePane('module');
+    w.moduleClear();
+    /* jsdom 没有 URL.createObjectURL，给图片 / PDF 造一个假的（真实浏览器里是 blob: URL） */
+    modRestoreURL=w.URL.createObjectURL;
+    var seq=0;
+    w.URL.createObjectURL=function(){ return 'blob:test/'+(++seq); };
+    w.URL.revokeObjectURL=function(){};
+    var fs=[
+      new w.File(['B-第二章正文'], '02-第二章.txt', {type:'text/plain'}),
+      new w.File(['A-第一章正文'], '01-第一章.txt', {type:'text/plain'}),
+      new w.File(['C-第三章正文'], '03-第三章.txt', {type:'text/plain'})
+    ];
+    w.moduleAddFiles(fs, function(){ done(); });
+    setTimeout(done, 2000);
+  });
+  ok('模组：一次加多个 → 顶部按文件名排好序的标签页，默认看第一份', (function(){
+    var pane=$('sidePane'), tabs=pane.querySelectorAll('#spTabs .sp-tab');
+    var doc=pane.querySelector('#spDoc');
+    return tabs.length===3 &&
+      /01-第一章\.txt/.test(tabs[0].textContent) &&
+      /03-第三章\.txt/.test(tabs[2].textContent) &&
+      tabs[0].classList.contains('on') &&
+      !!doc && doc.textContent.indexOf('A-第一章正文')>=0 &&
+      !!pane.querySelector('#spDrop') && !!$('moduleFileInput') && !!$('moduleFolderInput') &&
+      (($('moduleFileInput').getAttribute('accept')||'').indexOf('image/*')>=0) &&
+      $('moduleFolderInput').hasAttribute('webkitdirectory') &&
+      pane.dataset.dropBound==='1';
+  })());
+  ok('模组：点标签换一份 / ✕ 移出一份 / 全部清除后回到空状态', (function(){
+    var pane=$('sidePane');
+    var ids=w.moduleFiles.map(function(f){ return f.id; });
+    w.moduleSelect(ids[1]);
+    var switched=pane.querySelector('#spDoc') &&
+      pane.querySelector('#spDoc').textContent.indexOf('B-第二章正文')>=0 &&
+      pane.querySelectorAll('#spTabs .sp-tab')[1].classList.contains('on');
+    w.moduleCloseOne(ids[1]);
+    var tabsLeft=pane.querySelectorAll('#spTabs .sp-tab').length;
+    /* 关掉正在看的那份，接着看顶上来那一份（关的是最后一份则退回前一份） */
+    var nextShown=pane.querySelector('#spDoc') &&
+      pane.querySelector('#spDoc').textContent.indexOf('C-第三章正文')>=0;
+    w.moduleClear();
+    var cleaned=w.moduleFiles.length===0 && !pane.querySelector('#spTabs') &&
+      pane.textContent.indexOf('把模组拖进来')>=0 && pane.textContent.indexOf('标签页')>=0;
+    return switched && tabsLeft===2 && nextShown && cleaned;
+  })());
+  await new Promise(function(done){
+    if(!w.sidePaneIsOpen('module')) w.toggleSidePane('module');
+    w.moduleAddFiles([new w.File([new Uint8Array([1,2,3,4])], '场景图-地窖.png', {type:'image/png'})], function(){ done(); });
+    setTimeout(done, 1500);
+  });
+  ok('模组：图片直接显示，点一下切「适应窗口 / 原始大小」', (function(){
+    var pane=$('sidePane'), box=pane.querySelector('#spImgDoc');
+    var img=box?box.querySelector('img.sp-img'):null;
+    var shown=!!img && /^blob:/.test(img.getAttribute('src')||'') && !!pane.querySelector('.sp-tab');
+    w.moduleZoomImg();
+    var zoomed=!!box && box.classList.contains('zoom');
+    w.moduleZoomImg();
+    var back=!!box && !box.classList.contains('zoom');
+    return shown && zoomed && back;
+  })());
+  ok('模组：老格式（.doc / .pptx）给「另存为 PDF」的提示，不当作正文乱排', (function(){
+    var kinds=w.moduleKindOf('旧的.doc','application/msword')==='other' &&
+      w.moduleKindOf('幻灯.pptx','')==='other' &&
+      w.moduleKindOf('模组.PDF','')==='pdf' && w.moduleKindOf('a.docx','')==='docx' &&
+      w.moduleKindOf('图.JPG','')==='image' && w.moduleKindOf('说明.md','')==='text';
+    var html=w.moduleBodyHTML({id:'x',name:'旧的.doc',kind:'other',size:2048});
+    return kinds && html.indexOf('另存为')>=0 && html.indexOf('旧的.doc')>=0;
+  })());
+  await new Promise(function(done){
+    var before=w.moduleFiles.length;
+    w.moduleAddFiles([
+      new w.File([''], '.DS_Store', {type:''}),
+      new w.File([''], '~$模组.docx', {type:''}),
+      new w.File(['新加的正文'], '99-补遗.txt', {type:'text/plain'})
+    ], function(){ done(before); });
+    setTimeout(done, 1200);
+  });
+  ok('模组：跳过隐藏文件与 ~$ 临时文件，只加真文件', (function(){
+    var names=w.moduleFiles.map(function(f){ return f.name; });
+    return names.indexOf('99-补遗.txt')>=0 && names.indexOf('.DS_Store')<0 && names.indexOf('~$模组.docx')<0;
+  })());
+  await new Promise(function(done){
+    /* 拖文件夹走的是 webkitGetAsEntry 递归：用假 entry 验证能一层层读出来 */
+    var fileEntry={isFile:true, isDirectory:false, file:function(ok){ ok(new w.File(['正文'], '内部-第一章.txt', {type:'text/plain'})); }};
+    var dir={isFile:false, isDirectory:true, createReader:function(){
+      var calls=0;
+      return { readEntries:function(cb){ if(calls++) return cb([]); cb([fileEntry, {isFile:true, isDirectory:false, file:function(ok){ ok(new w.File(['x'], '.hidden.txt', {type:'text/plain'})); }}]); } };
+    }};
+    var out=[];
+    w.moduleWalkEntry(dir, out, function(){
+      w.moduleAddFiles(out, function(){ done(); });
+    });
+    setTimeout(done, 1500);
+  });
+  ok('模组：整个文件夹拖进来会递归读出里面的文件（并跳过隐藏文件）', (function(){
+    var names=w.moduleFiles.map(function(f){ return f.name; });
+    var pane=$('sidePane');
+    var okDir=names.indexOf('内部-第一章.txt')>=0 && names.indexOf('.hidden.txt')<0;
+    /* 收尾：把测试加进来的文件清掉，别影响后面的断言 */
+    var keep=w.moduleFiles.map(function(f){ return f.id; });
+    keep.forEach(function(id){ w.moduleCloseOne(id); });
+    if(modRestoreURL) w.URL.createObjectURL=modRestoreURL;
+    var cleaned=w.moduleFiles.length===0 && !pane.querySelector('#spTabs');
+    if(!modPaneWasOpen) w.toggleSidePane('module');
+    return okDir && cleaned;
+  })());
+
+  /* 载具/地图自愈：老存档把 vehicles 存成空数组、地图删光时不能整个空掉 */
   ok('存档自愈：载具空数组补回默认速度表、地图删光补一张示例图、悬空 activeMapId 修正', (function(){
     var vSave=S.vehicles, mSave=S.maps, idSave=S.activeMapId;
     S.vehicles=[]; S.maps=[]; S.activeMapId='ghost-map';

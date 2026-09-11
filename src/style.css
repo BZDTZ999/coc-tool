@@ -448,6 +448,8 @@ body.bgcustom .sidepane{background:var(--uic-b);border-color:var(--uic-line)}
 body.bgcustom .sp-head,body.bgcustom .rb-bar{background:linear-gradient(180deg,var(--uic-a),var(--uic-b));border-bottom-color:var(--uic-line)}
 body.bgcustom .sp-filebar{background:rgba(255,255,255,.03);border-bottom-color:var(--uic-line)}
 body.bgcustom .sp-drop{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .sp-tabs{background:var(--uic-d);border-bottom-color:var(--uic-line)}
+body.bgcustom .sp-tab{border-color:var(--uic-line)}
 body.bgcustom .sp-doc,body.bgcustom .sp-empty{color:var(--ink)}
 body.bgcustom .sp-tbl th{background:var(--uic-d)}
 body.bgcustom .sp-tbl td,body.bgcustom .sp-tbl th{border-color:var(--uic-line)}
@@ -953,7 +955,19 @@ body.spdragging{cursor:col-resize;user-select:none}
 .sp-hit{background:rgba(227,196,127,.32);color:inherit;border-radius:3px}
 .sp-hit.on{background:var(--gold);color:#1a1e2b}
 .sp-fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--gold)}
-.sp-frame{width:100%;height:calc(100vh - 210px);min-height:360px;border:0;background:#fff}
+.sp-frame{width:100%;height:calc(100vh - 250px);min-height:360px;border:0;background:#fff}
+.sp-body-fill{overflow:hidden}
+.sp-body-fill .sp-frame{flex:1 1 auto;height:auto;min-height:240px}
+.sp-tabs{display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);scrollbar-width:thin}
+.sp-tab{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;max-width:240px;padding:3px 5px 3px 9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03);color:var(--ink);font-size:12px;line-height:1.5;cursor:pointer;white-space:nowrap}
+.sp-tab:hover{border-color:var(--acc)}
+.sp-tab.on{border-color:var(--gold);background:rgba(227,196,127,.14);color:var(--gold)}
+.sp-tabname{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.sp-tabx{font-style:normal;opacity:.45;padding:0 3px;border-radius:50%;font-size:11px}
+.sp-tabx:hover{opacity:1;background:rgba(255,255,255,.14)}
+.sp-imgdoc{text-align:center;padding:10px}
+.sp-imgdoc .sp-img{cursor:zoom-in}
+.sp-imgdoc.zoom .sp-img{max-width:none;margin:0 auto;cursor:zoom-out}
 .sp-doc{flex:1 1 auto;overflow:auto;padding:4px 14px 20px;font-size:14px;line-height:1.85;word-break:break-word}
 .sp-doc h1{font-size:1.35em;color:var(--gold);border-bottom:1px solid var(--line);padding-bottom:4px}
 .sp-doc h2{font-size:1.2em;color:var(--gold)}

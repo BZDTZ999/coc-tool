@@ -101,16 +101,25 @@ function renderSidePane(){
 }
 
 /* ================= 📖 模组 ================= */
-var moduleFile=null;                 // {name, kind, text, url}
+var moduleFiles=[];                  // 模组里的文件们：[{id,name,kind,size,url?,blob?,text?}]
+var moduleActiveId=null;             // 当前在看的那一份（标签页只有 active 的那份会渲染大图/正文）
+var moduleSeq=0;
+var MODULE_MAX=300;                  // 一次最多收这么多，免得手滑把整个磁盘拖进来
 function moduleKindOf(name, type){
-  var s=(name||'').toLowerCase();
+  var s=String(name||'').toLowerCase();
   if(/\.pdf$/.test(s)) return 'pdf';
   if(/\.docx$/.test(s)) return 'docx';
-  if(/\.(txt|md|markdown)$/.test(s)) return 'text';
-  if(type==='application/pdf') return 'pdf';
-  if(/wordprocessingml/.test(type||'')) return 'docx';
-  return 'text';
+  if(/\.(txt|md|markdown|csv|json|log)$/.test(s)) return 'text';
+  if(/\.(png|jpe?g|gif|webp|bmp|svg|avif)$/.test(s)) return 'image';
+  var t=String(type||'');
+  if(t==='application/pdf') return 'pdf';
+  if(/wordprocessingml/.test(t)) return 'docx';
+  if(/^image\//.test(t)) return 'image';
+  if(/^text\//.test(t)) return 'text';
+  return 'other';
 }
+function moduleIcon(kind){ return kind==='pdf'?'📄':(kind==='docx'?'📝':(kind==='image'?'🖼':(kind==='text'?'📃':'📦'))); }
+function moduleKindLabel(kind){ return kind==='pdf'?'PDF':(kind==='docx'?'Word':(kind==='image'?'图片':(kind==='text'?'文本':'其他'))); }
 /* ---- IndexedDB：把上传的模组存在浏览器里，刷新后还在 ---- */
 function idbOpen(cb, fail){
   if(!window.indexedDB){ if(fail) fail(new Error('浏览器不支持本地存储')); return; }
@@ -141,62 +150,185 @@ function idbDel(key, cb){
     tx.oncomplete=function(){ if(cb) cb(); };
   }, function(){ if(cb) cb(); });
 }
-function modulePickFile(){ var f=$('moduleFileInput'); if(f) f.click(); }
-function onModulePick(ev){
-  var f=ev.target.files && ev.target.files[0];
-  ev.target.value='';
-  if(f) loadModuleFile(f);
+/* ---- 整份文件列表存成一条记录（PDF / 图片存 blob，Word / 文本存排好的正文） ---- */
+function moduleSaveStore(){
+  var items=moduleFiles.map(function(f){
+    if(f.kind==='pdf'||f.kind==='image') return {id:f.id, name:f.name, kind:f.kind, size:f.size, blob:f.blob||null};
+    return {id:f.id, name:f.name, kind:f.kind, size:f.size, text:f.text||''};
+  });
+  idbPut('moduleList', {v:2, items:items});
 }
-function loadModuleFile(file, cb){
+function moduleRestoreStore(cb){
+  idbGet('moduleList', function(rec){
+    if(rec && rec.items && rec.items.length){
+      moduleFiles=rec.items.map(function(it){
+        var f={id:it.id||('m'+(++moduleSeq)), name:it.name||'模组', kind:it.kind||'text', size:it.size||0};
+        if(it.kind==='pdf'||it.kind==='image'){
+          f.blob=it.blob||null;
+          f.url=(f.blob && window.URL && URL.createObjectURL)?URL.createObjectURL(f.blob):null;
+          if(!f.url) f.missing=true;
+        } else f.text=it.text||'';
+        return f;
+      });
+      moduleActiveId=moduleFiles[0].id;
+      if(cb) cb(true);
+      return;
+    }
+    /* 老版本只存了一个文件（key='module'），搬过来别让用户白传一趟 */
+    idbGet('module', function(old){
+      if(old && old.name){
+        var f={id:'m'+(++moduleSeq), name:old.name, kind:old.kind||'text', size:old.size||0};
+        if(old.kind==='pdf' && old.blob){ f.blob=old.blob; f.url=(window.URL&&URL.createObjectURL)?URL.createObjectURL(old.blob):null; }
+        else f.text=old.text||'';
+        moduleFiles=[f]; moduleActiveId=f.id; idbDel('module'); moduleSaveStore();
+      }
+      if(cb) cb(false);
+    });
+  });
+}
+function modulePickFile(){ var f=$('moduleFileInput'); if(f) f.click(); }
+function modulePickFolder(){ var f=$('moduleFolderInput'); if(f) f.click(); }
+function onModulePick(ev){
+  var fs=ev.target.files;
+  ev.target.value='';
+  if(!fs || !fs.length) return;
+  moduleAddFiles(fs, function(n){ if(n) toast('已加入 '+n+' 个文件'); });
+}
+/* 读一个文件 → item（PDF / 图片走 object URL，Word 解析成 HTML，文本直接读） */
+function moduleReadOne(file, cb){
   var kind=moduleKindOf(file.name, file.type);
-  if(kind==='pdf'){
-    if(moduleFile && moduleFile.url) try{ URL.revokeObjectURL(moduleFile.url); }catch(e){}
-    moduleFile={name:file.name, kind:'pdf', url:URL.createObjectURL(file), size:file.size};
-    idbPut('module', {name:file.name, kind:'pdf', blob:file});
-    renderSidePane(); if(cb) cb();
-    return;
+  var item={id:'m'+(++moduleSeq), name:file.name, kind:kind, size:file.size||0};
+  if(kind==='pdf'||kind==='image'){
+    item.blob=file;
+    item.url=(window.URL&&URL.createObjectURL)?URL.createObjectURL(file):null;
+    if(!item.url) item.missing=true;
+    cb(item); return;
   }
+  var rd=new FileReader();
+  rd.onerror=function(){ cb(null); };
   if(kind==='docx'){
-    var rd2=new FileReader();
-    rd2.onload=function(){
-      var buf=rd2.result, html;
-      try{
-        html=docxToHTML(buf);
-      }catch(e){
+    rd.onload=function(){
+      var html;
+      try{ html=docxToHTML(rd.result); }
+      catch(e){
         html='<div class="sp-empty"><p><b>这个 .docx 打不开</b></p><p class="hint">'+esc(e.message||e)+'</p>'+
              '<p class="hint">可以先用 Word 另存为 PDF 再拖进来（老的 .doc 格式也请先另存为 .docx）。</p></div>';
       }
-      moduleFile={name:file.name, kind:'docx', text:html, size:file.size};
-      idbPut('module', {name:file.name, kind:'docx', text:html});
-      renderSidePane(); if(cb) cb();
+      item.text=html; cb(item);
     };
-    rd2.readAsArrayBuffer(file);
+    rd.readAsArrayBuffer(file);
     return;
   }
-  var rd=new FileReader();
-  rd.onload=function(){
-    var text=String(rd.result||'');
-    moduleFile={name:file.name, kind:kind, text:text, size:file.size};
-    idbPut('module', {name:file.name, kind:kind, text:text});
-    renderSidePane(); if(cb) cb();
-  };
+  rd.onload=function(){ item.text=String(rd.result||''); cb(item); };
   rd.readAsText(file, 'utf-8');
 }
-function restoreModuleFromStore(){
-  idbGet('module', function(rec){
-    if(!rec) return;
-    if(rec.kind==='pdf' && rec.blob){
-      moduleFile={name:rec.name, kind:'pdf', url:URL.createObjectURL(rec.blob), size:rec.blob.size};
-    } else if(rec.text!=null){
-      moduleFile={name:rec.name, kind:rec.kind, text:rec.text, size:(rec.text||'').length};
-    }
-    if(sidePaneIsOpen('module')) renderSidePane();
+/* 一次加一批（拖进来的文件夹 / 多选）：按文件名自然排序，同名覆盖旧的 */
+function moduleAddFiles(list, cb){
+  var files=[].slice.call(list||[]).filter(function(f){
+    return !!(f && f.name) && !/^\./.test(f.name) && !/^~\$/.test(f.name);
+  });
+  if(!files.length){ if(cb) cb(0); return; }
+  if(files.length>MODULE_MAX) files=files.slice(0, MODULE_MAX);
+  var left=files.length, added=0, addedIds=[];
+  files.forEach(function(file){
+    moduleReadOne(file, function(item){
+      if(item){
+        var same=null;
+        moduleFiles.forEach(function(x){ if(x.name===item.name) same=x; });
+        if(same){
+          var si=moduleFiles.indexOf(same);
+          if(same.url) try{ URL.revokeObjectURL(same.url); }catch(e){}
+          item.id=same.id; moduleFiles[si]=item;
+        } else moduleFiles.push(item);
+        added++; addedIds.push(item.id);
+      }
+      if(--left<=0) moduleAddDone(added, cb, addedIds);
+    });
   });
 }
+function moduleAddDone(added, cb, addedIds){
+  moduleFiles.sort(function(a,b){ return String(a.name).localeCompare(String(b.name), 'zh', {numeric:true}); });
+  /* 刚加进来的直接翻到第一份（拖一整个文件夹时最顺手）；按排好序的名次取，别受读取先后影响 */
+  var fresh={}; (addedIds||[]).forEach(function(id){ fresh[id]=1; });
+  var firstNew=null;
+  moduleFiles.forEach(function(f){ if(!firstNew && fresh[f.id]) firstNew=f.id; });
+  var has=moduleFiles.filter(function(f){ return f.id===moduleActiveId; })[0];
+  if(firstNew) moduleActiveId=firstNew;
+  else if(!has) moduleActiveId=moduleFiles.length?moduleFiles[0].id:null;
+  moduleSaveStore(); renderSidePane();
+  if(cb) cb(added);
+}
+/* 拖进来的可能是「整个文件夹」：用 webkitGetAsEntry 递归走一遍 */
+function moduleWalkEntry(entry, out, done){
+  if(!entry){ done(); return; }
+  if(entry.isFile){
+    entry.file(function(f){ if(f && f.name && !/^\./.test(f.name) && !/^~\$/.test(f.name)) out.push(f); done(); }, function(){ done(); });
+    return;
+  }
+  if(entry.isDirectory){
+    var reader=entry.createReader(), kids=[];
+    (function readBatch(){
+      reader.readEntries(function(batch){
+        if(!batch.length){
+          if(!kids.length){ done(); return; }
+          var pending=kids.length;
+          kids.forEach(function(k){ moduleWalkEntry(k, out, function(){ if(--pending<=0) done(); }); });
+          return;
+        }
+        kids=kids.concat([].slice.call(batch));
+        readBatch();
+      }, function(){ done(); });
+    })();
+    return;
+  }
+  done();
+}
+function moduleDropLoad(dt, cb){
+  var entries=[], items=dt && dt.items;
+  if(items && items.length){
+    for(var i=0;i<items.length;i++){
+      var it=items[i];
+      if(it.kind!=='file') continue;
+      var en=(it.webkitGetAsEntry && it.webkitGetAsEntry());
+      if(en) entries.push(en);
+    }
+  }
+  if(!entries.length){
+    var fs=(dt && dt.files)?[].slice.call(dt.files):[];
+    if(!fs.length){ if(cb) cb(0); return; }
+    moduleAddFiles(fs, cb);
+    return;
+  }
+  var out=[], pending=entries.length;
+  entries.forEach(function(en){
+    moduleWalkEntry(en, out, function(){
+      if(--pending<=0) moduleAddFiles(out, cb);
+    });
+  });
+}
+/* 兼容旧调用：一次只加一个文件（测试与老代码都用它） */
+function loadModuleFile(file, cb){ moduleAddFiles([file], function(){ if(cb) cb(); }); }
+function restoreModuleFromStore(){
+  moduleRestoreStore(function(any){
+    if(any && moduleFiles.length && sidePaneIsOpen('module')) renderSidePane();
+  });
+}
+function moduleActive(){ return moduleFiles.filter(function(f){ return f.id===moduleActiveId; })[0]||null; }
+function moduleSelect(id){ if(moduleActiveId===id) return; moduleActiveId=id; renderSidePane(); }
+function moduleCloseOne(id){
+  var i=-1;
+  moduleFiles.forEach(function(f,k){ if(f.id===id) i=k; });
+  if(i<0) return;
+  var f=moduleFiles[i];
+  if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){}
+  moduleFiles.splice(i,1);
+  if(moduleActiveId===id) moduleActiveId=moduleFiles.length?moduleFiles[Math.min(i, moduleFiles.length-1)].id:null;
+  moduleSaveStore(); renderSidePane();
+}
 function moduleClear(){
-  if(!moduleFile) return;
-  if(moduleFile.url) try{ URL.revokeObjectURL(moduleFile.url); }catch(e){}
-  moduleFile=null; idbDel('module');
+  moduleFiles.forEach(function(f){ if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){} });
+  moduleFiles=[]; moduleActiveId=null;
+  idbDel('moduleList'); idbDel('module');
   renderSidePane();
 }
 function moduleSizeText(n){
@@ -206,42 +338,83 @@ function moduleSizeText(n){
   return (n/1024/1024).toFixed(1)+' MB';
 }
 function renderModulePane(pane){
-  var m=moduleFile;
+  var m=moduleActive();
+  var many=moduleFiles.length>1;
   var head='<div class="sp-head"><b>📖 模组</b>'+
-    '<span class="hint">左边照常带团，右边看模组</span>'+
+    '<span class="hint">'+(many?('共 '+moduleFiles.length+' 份，点标签页换着看'):'左边照常带团，右边看模组')+'</span>'+
     '<div class="row sp-tools">'+
-      '<button class="small" onclick="modulePickFile()">'+(m?'🔁 换一个':'⬆ 上传模组')+'</button>'+
-      (m?'<button class="small ghost" onclick="moduleClear()" title="从本机清除（不删你自己的文件）">🗑 清除</button>':'')+
+      '<button class="small" onclick="modulePickFile()" title="可以一次选多个文件">⬆ 添加文件</button>'+
+      '<button class="small" onclick="modulePickFolder()" title="选一整个文件夹，里面的 PDF / Word / 图片会全部加进来">📁 文件夹</button>'+
+      (moduleFiles.length?'<button class="small ghost" onclick="moduleClear()" title="从本机清除（不删你自己的文件）">🗑 全部清除</button>':'')+
       '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
     '</div></div>';
-  var body='';
-  if(!m){
-    body='<div class="sp-empty">'+
-      '<p><b>把模组文件拖进来，或点「⬆ 上传模组」</b></p>'+
-      '<p class="hint">支持 <b>Word（.docx）</b>、<b>PDF</b>、<b>txt / md</b>；PDF 用浏览器自带的阅读器（可缩放、可搜），'+
-      'Word 会直接排成网页看。文件只存在你自己的浏览器里，刷新后还在，不上传任何服务器。</p>'+
-      '<p class="hint">想左右调宽度：拖中间那条细线，双击回到一半一半。</p></div>';
-  } else if(m.kind==='pdf'){
-    body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📄 '+esc(m.name)+'</span>'+
-         '<span class="hint">'+moduleSizeText(m.size)+' · PDF 用阅读器自带的搜索（Ctrl/⌘+F）与缩放</span></div>'+
-         '<iframe class="sp-frame" src="'+esc(m.url)+'" title="模组 PDF"></iframe>';
-  } else if(m.kind==='docx'){
-    body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📝 '+esc(m.name)+'</span>'+
-         moduleFindBarHTML()+
-         '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
-         '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
-         '<div class="sp-doc" id="spDoc">'+moduleDocxHTML(m.text)+'</div>';
-  } else {
-    body='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">📄 '+esc(m.name)+'</span>'+
-         moduleFindBarHTML()+
-         '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
-         '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
-         '<div class="sp-doc" id="spDoc"><pre class="sp-pre">'+esc(m.text)+'</pre></div>';
-  }
-  var drop='<div class="sp-drop" id="spDrop">⬇ 拖模组文件到这里也可以（docx / pdf / txt / md）</div>';
-  pane.innerHTML=head+'<div class="sp-body">'+body+drop+'</div>'+
-    '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown" style="display:none" onchange="onModulePick(event)">';
+  var body=moduleBodyHTML(m);
+  var drop='<div class="sp-drop" id="spDrop">⬇ 把模组文件或<b>整个文件夹</b>拖到这里（PDF · Word · 图片 · txt/md'+
+    (moduleFiles.length?'，可以继续加':'')+'）</div>';
+  pane.innerHTML=head+moduleTabsHTML()+'<div class="sp-body'+(m&&m.kind==='pdf'?' sp-body-fill':'')+'">'+body+drop+'</div>'+
+    '<input type="file" id="moduleFileInput" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple style="display:none" onchange="onModulePick(event)">'+
+    '<input type="file" id="moduleFolderInput" webkitdirectory directory multiple style="display:none" onchange="onModulePick(event)">';
   moduleBindDrop();
+  moduleScrollActiveTab();
+}
+/* 多文件时顶上这一排标签页：点一下换一份，✕ 把这份移出去 */
+function moduleTabsHTML(){
+  if(!moduleFiles.length) return '';
+  var tabs=moduleFiles.map(function(f){
+    var on=(f.id===moduleActiveId);
+    return '<span class="sp-tab'+(on?' on':'')+'" title="'+esc(f.name)+'" onclick="moduleSelect(\''+f.id+'\')">'+
+      moduleIcon(f.kind)+'<span class="sp-tabname">'+esc(f.name)+'</span>'+
+      '<i class="sp-tabx" title="移出这一份" onclick="event.stopPropagation();moduleCloseOne(\''+f.id+'\')">✕</i></span>';
+  }).join('');
+  return '<div class="sp-tabs" id="spTabs">'+tabs+'</div>';
+}
+function moduleBodyHTML(m){
+  if(!m){
+    return '<div class="sp-empty">'+
+      '<p><b>把模组拖进来，或点「⬆ 添加文件 / 📁 文件夹」</b></p>'+
+      '<p class="hint">支持 <b>PDF</b>、<b>Word（.docx）</b>、<b>图片</b>（png / jpg / gif / webp…）、<b>txt / md</b>；'+
+      '多文件模组可以一次全加进来，上面会出一排标签页换着看，不用来回换。</p>'+
+      '<p class="hint">PDF 用浏览器自带的阅读器（可缩放、可搜）；Word 直接排成网页看（有自己的搜索高亮）；'+
+      '图片点一下可以切「适应窗口 / 原始大小」。</p>'+
+      '<p class="hint">文件只存在你自己的浏览器里，刷新后还在，不上传任何服务器。想左右调宽度：拖中间那条细线，双击回到一半一半。</p></div>';
+  }
+  var bar='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span>';
+  if(m.kind==='pdf'){
+    if(!m.url) return moduleLostHTML(m);
+    return bar+'<span class="hint">'+moduleSizeText(m.size)+' · PDF 用阅读器自带的搜索（Ctrl/⌘+F）与缩放</span></div>'+
+      '<iframe class="sp-frame" src="'+esc(m.url)+'" title="模组 PDF"></iframe>';
+  }
+  if(m.kind==='image'){
+    if(!m.url) return moduleLostHTML(m);
+    return bar+'<span class="hint">'+moduleSizeText(m.size)+' · 图片，点图切「适应窗口 / 原始大小」</span></div>'+
+      '<div class="sp-doc sp-imgdoc" id="spImgDoc"><img class="sp-img" src="'+esc(m.url)+'" alt="'+esc(m.name)+'" onclick="moduleZoomImg()"></div>';
+  }
+  if(m.kind==='docx'||m.kind==='text'){
+    var inner=(m.kind==='docx')?moduleDocxHTML(m.text):('<pre class="sp-pre">'+esc(m.text)+'</pre>');
+    return bar+moduleFindBarHTML()+
+      '<span class="row" style="gap:4px"><button class="small ghost" onclick="moduleFont(-1)">A－</button>'+
+      '<button class="small ghost" onclick="moduleFont(1)">A＋</button></span></div>'+
+      '<div class="sp-doc" id="spDoc">'+inner+'</div>';
+  }
+  return bar+'<span class="hint">'+moduleSizeText(m.size)+'</span></div>'+
+    '<div class="sp-empty"><p><b>这份文件的格式现在看不了</b></p>'+
+    '<p class="hint">只支持 PDF / Word（.docx）/ 图片 / txt·md。'+
+    '老格式（.doc、.rtf、.pptx 等）请先用 Word / WPS 另存为 <b>PDF</b> 或 <b>docx</b>，再拖进来。</p></div>';
+}
+function moduleLostHTML(m){
+  return '<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span></div>'+
+    '<div class="sp-empty"><p><b>这份文件读不到了</b></p>'+
+    '<p class="hint">浏览器只把文件存在本机，可能被清掉了；重新拖一次同名文件就会补上。'+
+    '（也可以点标签上的 ✕ 把它移出列表。）</p></div>';
+}
+function moduleZoomImg(){
+  var box=$('spImgDoc'); if(!box) return;
+  box.classList.toggle('zoom');
+}
+function moduleScrollActiveTab(){
+  var tabs=$('spTabs'); if(!tabs) return;
+  var on=tabs.querySelector('.sp-tab.on'); if(!on || !on.scrollIntoView) return;
+  try{ on.scrollIntoView({block:'nearest', inline:'nearest'}); }catch(e){}
 }
 /* ---- Word / 文本模组：搜索 + 高亮 + 上/下一条跳转 ---- */
 function moduleFindBarHTML(){
@@ -308,13 +481,34 @@ function moduleFont(d){
   el.dataset.fs=cur; el.style.fontSize=cur+'px';
 }
 function moduleBindDrop(){
-  var z=$('spDrop'); if(!z) return;
-  ['dragenter','dragover'].forEach(function(ev){ z.addEventListener(ev, function(e){ e.preventDefault(); z.classList.add('on'); }); });
-  ['dragleave','drop'].forEach(function(ev){ z.addEventListener(ev, function(e){ e.preventDefault(); z.classList.remove('on'); }); });
-  z.addEventListener('drop', function(e){
-    var f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    if(f) loadModuleFile(f, function(){ toast('模组已载入'); });
-  });
+  var z=$('spDrop');
+  var on=function(e){ e.preventDefault(); if(z) z.classList.add('on'); };
+  var off=function(e){ e.preventDefault(); if(z) z.classList.remove('on'); };
+  var drop=function(e){
+    var dt=e.dataTransfer;
+    if(e.stopPropagation) e.stopPropagation();
+    if(z) z.classList.remove('on');
+    moduleDropLoad(dt, function(n){
+      if(n) toast(n>1?('已加入 '+n+' 个文件'):'模组已载入');
+      else toast('没读到文件（可能是空的文件夹或这个格式不支持）');
+    });
+  };
+  if(z && !z.dataset.bound){
+    z.dataset.bound='1';
+    ['dragenter','dragover'].forEach(function(ev){ z.addEventListener(ev, on); });
+    ['dragleave'].forEach(function(ev){ z.addEventListener(ev, off); });
+    z.addEventListener('drop', drop);
+  }
+  /* 整条右半屏都能接住拖进来的文件夹，不用对准那一条 */
+  var pane=$('sidePane');
+  if(pane && !pane.dataset.dropBound){
+    pane.dataset.dropBound='1';
+    ['dragenter','dragover'].forEach(function(ev){
+      pane.addEventListener(ev, function(e){ if(sidePaneIsOpen('module')) on(e); });
+    });
+    pane.addEventListener('dragleave', function(e){ if(e.target===pane) off(e); });
+    pane.addEventListener('drop', function(e){ if(sidePaneIsOpen('module')) drop(e); });
+  }
 }
 
 /* ---- .docx → HTML：docx 就是个 zip，自己解压 + 自己排版 ----
