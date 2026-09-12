@@ -1126,6 +1126,105 @@ const ready = new Promise((res) => {
       /会计 5→9/.test(last.note) && /成长 \+4/.test(last.note);
   })());
 
+  // ===== 本轮修复：技能「成长」是**累计**成长（卡上原有的 + 这次团的），不是本次增量 =====
+  /* 造一张「闪避 初始32 / 兴趣18 / 成长10 → 总值60」的卡（模板里闪避在第 29 行） */
+  function cardWithDodge(put){
+    var wb=w.XLSX.read(w.b64ToBytes(w.__COC_BLANK_CARD_B64),{type:'array'});
+    put(wb.Sheets['人物卡']);
+    return w.XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  }
+  function importDodgeCard(put){
+    var bytes=cardWithDodge(put||function(ws){
+      ws['J29']={t:'n',v:32}; ws['L29']={t:'n',v:10}; ws['P29']={t:'n',v:18}; ws['R29']={t:'n',v:60};
+    });
+    w.parseCardData(new Uint8Array(bytes),'闪避测试.xlsx');   // 走真实导入路径（内部会 doImport）
+    return S.actors[S.actors.length-1];
+  }
+  function dodgeOf(a){ return (a.skills||[]).filter(function(s){return s.name==='闪避';})[0]; }
+  function setDodgeTotal(id, total, base){
+    w.openActorModal(id,'pc');
+    var chip=[].slice.call(d.querySelectorAll('#actorModal .skillchip')).filter(function(li){
+      return (li.querySelector('.sk-name')||{}).value==='闪避'; })[0];
+    if(!chip){ w.closeActorModal(); return false; }
+    if(base!=null) chip.dataset.base=String(base);
+    chip.querySelector('.sk-total').value=String(total);
+    w.saveActorModal();
+    return true;
+  }
+  function cardSheetOf(a){
+    return w.XLSX.read(w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes,{type:'array'}).Sheets['人物卡'];
+  }
+
+  ok('导入：卡上「成长」列（左 L）读进技能，不再丢', (function(){
+    var a=importDodgeCard(); var sk=dodgeOf(a);
+    return !!sk && sk.base===32 && sk.growth===10 && sk.intPts===18 && sk.total===60;
+  })());
+
+  ok('成长：卡上原有 10 + 本次 +1 = 11（导出写回「成长」列，不再被覆盖成 1）', (function(){
+    var a=importDodgeCard(); if(!setDodgeTotal(a.id,61)) return false;
+    var ws=cardSheetOf(a), sk=dodgeOf(a);
+    return sk.growth===11 && Number(ws['L29'].v)===11 && Number(ws['R29'].v)===61 &&
+      String(ws['R29'].f||'').toUpperCase().indexOf('SUM(J29:P29)')>=0 &&
+      Number(ws['J29'].v)===32 && Number(ws['P29'].v)===18;
+  })());
+
+  ok('成长：10 + 3 = 13；连涨 10+1+1+1 = 13（多次保存累加，不会只剩最后一次）', (function(){
+    var a=importDodgeCard(); if(!setDodgeTotal(a.id,63)) return false;
+    if(dodgeOf(a).growth!==13) return false;
+    var b=importDodgeCard(); var okAll=true;
+    [61,62,63].forEach(function(t){ if(!okAll) return; if(!setDodgeTotal(b.id,t) || dodgeOf(b).growth!==(t-50)) okAll=false; });
+    return okAll && dodgeOf(b).growth===13 && Number(cardSheetOf(b)['L29'].v)===13;
+  })());
+
+  ok('成长：卡上 0 + 本次 +1 = 1', (function(){
+    var a=importDodgeCard(function(ws){
+      ws['J29']={t:'n',v:32}; ws['L29']={t:'n',v:0}; ws['P29']={t:'n',v:18}; ws['R29']={t:'n',v:50};
+    });
+    if(dodgeOf(a).growth!==0) return false;
+    if(!setDodgeTotal(a.id,51)) return false;
+    return dodgeOf(a).growth===1 && Number(cardSheetOf(a)['L29'].v)===1;
+  })());
+
+  ok('基础值变化 ≠ 成长：初始 32→34 且总值 60→62，成长仍是 10（不会变成 12）', (function(){
+    var a=importDodgeCard();
+    if(!setDodgeTotal(a.id,62,34)) return false;         // 同时改基础值与总值（属性重算会一起动）
+    var ws=cardSheetOf(a), sk=dodgeOf(a);
+    return sk.growth===10 && Number(ws['L29'].v)===10 && Number(ws['J29'].v)===34 && Number(ws['R29'].v)===62;
+  })());
+
+  ok('基础值变化 ≠ 成长：只改总值、不动基础值时成长照常累加（10 + 2 = 12）', (function(){
+    var a=importDodgeCard();
+    if(!setDodgeTotal(a.id,62)) return false;
+    return dodgeOf(a).growth===12;
+  })());
+
+  ok('老存档（技能没有 growth 字段）导出时按卡的不变式反推，不会写成 0', (function(){
+    var a=importDodgeCard();
+    delete dodgeOf(a).growth;
+    var ws=cardSheetOf(a);
+    return Number(ws['L29'].v)===10 && Number(ws['R29'].v)===60;
+  })());
+
+  ok('导出 → 导入：初始 / 兴趣 / 成长 三项都一致（再来一次仍是 11）', (function(){
+    var a=importDodgeCard(); if(!setDodgeTotal(a.id,61)) return false;
+    var bytes=w.buildCardXlsx(a, w.b64ToBytes(w.__COC_BLANK_CARD_B64)).bytes;
+    var p=w.CoCParser.parseWorkbook(w.XLSX.read(bytes,{type:'array'}));
+    var sk=(p.skills||[]).filter(function(s){return s.name==='闪避';})[0];
+    return !!sk && sk.base===32 && sk.intPts===18 && sk.growth===11 && sk.total===61;
+  })());
+
+  ok('战斗同步回档案：职业点 / 兴趣点 / 累计成长 / 所在格子都不会被抹掉', (function(){
+    var a=importDodgeCard(); a.id='expCombG'; S.actors.push(a);
+    var before=dodgeOf(a);
+    var c=w.spawnCombatant(a,'');
+    S.combat=S.combat||{}; S.combat.participants=S.combat.participants||[];
+    S.combat.participants.push(c);
+    var done=w.combSyncParticipant(c,{quiet:true});
+    var after=dodgeOf(a);
+    return done && after && after.growth===10 && after.intPts===18 && after.slot &&
+      !!after.slot.r && after.slot.r===before.slot.r && after.slot.c===before.slot.c;
+  })());
+
   // ===== 本轮修复：源卡错误值(#N/A) / 职业序号空串会让本职列全变 #N/A / 「背包格」列 =====
   ok('导入：Excel 错误值当空处理（#N/A 不会被抄进角色数据）', (function(){
     return w.CoCParser.clean('#N/A')==='' && w.CoCParser.clean('#VALUE!')==='' &&
@@ -3387,19 +3486,52 @@ const ready = new Promise((res) => {
       all.indexOf('十字准星')>=0 && all.indexOf('触手')>=0 && all.indexOf('骷髅')>=0 && all.indexOf('闪电')>=0 &&
       on && saved && off;
   })());
-  ok('彩蛋：点击特效也加到 8 档（触手 / 骷髅 / 骰子 / 雪花），选一档点下去会蹦出小节点', (function(){
+  ok('彩蛋：点击特效加到 16 档（血滴 / 火苗 / 迷雾 / 音符…），选一档点下去会蹦出小节点', (function(){
     w.fancySetTab('fx');
-    var btns=[].slice.call(d.querySelectorAll('#fancyBody .xp-tab')).map(function(b){ return b.textContent; });
+    var btns=[].slice.call(d.querySelectorAll('#fancyBody .fancy-fxcard')).map(function(b){ return b.textContent; });
     var labels=btns.join('');
-    var eight=btns.length>=8 && labels.indexOf('雪花')>=0 && labels.indexOf('触手')>=0 && labels.indexOf('骰子')>=0;
+    var many=btns.length>=16 && labels.indexOf('雪花')>=0 && labels.indexOf('触手')>=0 &&
+      labels.indexOf('骰子')>=0 && labels.indexOf('血滴')>=0 && labels.indexOf('迷雾')>=0 && labels.indexOf('音符')>=0;
     w.fancyPickFx('snow');
     var bits=d.querySelectorAll('.fancy-bit').length;
     var saved=(w.state.ui.fancy||{}).fx==='snow';
-    var lit=d.querySelectorAll('#fancyBody .xp-tab.on').length;
+    var lit=d.querySelectorAll('#fancyBody .fancy-fxcard.on').length;
     w.fancyPickFx('');
     var cleared=(w.state.ui.fancy||{}).fx==='';
     w.fancySetTab('cursor');
-    return eight && bits>0 && saved && lit===1 && cleared;   /* 小节点靠动画跑完自己删，不在这里断言 */
+    return many && bits>0 && saved && lit===1 && cleared;   /* 小节点靠动画跑完自己删，不在这里断言 */
+  })());
+  ok('彩蛋：鼠标样式扩到 30 款，key 不重复、热点都落在 32 格画面里', (function(){
+    var seen={}, bad=0, n=0;
+    w.FANCY_STYLES.forEach(function(st){
+      if(seen[st.k]) bad++;
+      seen[st.k]=1; n++;
+      var hx=st.hot[0], hy=st.hot[1];
+      if(!(hx>=0 && hx<=32 && hy>=0 && hy<=32)) bad++;
+    });
+    return n>=30 && bad===0 && !!seen['key'] && !!seen['compass'] && !!seen['spider'] && !!seen['camera'];
+  })());
+  ok('彩蛋：Retina（dpr=2）下热点坐标跟着图案一起放大，不会「点不准」', (function(){
+    var re=/url\("data:image\/png[^"]*"\) (\d+) (\d+)/;
+    var m1=re.exec(w.fancyCursorCSS('star'));            /* 默认 dpr=1：热点就是 32 格里的原值 */
+    var desc=Object.getOwnPropertyDescriptor(w,'devicePixelRatio');
+    var m2=null;
+    try{
+      Object.defineProperty(w,'devicePixelRatio',{value:2,configurable:true});
+      w._fancyCache={};                                   /* 清了缓存才会按新 dpr 重画 */
+      m2=re.exec(w.fancyCursorCSS('star'));
+    }catch(e){}
+    try{ if(desc) Object.defineProperty(w,'devicePixelRatio',desc); else delete w.devicePixelRatio; }catch(e){}
+    w._fancyCache={};
+    return !!m1 && !!m2 && m1[1]==='16' && m1[2]==='4' && m2[1]==='32' && m2[2]==='8';
+  })());
+  ok('彩蛋：emoji 光标只画一遍（不再错位叠两层，重影 / 毛边就是这么来的）', (function(){
+    var src=fs.readFileSync(path.join(__dirname,'..','src','38-fancy.js'),'utf8');
+    var fn=/function fancyDrawEmoji\(g, ch\)\{[\s\S]*?\n\}/.exec(src);
+    if(!fn) return false;
+    var body=fn[0];
+    var fills=(body.match(/fillText\(/g)||[]).length;    /* 只许有一次 fillText */
+    return fills===1 && body.indexOf('shadowBlur')>=0;
   })());
   ok('彩蛋：手机 / 触屏完全不挂（连鼠标样式都不生成），窄窗口也一样', (function(){
     var old=w.isCoarseTouch;

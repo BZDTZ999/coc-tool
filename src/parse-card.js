@@ -168,14 +168,17 @@
     if (rowsMain) {
       for (var r = 15; r <= 49; r++) {
         var row = rowsMain[r] || [];
-        /* 左半 F/R/J/N/P = 名称/成功率/初始/职业/兴趣；右半 AB/AN/AF/AJ/AL 同义。
+        /* 左半 F/R/J/L/N/P = 名称/成功率/初始/成长/职业/兴趣；右半 AB/AN/AF/AH/AJ/AL 同义。
            同时记下它所在的格子（slot），导出时按原格子写回，技能顺序就不会乱。 */
-        /* 顺序：名称 / 成功率 / 初始 / 职业 / 兴趣 / 成功标 / 本职（★） / 名称后半格
+        /* 顺序：名称 / 成功率 / 初始 / 职业 / 兴趣 / 成功标 / 本职（★） / 名称后半格 / 成长
            左半技能的「技能名称」是两格合并的（F:G 是「格斗：」「射击：」「技艺①」这类大类，
            H:I 才是「斗殴」「手枪」「符篆」），只读 F 会得到「格斗：」这种半截名字。 */
         /* 右半的自定义子技能名（如「驾驶：」后面的「摩托」）写在 AD 列，
            卡里 AF 列的成功率公式会去比 AD —— 不读 AD 就丢了自定义技能名。 */
-        [['F','R','J','N','P','B','D','H'],['AB','AN','AF','AJ','AL','X','Z','AD']].forEach(function (g) {
+        /* 「成长」列（左 L / 右 AH）是卡上的**累计**成长：成功率 R = SUM(J:P) 里就含它。
+           不读这一列的话，导出时就只能拿「和导入时比多了多少」当成长，
+           会把角色原本已经有的累计成长（比如 10）覆盖成本次增量（1）。 */
+        [['F','R','J','N','P','B','D','H','L'],['AB','AN','AF','AJ','AL','X','Z','AD','AH']].forEach(function (g) {
           var nm1 = clean(row[colIdx(g[0])]);
           if (!nm1) return;
           var nm2 = g[7] ? clean(row[colIdx(g[7])]) : '';
@@ -184,6 +187,7 @@
           skills.push({ name: nm, name1: nm1, name2: nm2, base: num(row[colIdx(g[2])]), total: tot,
             occPts: num(row[colIdx(g[3])]), intPts: num(row[colIdx(g[4])]),
             mark: clean(row[colIdx(g[5])]), occ: clean(row[colIdx(g[6])]),
+            growth: num(row[colIdx(g[8])]),
             slot: { r: r + 1, c: g[0] } });
           if (/克苏鲁神话/.test(nm)) mythos = Math.max(mythos, tot);
         });

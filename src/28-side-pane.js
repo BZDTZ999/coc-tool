@@ -375,7 +375,7 @@ function moduleCloseOne(id){
   var i=-1;
   moduleFiles.forEach(function(f,k){ if(f.id===id) i=k; });
   if(i<0) return;
-  if(typeof pdfParkForget==='function') pdfParkForget('spPdfHost');
+  if(typeof pdfParkForget==='function') pdfParkForget('mod:'+id);   /* 只丢这一份的阅读器，别的模组照旧留在内存里 */
   var f=moduleFiles[i];
   if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){}
   moduleFiles.splice(i,1);
@@ -383,8 +383,10 @@ function moduleCloseOne(id){
   moduleSaveStore(); renderSidePane();
 }
 function moduleClear(){
-  if(typeof pdfParkForget==='function') pdfParkForget('spPdfHost');
-  moduleFiles.forEach(function(f){ if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){} });
+  moduleFiles.forEach(function(f){
+    if(typeof pdfParkForget==='function') pdfParkForget('mod:'+f.id);
+    if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){}
+  });
   moduleFiles=[]; moduleActiveId=null;
   idbDel('moduleList'); idbDel('module');
   renderSidePane();
@@ -427,6 +429,9 @@ function renderModulePane(pane){
       page: modulePdfPage[m.id]||1,
       onPage: function(n){ modulePdfPage[m.id]=n; modSyncToc(); }
     });
+    /* 面板重画时如果这棵阅读器是「原样挂回来」的，书签不会再读一遍；
+       还没读到书签就在这里补一次，免得目录栏一直空着。 */
+    if(!_modTocReady && pdfState.doc) pdfLoadOutline(pdfState.doc);
     modRenderToc();
   }
   moduleBindDrop();

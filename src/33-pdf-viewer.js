@@ -9,14 +9,14 @@
    · 在线版：第一次打开 PDF 时才按需下载，首屏依旧很轻。
    两个面板（📚 规则书 / 📖 模组里的 PDF）同一时间只会开一个，所以共用这一份查看器状态。 */
 var PDF_MIN_ZOOM=0.25, PDF_MAX_ZOOM=5;
-var PDF_DOC_CACHE_MAX=2;      /* 最多同时缓存两份 PDF（规则书 + 当前模组），换标签来回切不用重开 */
+var PDF_DOC_CACHE_MAX=3;      /* 最多同时缓存三份 PDF（规则书 + 最近两份模组），换标签来回切不用重开 */
 var PDF_PAGE_GAP=10;          /* 页与页之间的缝（要和 CSS 里 .pdfv-pages 的 gap 对齐） */
 var PDF_PAGE_PAD=10;          /* 第一页上面的留白（要和 .pdfv-pages 的 padding-top 对齐） */
 var PDF_NEAR=1;               /* 视口上下各多画一页，滑起来看不到空白 */
 var PDF_KEEP=3;               /* 离视口这么远的页就把画布放掉，省内存（318 页的规则书也扛得住） */
 var PDF_JUMP_MAX=420;         /* 跳页面板最多画多少个页码按钮，超了就每 N 页一个 */
 var PDF_VIEW_KEEP=24;         /* 最多记住 24 份文档的阅读状态，免得 localStorage 无限长大 */
-var PDF_PARK_MAX=2;           /* 最多把两份「暂时摘下」的阅读器 DOM 留在内存里（模组 + 规则书各一份） */
+var PDF_PARK_MAX=3;           /* 最多把三份「暂时摘下」的阅读器 DOM 留在内存里（规则书 + 最近看的两份模组） */
 var pdfState={
   host:null, wrap:null, canvas:null, doc:null, src:'', key:'', num:0, page:1, zoom:1, fit:true,
   baseW:612, baseH:792, task:null, token:0, onPage:null, onCount:null,
@@ -27,7 +27,10 @@ var _pdfLibWaiters=null;      /* 在线版第一次加载 pdf.js 时排队等它
 var _pdfOutlineStore=null, _pdfOutlineN=0;   /* 书签条目：面板里只放一个编号，点的时候再算它在第几页 */
 var _pdfJumpTab='num';                       /* 跳页面板当前看「页码」还是「目录」（有书签的 PDF 才有得选） */
 var _pdfScrollRaf=0, _pdfScrollTimer=0;
-var _pdfParks={}, _pdfParkIds=[];            /* 被面板重画暂时摘下、等会儿原样挂回去的阅读器 DOM */
+/* 被面板重画暂时摘下、等会儿原样挂回去的阅读器 DOM。
+   **按「文档标识」存**（rulebook / mod:<id>）而不是按 DOM 的 id —— 两份模组用的是同一个
+   #spPdfHost，按 id 存会互相顶掉，切回来就只能重建；按文档存才能真的「原样挂回去」。 */
+var _pdfParks={}, _pdfParkIds=[];
 var _pdfViewSaveT=0;                         /* 阅读状态的落盘防抖：翻页时别每页都写一次 localStorage */
 
 function pdfLibReady(){
@@ -142,15 +145,17 @@ function pdfSnapshot(){
 }
 function pdfParkHost(){
   var st=pdfState, host=st.host;
-  if(!host || !host.__pdfLive || !host.id) return null;
+  if(!host || !host.__pdfLive || !host.id || !st.key) return null;
+  /* scrollTop 一定要在摘下 DOM **之前**读：元素一旦离开文档，浏览器就把它当 0 了，
+     挂回去时再写这个 0，看着就是「切出去再切回来，阅读器跳回第一页」。 */
+  var top=0; try{ top=host.scrollTop||0; }catch(e){}
   if(host.parentNode) host.parentNode.removeChild(host);
   host.__pdfLive=0;
-  var top=0; try{ top=host.scrollTop||0; }catch(e){}
-  var old=_pdfParks[host.id];
+  var old=_pdfParks[st.key];
   if(old && old.el!==host) old.el.__pdfLive=0;
-  if(old){ var oi=_pdfParkIds.indexOf(host.id); if(oi>=0) _pdfParkIds.splice(oi,1); }
-  _pdfParks[host.id]={el:host, top:top, st:pdfSnapshot()};
-  _pdfParkIds.push(host.id);
+  if(old){ var oi=_pdfParkIds.indexOf(st.key); if(oi>=0) _pdfParkIds.splice(oi,1); }
+  _pdfParks[st.key]={el:host, top:top, st:pdfSnapshot()};
+  _pdfParkIds.push(st.key);
   while(_pdfParkIds.length>PDF_PARK_MAX){
     var drop=_pdfParkIds.shift(), d=_pdfParks[drop];
     if(d && !d.el.__pdfLive && d.el.parentNode) d.el.parentNode.removeChild(d.el);
@@ -158,24 +163,25 @@ function pdfParkHost(){
   }
   pdfJumpClose();
   st.host=null; st.wrap=null; st.canvas=null;
-  return _pdfParks[host.id];
+  return _pdfParks[st.key];
 }
-/* 这块 DOM 不要了（文件被移出 / 清空时调） */
-function pdfParkForget(id){
-  var rec=id?(_pdfParks[id]||null):null;
+/* 这块 DOM 不要了（文件被移出 / 清空时调）。不给 key 就把摘下来的全清掉。 */
+function pdfParkForget(key){
+  if(!key){ for(var k in _pdfParks) pdfParkForget(k); return; }
+  var rec=_pdfParks[key]||null;
   if(!rec) return;
-  delete _pdfParks[id];
-  var i=_pdfParkIds.indexOf(id); if(i>=0) _pdfParkIds.splice(i,1);
+  delete _pdfParks[key];
+  var i=_pdfParkIds.indexOf(key); if(i>=0) _pdfParkIds.splice(i,1);
   if(rec.el && !rec.el.__pdfLive && rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
 }
 /* 面板重画前调用：把正在看的阅读器摘下来留着 */
 function pdfParkLive(){ try{ pdfParkHost(); }catch(e){} }
 /* 同一份文档又要看了：把摘下来那棵原样挂回去（页码 / 缩放 / 画布 / 滚动位置全在） */
 function pdfUnpark(host, key, opts){
-  var rec=_pdfParks[host.id];
+  var rec=key?(_pdfParks[key]||null):null;
   if(!rec || !key || !rec.st || rec.st.key!==key) return false;
-  delete _pdfParks[host.id];
-  var i=_pdfParkIds.indexOf(host.id); if(i>=0) _pdfParkIds.splice(i,1);
+  delete _pdfParks[key];
+  var i=_pdfParkIds.indexOf(key); if(i>=0) _pdfParkIds.splice(i,1);
   if(host.parentNode) host.parentNode.replaceChild(rec.el, host);
   var st=pdfState, ss=rec.st;
   st.host=rec.el; st.wrap=rec.el.querySelector('.pdfv-pages'); st.canvas=null;
@@ -185,9 +191,19 @@ function pdfUnpark(host, key, opts){
   st.token=ss.token; st.navLock=Date.now(); st.pinch=0; st.task=null;
   st.onPage=opts.onPage||null; st.onCount=opts.onCount||null;
   rec.el.__pdfLive=1;
-  try{ rec.el.scrollTop=rec.top||0; }catch(e){}
   pdfBindScroll(rec.el);
   pdfBindPinch(rec.el);
+  /* 挂回去以后按「第几页 + 页内位置」重新落位：
+     - 面板重画 / 浏览器把 DOM 摘下再挂回时滚动位置会丢；
+     - 这期间窗口宽窄、缩放、分栏比例都可能变过，直接把旧的 scrollTop 写回去不一定对得上。
+     用 offsets + 页高换算一次最稳；算式和保存时用的是同一套（pdfViewAnchor / pdfRestoreAnchor）。 */
+  var sv=pdfReaderGet(key)||{};
+  var an=pdfSavedAnchor(sv);
+  if(an && (an.i|0)===((st.page|0)-1)) pdfRestoreAnchor(an);
+  else pdfScrollToPage(st.page||1);
+  /* 兜底：万一还是没落在目标页（旧存档页码 / 排过版的页高对不上），按「目标页顶」再摆一次。 */
+  if(pdfPageAtView()!==(st.page||1)) pdfScrollToPage(st.page||1);
+  pdfSaveView();                                  /* 落位以后回写一次，免得随后的滚动事件把页码带偏 */
   pdfSyncBar();
   if(st.onCount) st.onCount(st.num);
   if(st.onPage) st.onPage(st.page);
@@ -227,6 +243,7 @@ function pdfMountPdf(host, src, opts){
   if(!isFinite(wantZoom) || wantZoom<=0) wantZoom=0;
   st.host=host; st.wrap=null; st.canvas=null; st.src=src||''; st.key=key; st.num=0;
   st.doc=null; st.zoom=1; st.fit=true;         /* 读到存档前先按「适应宽度」 */
+  st.baseW=612; st.baseH=792;                  /* 别沿用上一份 PDF 的页尺寸 */
   st.page=Math.max(1, (saved.page|0) || (opts.page|0) || 1);
   st.pages=[]; st.offsets=[]; st.total=0; st.outline=null; st.navLock=0; st.pinch=0;
   st.onPage=opts.onPage||null; st.onCount=opts.onCount||null;
@@ -433,7 +450,8 @@ function pdfRenderPage(n){
       p.rw=base.width; p.rh=base.height;         /* 这一页和别的页不一样大：重排一次，视线别乱跳 */
       var a=pdfViewAnchor();
       pdfLayout();
-      pdfRestoreAnchor(a);
+      /* 刚跳完页的话，以「目标页在视口顶部」为准：页高重排不能把落点带偏（不然会滑到最下方）。 */
+      if(st.navLock && (Date.now()-st.navLock)<1500) pdfScrollToPage(st.page); else pdfRestoreAnchor(a);
     }
     var z=z0, cv=p.cv;
     var w=p.w||Math.max(1, Math.round((p.rw||st.baseW)*z));

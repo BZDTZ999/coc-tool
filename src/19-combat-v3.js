@@ -257,9 +257,18 @@ function combSyncParticipant(cc, opts){
       if(cc.mp.cur!=null) a.mp.cur=Math.max(0,num(cc.mp.cur));
       if(cc.mp.max) a.mp.max=Math.max(0,Math.round(num(cc.mp.max)));
     }
+    /* 战斗里不改技能表，但「同步回档案」时不能把卡上的信息（所在格子 / 职业点 / 兴趣点 /
+       累计成长 / 成功标）抹掉 —— 只保留 name/total/base 会让导出时的「成长」列算错。 */
+    var oldOf={};
+    (a.skills||[]).forEach(function(x){ var k=String((x&&x.name)||'').trim(); if(k && !oldOf[k]) oldOf[k]=x; });
     a.skills=(cc.skills||[]).map(function(s){
       var b=(s.base!=null&&s.base!=='')?num(s.base):skillBaseOf(s.name);
-      return {name:s.name,total:num(s.total),base:(b!=null?b:null)};
+      var o={name:s.name,total:num(s.total),base:(b!=null?b:null)};
+      var old=oldOf[String((s&&s.name)||'').trim()]||s;
+      ['name1','name2','slot','occPts','intPts','mark','occ'].forEach(function(k){ if(old&&old[k]!=null) o[k]=old[k]; });
+      if(old&&old.growth!=null) o.growth=num(old.growth);
+      else if(typeof skillGrowthAfter==='function') o.growth=skillGrowthAfter(old,o.total,o.base,a);
+      return o;
     });
   }
   a.weapons=(cc.weapons||[]).map(function(w){return JSON.parse(JSON.stringify(w));});
@@ -448,7 +457,9 @@ function spawnCombatant(actor, tag){
     dex:at.dex||0, mov:a.mov||8,
     hp:{cur:0,max:0}, san:{cur:0,max:99}, mp:{cur:0,max:0},
     db:a.db||dbTextOf(at), armor:(a.armor&&a.armor.value)||0,
-    skills:(a.skills||[]).map(function(s){return {name:s.name,total:num(s.total),base:(s.base!=null?s.base:skillBaseOf(s.name))};}),
+    skills:(a.skills||[]).map(function(s){return {name:s.name,name1:s.name1,name2:s.name2,total:num(s.total),
+      base:(s.base!=null?s.base:skillBaseOf(s.name)),occPts:s.occPts,intPts:s.intPts,growth:s.growth,
+      mark:s.mark,occ:s.occ,slot:s.slot};}),
     weapons:(a.weapons||[]).map(function(w){return JSON.parse(JSON.stringify(w));}),
     inv:(a.inv||[]).map(function(i){return JSON.parse(JSON.stringify(i));}),
     spells:(a.spells||[]).map(function(sp){return JSON.parse(JSON.stringify(sp));}),

@@ -129,12 +129,18 @@ function cardSetCell(xml,ref,value,isNum,keepFormula,newFormula){
 /* 导入时的数据快照：用于对比“这次团里角色发生了什么变化”。 */
 function importSnapshotOf(a){
   a=a||{};
-  var snap={attrs:{},hp:{},san:{},mp:{},skills:{},weapons:[],inv:[],plot:[],spells:[],armor:0,mov:0,db:''};
+  var snap={attrs:{},hp:{},san:{},mp:{},skills:{},skillGrowth:{},weapons:[],inv:[],plot:[],spells:[],armor:0,mov:0,db:''};
   ['str','con','pow','dex','app','siz','int','edu','luck'].forEach(function(k){ snap.attrs[k]=num(a.attrs&&a.attrs[k]); });
   snap.hp={cur:num(a.hp&&a.hp.cur),max:num(a.hp&&a.hp.max)};
   snap.san={cur:num(a.san&&a.san.cur),max:num(a.san&&a.san.max)};
   snap.mp={cur:num(a.mp&&a.mp.cur),max:num(a.mp&&a.mp.max)};
-  (a.skills||[]).forEach(function(s){ if(s&&String(s.name||'').trim()) snap.skills[String(s.name).trim()]=num(s.total); });
+  (a.skills||[]).forEach(function(s){
+    if(!s||!String(s.name||'').trim()) return;
+    var k=String(s.name).trim();
+    snap.skills[k]=num(s.total);
+    /* 顺手把「卡上原有的累计成长」也记下来：老存档的技能没有 growth 字段时，导出靠它反推。 */
+    if(s.growth!=null && s.growth!=='') snap.skillGrowth[k]=num(s.growth);
+  });
   snap.weapons=(a.weapons||[]).map(function(w){return String((w&&w.name)||'').trim();}).filter(Boolean);
   snap.inv=(a.inv||[]).filter(function(i){return i&&i.slot!=='bag';}).map(function(i){return String((i&&i.name)||'').trim();}).filter(Boolean);
   snap.plot=(a.plot||[]).filter(function(i){return i && num(i.qty)>0;}).map(function(i){return String(i.name||'').trim();}).filter(Boolean);
@@ -213,15 +219,50 @@ function diffActorSinceImport(a){
   if(aChg.length) out.push('其他资产表：'+aChg.join('、'));
   return out.length?out.join('；'):'（本次无数据变化）';
 }
-/* 「成长」列：和“最初上传时的技能值”比，多了写 +N，少了写 -N；没变化留空。
-   导入时没有这项技能（新加的）时，按“比它的初始值多多少”算。 */
+/* ---------- 技能数值模型：成功率 = 初始 + 成长 + 职业 + 兴趣 ----------
+   这四张模板卡里「成功率」都是 R = SUM(J:P)、右半 AN = SUM(AF:AL)，
+   也就是 初始(J) + 成长(L) + 职业(N) + 兴趣(P)（K/M/O 是「+」这类文本，SUM 会忽略）。
+   所以：
+     · 「成长」是**累计**成长，不是本次增量；卡上本来有多少就带多少；
+     · 累计成长 = 当前总值 − 初始 − 职业 − 兴趣；
+     · 基础值（初始）被重算时，总值跟着一起变，两者抵消，不会被算成成长。
+   导入时 parse-card.js 会把卡上「成长」列读进 s.growth（左 L / 右 AH）。 */
+function skillGrowthOf(s, base){
+  if(!s) return null;
+  var b=(base!=null && base!=='')?num(base):((s.base!=null && s.base!=='')?num(s.base):skillBaseOf(s.name));
+  if(b==null) return null;                       /* 基础值不明的自制技能：交给旧逻辑 */
+  return num(s.total)-b-num(s.occPts)-num(s.intPts);
+}
+/* 老存档反推「累计成长」：技能上没有 growth 字段时，先用卡的不变式算，再退回导入快照。 */
+function skillGrowthSeedOf(old, a){
+  if(!old) return 0;
+  if(old.growth!=null && old.growth!=='') return num(old.growth);
+  var g=skillGrowthOf(old, null);
+  if(g!=null) return g;
+  var snap=a&&a.importSnapshot, key=String(old.name||'').trim();
+  if(snap&&snap.skillGrowth&&snap.skillGrowth[key]!==undefined) return num(snap.skillGrowth[key]);
+  if(snap&&snap.skills&&snap.skills[key]!==undefined) return num(old.total)-num(snap.skills[key]);
+  return 0;
+}
+/* 「成长」列要写进卡里的值 = 累计成长（含卡上原有的 + 这次团里涨的）。
+   导入时没有这项技能（新加的）时，按“比它的初始值多多少”算，和以前一致。 */
 function cardSkillGrowth(a,s,base){
+  var g=skillGrowthOf(s, base);
+  if(g!=null) return g;
   var snap=a&&a.importSnapshot;
   if(!snap||!snap.skills) return 0;
   var key=String((s&&s.name)||'').trim();
   if(!key) return 0;
   if(snap.skills[key]===undefined) return num(s&&s.total)-num(base);
   return num(s&&s.total)-num(snap.skills[key]);
+}
+/* 技能总值被改动以后（详情卡保存 / 战斗里同步回档案），把差额并进「累计成长」：
+   只在总值真的变了时才涨，基础值（初始）被重算的那部分不算成长。 */
+function skillGrowthAfter(old, total, base, a){
+  var g0=skillGrowthSeedOf(old, a);
+  var dTot=num(total)-num(old&&old.total);
+  var dBase=((base!=null && old && old.base!=null)?(num(base)-num(old.base)):0);
+  return Math.round(num(g0)+dTot-dBase);
 }
 /* 「法术一览」的使用代价：优先用 MP/SAN/用时拼，拼不出来就回退原卡上的原文 */
 function cardSpellCost(sp){

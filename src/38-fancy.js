@@ -8,28 +8,47 @@
 var FANCY_CLICKS=5;              /* 连点几下背景才出来 */
 var FANCY_CLICK_MS=1500;         /* 这几下必须在这个时间内点完 */
 var FANCY_MIN_W=900;             /* 窄屏（手机 / 平板竖屏）不启用 */
+/* hot 是「热点」：在 32×32 的画面坐标里指定「鼠标真正作用在哪一点」。
+   箭头类落在笔尖 / 尖角上，装饰类落在图案正中 —— 这样点哪儿看得见、点在哪儿也说得通。
+   （渲染时会按设备像素比把 hot 一起放大，见 fancyCursorCSS；不然 Retina 上热点会偏一半。） */
 var FANCY_STYLES=[
   {k:'',      n:'默认',     e:'➤', hot:[0,0]},
   {k:'pixel', n:'像素箭头', e:'➤', hot:[3,2]},
-  {k:'star',  n:'星星',     e:'★', hot:[16,16]},
-  {k:'hand',  n:'小手',     e:'☝', hot:[16,4]},
-  {k:'wand',  n:'魔法棒',   e:'🪄', hot:[25,5]},
+  {k:'star',  n:'星星',     e:'★', hot:[16,4]},
+  {k:'hand',  n:'小手',     e:'☝', hot:[19,3]},
+  {k:'wand',  n:'魔法棒',   e:'🪄', hot:[25,6]},
   {k:'glass', n:'放大镜',   e:'🔍', hot:[13,13]},
   {k:'cross', n:'十字准星', e:'✛', hot:[16,16]},
+  {k:'claw',  n:'爪痕',     e:'✖', hot:[11,5]},
+  {k:'bolt',  n:'闪电',     e:'⚡', hot:[19,4]},
   {k:'tentacle', n:'触手',  e:'🐙', hot:[16,16]},
   {k:'eye',   n:'眼球',     e:'👁', hot:[16,16]},
   {k:'skull', n:'骷髅',     e:'💀', hot:[16,16]},
   {k:'dice',  n:'骰子',     e:'🎲', hot:[16,16]},
-  {k:'book',  n:'古书',     e:'📖', hot:[8,16]},
-  {k:'candle',n:'蜡烛',     e:'🕯', hot:[16,25]},
-  {k:'sparkle',n:'闪光',    e:'✨', hot:[16,16]},
-  {k:'claw',  n:'爪痕',     e:'✖', hot:[16,24]},
-  {k:'bolt',  n:'闪电',     e:'⚡', hot:[16,16]}
+  {k:'book',  n:'古书',     e:'📖', hot:[16,16]},
+  {k:'candle',n:'蜡烛',     e:'🕯', hot:[16,16]},
+  {k:'sparkle',n:'闪光',    e:'✨', hot:[16,15]},
+  {k:'key',     n:'旧钥匙',   e:'🗝', hot:[16,14]},
+  {k:'torch',   n:'手电筒',   e:'🔦', hot:[16,16]},
+  {k:'compass', n:'指南针',   e:'🧭', hot:[16,16]},
+  {k:'map',     n:'旧地图',   e:'🗺', hot:[16,16]},
+  {k:'watch',   n:'怀表',     e:'🕰', hot:[16,16]},
+  {k:'hourglass',n:'沙漏',    e:'⌛', hot:[16,16]},
+  {k:'bone',    n:'骨头',     e:'🦴', hot:[16,16]},
+  {k:'potion',  n:'药瓶',     e:'🧪', hot:[16,16]},
+  {k:'quill',   n:'羽毛笔',   e:'🪶', hot:[16,16]},
+  {k:'mask',    n:'面具',     e:'🎭', hot:[16,16]},
+  {k:'bat',     n:'蝙蝠',     e:'🦇', hot:[16,16]},
+  {k:'spider',  n:'蜘蛛',     e:'🕷', hot:[16,16]},
+  {k:'ghost',   n:'幽灵',     e:'👻', hot:[16,16]},
+  {k:'camera',  n:'老相机',   e:'📷', hot:[16,16]}
 ];
-/* 这些直接画 emoji（跟「小手」一个路子）：不引图片文件、离线可用 */
-var FANCY_EMOJI={hand:'☝', tentacle:'🐙', eye:'👁', skull:'💀', dice:'🎲', book:'📖', candle:'🕯', sparkle:'✨'};
+/* 这几款是手工画的矢量（比 emoji 更利、更清楚）；其余的按 e 里的字符现画 emoji —— 不引图片文件、离线可用 */
+var FANCY_DRAWN={pixel:1, star:1, claw:1, bolt:1, wand:1, glass:1, cross:1};
 var FANCY_FX=[{k:'',n:'关闭'},{k:'star',n:'星星'},{k:'heart',n:'爱心'},{k:'bubble',n:'泡泡'},
-  {k:'tentacle',n:'触手'},{k:'skull',n:'骷髅'},{k:'dice',n:'骰子'},{k:'snow',n:'雪花'}];
+  {k:'tentacle',n:'触手'},{k:'skull',n:'骷髅'},{k:'dice',n:'骰子'},{k:'snow',n:'雪花'},
+  {k:'blood',n:'血滴'},{k:'fire',n:'火苗'},{k:'coin',n:'金币'},{k:'mist',n:'迷雾'},
+  {k:'gaze',n:'凝视'},{k:'feather',n:'羽毛'},{k:'ghost',n:'幽灵'},{k:'note',n:'音符'}];
 var _fancyHits=0, _fancyHitT=0, _fancyPanelOn=false, _fancyTab='cursor';
 var _fancyCache={}, _fancyResizeT=0;
 
@@ -57,18 +76,21 @@ function fancyDesktop(){
   return w>=FANCY_MIN_W;
 }
 /* ---------- 鼠标图案：canvas 现画成 PNG（浏览器对 PNG cursor 支持最好；SVG cursor 个别内核不认） ---------- */
-/* emoji 光标：先描一层深色影子再画本色，浅色背景上也看得见 */
+/* emoji 光标：只画一遍。以前为了在浅色背景上看得见「错开位置画两遍」，
+   但彩色 emoji 不吃 fillStyle，两遍就是同一张图错位叠一次 —— 看着就是重影 / 毛边。
+   现在改成一遍 + 一圈柔和的外发光（阴影），浅背景上一样看得清，还不会有第二张脸。 */
 function fancyDrawEmoji(g, ch){
   g.font='23px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
   g.textAlign='center'; g.textBaseline='middle';
-  g.fillStyle='#111';
-  g.fillText(ch,17.4,18.4);
+  g.shadowColor='rgba(8,10,14,.85)';
+  g.shadowBlur=2.6; g.shadowOffsetX=0; g.shadowOffsetY=1;
   g.fillText(ch,16,17);
+  g.shadowColor='transparent'; g.shadowBlur=0; g.shadowOffsetY=0;
 }
 function fancyDrawCursor(kind, g){
   g.clearRect(0,0,32,32);
   g.lineJoin='round'; g.lineCap='round';
-  var ch=FANCY_EMOJI[kind];
+  var ch=FANCY_DRAWN[kind]?'':fancyStyleOf(kind).e;
   if(ch){ fancyDrawEmoji(g, ch); return; }
   if(kind==='pixel'){
     g.lineWidth=2.2; g.strokeStyle='#101216'; g.fillStyle='#ffffff';
@@ -157,13 +179,20 @@ function fancyDrawCursor(kind, g){
     return;
   }
 }
+/* Retina / 高 DPI 屏上把图案画成 32×dpr 的位图，光标才不发虚；dpr 封顶 2（再大浏览器也会缩回去） */
+function fancyDPR(){
+  var d=1;
+  try{ d=window.devicePixelRatio||1; }catch(e){}
+  d=Math.round(d); if(!isFinite(d)||d<1) d=1;
+  return Math.min(2,d);
+}
+/* 画好的光标缓存：url + 当时用的倍率（热点也要按同一个倍率放大） */
 function fancyCursorURL(kind){
-  if(!kind) return '';
+  if(!kind) return null;
   if(_fancyCache[kind]) return _fancyCache[kind];
-  var url='';
+  var url='', dpr=fancyDPR();
   try{
     var c=document.createElement('canvas');
-    var dpr=Math.min(2, (window.devicePixelRatio||1));
     c.width=Math.round(32*dpr); c.height=Math.round(32*dpr);
     var g=c.getContext('2d');
     if(g){
@@ -172,14 +201,18 @@ function fancyCursorURL(kind){
       url=c.toDataURL('image/png');
     }
   }catch(e){ url=''; }
-  if(url) _fancyCache[kind]=url;
-  return url;
+  if(!url) return null;
+  _fancyCache[kind]={url:url, s:dpr};
+  return _fancyCache[kind];
 }
+/* 热点坐标是「32 格」里的位置，图片是按 dpr 放大的，所以热点也要 ×dpr ——
+   不然 Retina 上热点只有实际位置的一半，看着就是「点了半天点不准」。 */
 function fancyCursorCSS(kind){
-  var url=fancyCursorURL(kind);
-  if(!url) return '';
+  var c=fancyCursorURL(kind);
+  if(!c) return '';
   var st=fancyStyleOf(kind);
-  return 'url("'+url+'") '+(st.hot[0]||0)+' '+(st.hot[1]||0)+', auto';
+  var hx=Math.round((st.hot[0]||0)*c.s), hy=Math.round((st.hot[1]||0)*c.s);
+  return 'url("'+c.url+'") '+hx+' '+hy+', auto';
 }
 /* 生效 / 取消：只写一个 CSS 变量 + 一个 body 上的开关类，具体作用范围全在 style.css 里（排除交互元素） */
 function applyFancy(){
@@ -286,7 +319,11 @@ function fancyBuildPanel(){
 }
 function fancyCursorHTML(){
   var f=fancyState();
-  var html='<div class="fancy-grid">';
+  var html='<div class="row fancy-tools">'+
+      '<button class="small ghost" onclick="fancyPickRandom()">🎲 随机换一个</button>'+
+      '<button class="small ghost" onclick="fancyPickPrev()">↻ 上一个</button>'+
+      '<span class="hint" style="margin-left:auto">共 '+FANCY_STYLES.length+' 款（含默认）</span></div>'+
+    '<div class="fancy-grid">';
   FANCY_STYLES.forEach(function(st){
     var on=(st.k===(f.cursor||''));
     var css=st.k?fancyCursorCSS(st.k):'';
@@ -298,10 +335,10 @@ function fancyCursorHTML(){
 }
 function fancyFxHTML(){
   var f=fancyState();
-  var html='<div class="row" style="gap:6px">';
+  var html='<div class="fancy-fxgrid">';
   FANCY_FX.forEach(function(x){
     var on=(x.k===(f.fx||''));
-    html+='<button class="xp-tab'+(on?' on':'')+'" onclick="fancyPickFx(\''+x.k+'\')">'+esc(x.n)+'</button>';
+    html+='<button class="fancy-fxcard'+(on?' on':'')+'" onclick="fancyPickFx(\''+x.k+'\')">'+esc(x.n)+'</button>';
   });
   html+='</div><p class="hint" style="margin:10px 0 0">选了以后，在页面上点一下就会蹦出几个小东西（纯本地动画，不吃性能）。</p>'+
     '<p class="hint" style="margin:6px 0 0">偏好「少动」的话：系统开了「减弱动态效果」时下面的小东西不会显示。</p>';
@@ -314,6 +351,18 @@ function fancyPick(k){
   applyFancy();
   fancyBuildPanel();
   toast(k?('鼠标样式：'+fancyStyleOf(k).n):'鼠标样式：默认');
+}
+/* 随机 / 上一个：不想一格一格挑的时候用（随机也避开当前这款，免得「点了没变」） */
+function fancyPickRandom(){
+  var f=fancyState(), pool=[], i;
+  for(i=1;i<FANCY_STYLES.length;i++) if(FANCY_STYLES[i].k!==f.cursor) pool.push(FANCY_STYLES[i]);
+  if(!pool.length) return;
+  fancyPick(pool[Math.floor(Math.random()*pool.length)].k);
+}
+function fancyPickPrev(){
+  var f=fancyState(), idx=0, i;
+  for(i=0;i<FANCY_STYLES.length;i++) if(FANCY_STYLES[i].k===(f.cursor||'')) idx=i;
+  fancyPick(FANCY_STYLES[(idx+FANCY_STYLES.length-1)%FANCY_STYLES.length].k);
 }
 function fancyPickFx(k){
   var f=fancyState();
@@ -331,7 +380,15 @@ var FANCY_BITS={
   tentacle:{g:['🐙','◍','·'],c:['#7fd4c1','#a8e6d8','#4fa38f']},
   skull:{g:['💀','☠','·'],c:['#e8e6df','#bdb9ad','#8f8b80']},
   dice:{g:['🎲','◆','·'],c:['#e3c47f','#fff0c2','#b99a55']},
-  snow:{g:['❄','❅','✻'],c:['#dff0ff','#bfe2ff','#9ccdf5']}
+  snow:{g:['❄','❅','✻'],c:['#dff0ff','#bfe2ff','#9ccdf5']},
+  blood:{g:['🩸','•','·'],c:['#c0392b','#e05a4a','#8e2a20']},
+  fire:{g:['🔥','✦','·'],c:['#ff9a3c','#ffd166','#e0552b']},
+  coin:{g:['🪙','●','·'],c:['#f4d06a','#fff0b3','#c9a227']},
+  mist:{g:['☁','◌','·'],c:['#cfd8e3','#eef2f7','#9fb0c9']},
+  gaze:{g:['👁','◉','·'],c:['#e8e6df','#9fd3e8','#6ea8c4']},
+  feather:{g:['🪶','✧','·'],c:['#e6d9c2','#cbb894','#a38963']},
+  ghost:{g:['👻','◌','·'],c:['#e8f0ff','#c9dcff','#9fb8e8']},
+  note:{g:['♪','♫','·'],c:['#ffd75e','#ffe9a8','#e0b64a']}
 };
 function fancyBurst(x, y, kind){
   if(!fancyDesktop()) return;

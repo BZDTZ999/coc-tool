@@ -1271,6 +1271,12 @@ body.fs-map .splitwrap,body.fs-combat .splitwrap{display:block}
 .fancy-pre{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:9px;
   background:rgba(0,0,0,.22);font-size:19px;line-height:1}
 .fancy-nm{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fancy-tools{margin:0 0 8px}
+.fancy-fxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+.fancy-fxcard{height:30px;padding:0 8px;border:1px solid var(--line);border-radius:8px;
+  background:rgba(255,255,255,.03);color:var(--ink);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fancy-fxcard:hover{border-color:var(--acc);color:var(--gold)}
+.fancy-fxcard.on{border-color:var(--gold);background:rgba(227,196,127,.14);color:var(--gold)}
 /* 换鼠标：只作用在「背景 / 普通内容 / 面板 / 卡片 / 阅读区外层」这些地方。
    输入框、按钮、链接、可拖拽、拖分栏、拖宽手柄、PDF 画布与文字层都各自保留自己的 cursor —— 所以不许用 *{cursor:...} */
 body.fancycursor,body.fancycursor main,body.fancycursor footer,body.fancycursor #splitWrap,body.fancycursor section.tab,

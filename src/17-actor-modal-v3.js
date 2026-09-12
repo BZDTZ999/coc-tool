@@ -269,6 +269,13 @@ function collectFromModal(){
       if(old.mark!=null) o.mark=old.mark;
       if(old.occ!=null) o.occ=old.occ;
       if(o.base==null && old.base!=null) o.base=old.base;
+      /* 「累计成长」：不是本次增量。老存档没有这个字段时先按卡的不变式反推出来，
+         再把这次改动的差额并进去 —— 只在技能总值真的变了时才涨，改属性导致的基础值重算不算成长。 */
+      o.growth=(typeof skillGrowthAfter==='function')?skillGrowthAfter(old,o.total,o.base,a):num(old.growth);
+    } else {
+      /* 这次团里新加的技能：高出初始值的部分以前就算成长，保持不变 */
+      var baseNew=(o.base!=null)?num(o.base):null;
+      o.growth=Math.round(baseNew!=null?(num(o.total)-baseNew):num(o.total));
     }
     a.skills.push(o);
   });
@@ -385,7 +392,7 @@ function doImport(){
     armor:{value:num(p.derived.armorValue)||0,type:p.derived.armorType||''},
     occId:p.basic.occId||'',
     skills:p.skills.map(function(s){return {name:s.name,name1:s.name1,name2:s.name2,total:s.total,base:s.base,
-      occPts:s.occPts,intPts:s.intPts,mark:s.mark,occ:s.occ,slot:s.slot};}),
+      occPts:s.occPts,intPts:s.intPts,growth:s.growth,mark:s.mark,occ:s.occ,slot:s.slot};}),
     weapons:p.weapons.map(function(w){ var cap=num(w.ammoCap); return {name:w.name,type:w.type||'',skill:w.skill||'',
       damage:w.damage||'',range:w.range||'',pierce:w.pierce||'',attacks:w.attacks||'',ammo:(w.ammo==null?'':String(w.ammo)),
       success:num(w.success)||0,

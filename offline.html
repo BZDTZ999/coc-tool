@@ -1279,6 +1279,12 @@ body.fs-map .splitwrap,body.fs-combat .splitwrap{display:block}
 .fancy-pre{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:9px;
   background:rgba(0,0,0,.22);font-size:19px;line-height:1}
 .fancy-nm{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fancy-tools{margin:0 0 8px}
+.fancy-fxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px}
+.fancy-fxcard{height:30px;padding:0 8px;border:1px solid var(--line);border-radius:8px;
+  background:rgba(255,255,255,.03);color:var(--ink);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fancy-fxcard:hover{border-color:var(--acc);color:var(--gold)}
+.fancy-fxcard.on{border-color:var(--gold);background:rgba(227,196,127,.14);color:var(--gold)}
 /* 换鼠标：只作用在「背景 / 普通内容 / 面板 / 卡片 / 阅读区外层」这些地方。
    输入框、按钮、链接、可拖拽、拖分栏、拖宽手柄、PDF 画布与文字层都各自保留自己的 cursor —— 所以不许用 *{cursor:...} */
 body.fancycursor,body.fancycursor main,body.fancycursor footer,body.fancycursor #splitWrap,body.fancycursor section.tab,
@@ -1532,14 +1538,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     if (rowsMain) {
       for (var r = 15; r <= 49; r++) {
         var row = rowsMain[r] || [];
-        /* 左半 F/R/J/N/P = 名称/成功率/初始/职业/兴趣；右半 AB/AN/AF/AJ/AL 同义。
+        /* 左半 F/R/J/L/N/P = 名称/成功率/初始/成长/职业/兴趣；右半 AB/AN/AF/AH/AJ/AL 同义。
            同时记下它所在的格子（slot），导出时按原格子写回，技能顺序就不会乱。 */
-        /* 顺序：名称 / 成功率 / 初始 / 职业 / 兴趣 / 成功标 / 本职（★） / 名称后半格
+        /* 顺序：名称 / 成功率 / 初始 / 职业 / 兴趣 / 成功标 / 本职（★） / 名称后半格 / 成长
            左半技能的「技能名称」是两格合并的（F:G 是「格斗：」「射击：」「技艺①」这类大类，
            H:I 才是「斗殴」「手枪」「符篆」），只读 F 会得到「格斗：」这种半截名字。 */
         /* 右半的自定义子技能名（如「驾驶：」后面的「摩托」）写在 AD 列，
            卡里 AF 列的成功率公式会去比 AD —— 不读 AD 就丢了自定义技能名。 */
-        [['F','R','J','N','P','B','D','H'],['AB','AN','AF','AJ','AL','X','Z','AD']].forEach(function (g) {
+        /* 「成长」列（左 L / 右 AH）是卡上的**累计**成长：成功率 R = SUM(J:P) 里就含它。
+           不读这一列的话，导出时就只能拿「和导入时比多了多少」当成长，
+           会把角色原本已经有的累计成长（比如 10）覆盖成本次增量（1）。 */
+        [['F','R','J','N','P','B','D','H','L'],['AB','AN','AF','AJ','AL','X','Z','AD','AH']].forEach(function (g) {
           var nm1 = clean(row[colIdx(g[0])]);
           if (!nm1) return;
           var nm2 = g[7] ? clean(row[colIdx(g[7])]) : '';
@@ -1548,6 +1557,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
           skills.push({ name: nm, name1: nm1, name2: nm2, base: num(row[colIdx(g[2])]), total: tot,
             occPts: num(row[colIdx(g[3])]), intPts: num(row[colIdx(g[4])]),
             mark: clean(row[colIdx(g[5])]), occ: clean(row[colIdx(g[6])]),
+            growth: num(row[colIdx(g[8])]),
             slot: { r: r + 1, c: g[0] } });
           if (/克苏鲁神话/.test(nm)) mythos = Math.max(mythos, tot);
         });
@@ -5759,6 +5769,13 @@ function collectFromModal(){
       if(old.mark!=null) o.mark=old.mark;
       if(old.occ!=null) o.occ=old.occ;
       if(o.base==null && old.base!=null) o.base=old.base;
+      /* 「累计成长」：不是本次增量。老存档没有这个字段时先按卡的不变式反推出来，
+         再把这次改动的差额并进去 —— 只在技能总值真的变了时才涨，改属性导致的基础值重算不算成长。 */
+      o.growth=(typeof skillGrowthAfter==='function')?skillGrowthAfter(old,o.total,o.base,a):num(old.growth);
+    } else {
+      /* 这次团里新加的技能：高出初始值的部分以前就算成长，保持不变 */
+      var baseNew=(o.base!=null)?num(o.base):null;
+      o.growth=Math.round(baseNew!=null?(num(o.total)-baseNew):num(o.total));
     }
     a.skills.push(o);
   });
@@ -5875,7 +5892,7 @@ function doImport(){
     armor:{value:num(p.derived.armorValue)||0,type:p.derived.armorType||''},
     occId:p.basic.occId||'',
     skills:p.skills.map(function(s){return {name:s.name,name1:s.name1,name2:s.name2,total:s.total,base:s.base,
-      occPts:s.occPts,intPts:s.intPts,mark:s.mark,occ:s.occ,slot:s.slot};}),
+      occPts:s.occPts,intPts:s.intPts,growth:s.growth,mark:s.mark,occ:s.occ,slot:s.slot};}),
     weapons:p.weapons.map(function(w){ var cap=num(w.ammoCap); return {name:w.name,type:w.type||'',skill:w.skill||'',
       damage:w.damage||'',range:w.range||'',pierce:w.pierce||'',attacks:w.attacks||'',ammo:(w.ammo==null?'':String(w.ammo)),
       success:num(w.success)||0,
@@ -6477,9 +6494,18 @@ function combSyncParticipant(cc, opts){
       if(cc.mp.cur!=null) a.mp.cur=Math.max(0,num(cc.mp.cur));
       if(cc.mp.max) a.mp.max=Math.max(0,Math.round(num(cc.mp.max)));
     }
+    /* 战斗里不改技能表，但「同步回档案」时不能把卡上的信息（所在格子 / 职业点 / 兴趣点 /
+       累计成长 / 成功标）抹掉 —— 只保留 name/total/base 会让导出时的「成长」列算错。 */
+    var oldOf={};
+    (a.skills||[]).forEach(function(x){ var k=String((x&&x.name)||'').trim(); if(k && !oldOf[k]) oldOf[k]=x; });
     a.skills=(cc.skills||[]).map(function(s){
       var b=(s.base!=null&&s.base!=='')?num(s.base):skillBaseOf(s.name);
-      return {name:s.name,total:num(s.total),base:(b!=null?b:null)};
+      var o={name:s.name,total:num(s.total),base:(b!=null?b:null)};
+      var old=oldOf[String((s&&s.name)||'').trim()]||s;
+      ['name1','name2','slot','occPts','intPts','mark','occ'].forEach(function(k){ if(old&&old[k]!=null) o[k]=old[k]; });
+      if(old&&old.growth!=null) o.growth=num(old.growth);
+      else if(typeof skillGrowthAfter==='function') o.growth=skillGrowthAfter(old,o.total,o.base,a);
+      return o;
     });
   }
   a.weapons=(cc.weapons||[]).map(function(w){return JSON.parse(JSON.stringify(w));});
@@ -6668,7 +6694,9 @@ function spawnCombatant(actor, tag){
     dex:at.dex||0, mov:a.mov||8,
     hp:{cur:0,max:0}, san:{cur:0,max:99}, mp:{cur:0,max:0},
     db:a.db||dbTextOf(at), armor:(a.armor&&a.armor.value)||0,
-    skills:(a.skills||[]).map(function(s){return {name:s.name,total:num(s.total),base:(s.base!=null?s.base:skillBaseOf(s.name))};}),
+    skills:(a.skills||[]).map(function(s){return {name:s.name,name1:s.name1,name2:s.name2,total:num(s.total),
+      base:(s.base!=null?s.base:skillBaseOf(s.name)),occPts:s.occPts,intPts:s.intPts,growth:s.growth,
+      mark:s.mark,occ:s.occ,slot:s.slot};}),
     weapons:(a.weapons||[]).map(function(w){return JSON.parse(JSON.stringify(w));}),
     inv:(a.inv||[]).map(function(i){return JSON.parse(JSON.stringify(i));}),
     spells:(a.spells||[]).map(function(sp){return JSON.parse(JSON.stringify(sp));}),
@@ -8468,12 +8496,18 @@ function cardSetCell(xml,ref,value,isNum,keepFormula,newFormula){
 /* 导入时的数据快照：用于对比“这次团里角色发生了什么变化”。 */
 function importSnapshotOf(a){
   a=a||{};
-  var snap={attrs:{},hp:{},san:{},mp:{},skills:{},weapons:[],inv:[],plot:[],spells:[],armor:0,mov:0,db:''};
+  var snap={attrs:{},hp:{},san:{},mp:{},skills:{},skillGrowth:{},weapons:[],inv:[],plot:[],spells:[],armor:0,mov:0,db:''};
   ['str','con','pow','dex','app','siz','int','edu','luck'].forEach(function(k){ snap.attrs[k]=num(a.attrs&&a.attrs[k]); });
   snap.hp={cur:num(a.hp&&a.hp.cur),max:num(a.hp&&a.hp.max)};
   snap.san={cur:num(a.san&&a.san.cur),max:num(a.san&&a.san.max)};
   snap.mp={cur:num(a.mp&&a.mp.cur),max:num(a.mp&&a.mp.max)};
-  (a.skills||[]).forEach(function(s){ if(s&&String(s.name||'').trim()) snap.skills[String(s.name).trim()]=num(s.total); });
+  (a.skills||[]).forEach(function(s){
+    if(!s||!String(s.name||'').trim()) return;
+    var k=String(s.name).trim();
+    snap.skills[k]=num(s.total);
+    /* 顺手把「卡上原有的累计成长」也记下来：老存档的技能没有 growth 字段时，导出靠它反推。 */
+    if(s.growth!=null && s.growth!=='') snap.skillGrowth[k]=num(s.growth);
+  });
   snap.weapons=(a.weapons||[]).map(function(w){return String((w&&w.name)||'').trim();}).filter(Boolean);
   snap.inv=(a.inv||[]).filter(function(i){return i&&i.slot!=='bag';}).map(function(i){return String((i&&i.name)||'').trim();}).filter(Boolean);
   snap.plot=(a.plot||[]).filter(function(i){return i && num(i.qty)>0;}).map(function(i){return String(i.name||'').trim();}).filter(Boolean);
@@ -8552,15 +8586,50 @@ function diffActorSinceImport(a){
   if(aChg.length) out.push('其他资产表：'+aChg.join('、'));
   return out.length?out.join('；'):'（本次无数据变化）';
 }
-/* 「成长」列：和“最初上传时的技能值”比，多了写 +N，少了写 -N；没变化留空。
-   导入时没有这项技能（新加的）时，按“比它的初始值多多少”算。 */
+/* ---------- 技能数值模型：成功率 = 初始 + 成长 + 职业 + 兴趣 ----------
+   这四张模板卡里「成功率」都是 R = SUM(J:P)、右半 AN = SUM(AF:AL)，
+   也就是 初始(J) + 成长(L) + 职业(N) + 兴趣(P)（K/M/O 是「+」这类文本，SUM 会忽略）。
+   所以：
+     · 「成长」是**累计**成长，不是本次增量；卡上本来有多少就带多少；
+     · 累计成长 = 当前总值 − 初始 − 职业 − 兴趣；
+     · 基础值（初始）被重算时，总值跟着一起变，两者抵消，不会被算成成长。
+   导入时 parse-card.js 会把卡上「成长」列读进 s.growth（左 L / 右 AH）。 */
+function skillGrowthOf(s, base){
+  if(!s) return null;
+  var b=(base!=null && base!=='')?num(base):((s.base!=null && s.base!=='')?num(s.base):skillBaseOf(s.name));
+  if(b==null) return null;                       /* 基础值不明的自制技能：交给旧逻辑 */
+  return num(s.total)-b-num(s.occPts)-num(s.intPts);
+}
+/* 老存档反推「累计成长」：技能上没有 growth 字段时，先用卡的不变式算，再退回导入快照。 */
+function skillGrowthSeedOf(old, a){
+  if(!old) return 0;
+  if(old.growth!=null && old.growth!=='') return num(old.growth);
+  var g=skillGrowthOf(old, null);
+  if(g!=null) return g;
+  var snap=a&&a.importSnapshot, key=String(old.name||'').trim();
+  if(snap&&snap.skillGrowth&&snap.skillGrowth[key]!==undefined) return num(snap.skillGrowth[key]);
+  if(snap&&snap.skills&&snap.skills[key]!==undefined) return num(old.total)-num(snap.skills[key]);
+  return 0;
+}
+/* 「成长」列要写进卡里的值 = 累计成长（含卡上原有的 + 这次团里涨的）。
+   导入时没有这项技能（新加的）时，按“比它的初始值多多少”算，和以前一致。 */
 function cardSkillGrowth(a,s,base){
+  var g=skillGrowthOf(s, base);
+  if(g!=null) return g;
   var snap=a&&a.importSnapshot;
   if(!snap||!snap.skills) return 0;
   var key=String((s&&s.name)||'').trim();
   if(!key) return 0;
   if(snap.skills[key]===undefined) return num(s&&s.total)-num(base);
   return num(s&&s.total)-num(snap.skills[key]);
+}
+/* 技能总值被改动以后（详情卡保存 / 战斗里同步回档案），把差额并进「累计成长」：
+   只在总值真的变了时才涨，基础值（初始）被重算的那部分不算成长。 */
+function skillGrowthAfter(old, total, base, a){
+  var g0=skillGrowthSeedOf(old, a);
+  var dTot=num(total)-num(old&&old.total);
+  var dBase=((base!=null && old && old.base!=null)?(num(base)-num(old.base)):0);
+  return Math.round(num(g0)+dTot-dBase);
 }
 /* 「法术一览」的使用代价：优先用 MP/SAN/用时拼，拼不出来就回退原卡上的原文 */
 function cardSpellCost(sp){
@@ -9651,7 +9720,7 @@ function moduleCloseOne(id){
   var i=-1;
   moduleFiles.forEach(function(f,k){ if(f.id===id) i=k; });
   if(i<0) return;
-  if(typeof pdfParkForget==='function') pdfParkForget('spPdfHost');
+  if(typeof pdfParkForget==='function') pdfParkForget('mod:'+id);   /* 只丢这一份的阅读器，别的模组照旧留在内存里 */
   var f=moduleFiles[i];
   if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){}
   moduleFiles.splice(i,1);
@@ -9659,8 +9728,10 @@ function moduleCloseOne(id){
   moduleSaveStore(); renderSidePane();
 }
 function moduleClear(){
-  if(typeof pdfParkForget==='function') pdfParkForget('spPdfHost');
-  moduleFiles.forEach(function(f){ if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){} });
+  moduleFiles.forEach(function(f){
+    if(typeof pdfParkForget==='function') pdfParkForget('mod:'+f.id);
+    if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){}
+  });
   moduleFiles=[]; moduleActiveId=null;
   idbDel('moduleList'); idbDel('module');
   renderSidePane();
@@ -9703,6 +9774,9 @@ function renderModulePane(pane){
       page: modulePdfPage[m.id]||1,
       onPage: function(n){ modulePdfPage[m.id]=n; modSyncToc(); }
     });
+    /* 面板重画时如果这棵阅读器是「原样挂回来」的，书签不会再读一遍；
+       还没读到书签就在这里补一次，免得目录栏一直空着。 */
+    if(!_modTocReady && pdfState.doc) pdfLoadOutline(pdfState.doc);
     modRenderToc();
   }
   moduleBindDrop();
@@ -11465,14 +11539,14 @@ function xpRestoreTool(){
    · 在线版：第一次打开 PDF 时才按需下载，首屏依旧很轻。
    两个面板（📚 规则书 / 📖 模组里的 PDF）同一时间只会开一个，所以共用这一份查看器状态。 */
 var PDF_MIN_ZOOM=0.25, PDF_MAX_ZOOM=5;
-var PDF_DOC_CACHE_MAX=2;      /* 最多同时缓存两份 PDF（规则书 + 当前模组），换标签来回切不用重开 */
+var PDF_DOC_CACHE_MAX=3;      /* 最多同时缓存三份 PDF（规则书 + 最近两份模组），换标签来回切不用重开 */
 var PDF_PAGE_GAP=10;          /* 页与页之间的缝（要和 CSS 里 .pdfv-pages 的 gap 对齐） */
 var PDF_PAGE_PAD=10;          /* 第一页上面的留白（要和 .pdfv-pages 的 padding-top 对齐） */
 var PDF_NEAR=1;               /* 视口上下各多画一页，滑起来看不到空白 */
 var PDF_KEEP=3;               /* 离视口这么远的页就把画布放掉，省内存（318 页的规则书也扛得住） */
 var PDF_JUMP_MAX=420;         /* 跳页面板最多画多少个页码按钮，超了就每 N 页一个 */
 var PDF_VIEW_KEEP=24;         /* 最多记住 24 份文档的阅读状态，免得 localStorage 无限长大 */
-var PDF_PARK_MAX=2;           /* 最多把两份「暂时摘下」的阅读器 DOM 留在内存里（模组 + 规则书各一份） */
+var PDF_PARK_MAX=3;           /* 最多把三份「暂时摘下」的阅读器 DOM 留在内存里（规则书 + 最近看的两份模组） */
 var pdfState={
   host:null, wrap:null, canvas:null, doc:null, src:'', key:'', num:0, page:1, zoom:1, fit:true,
   baseW:612, baseH:792, task:null, token:0, onPage:null, onCount:null,
@@ -11483,7 +11557,10 @@ var _pdfLibWaiters=null;      /* 在线版第一次加载 pdf.js 时排队等它
 var _pdfOutlineStore=null, _pdfOutlineN=0;   /* 书签条目：面板里只放一个编号，点的时候再算它在第几页 */
 var _pdfJumpTab='num';                       /* 跳页面板当前看「页码」还是「目录」（有书签的 PDF 才有得选） */
 var _pdfScrollRaf=0, _pdfScrollTimer=0;
-var _pdfParks={}, _pdfParkIds=[];            /* 被面板重画暂时摘下、等会儿原样挂回去的阅读器 DOM */
+/* 被面板重画暂时摘下、等会儿原样挂回去的阅读器 DOM。
+   **按「文档标识」存**（rulebook / mod:<id>）而不是按 DOM 的 id —— 两份模组用的是同一个
+   #spPdfHost，按 id 存会互相顶掉，切回来就只能重建；按文档存才能真的「原样挂回去」。 */
+var _pdfParks={}, _pdfParkIds=[];
 var _pdfViewSaveT=0;                         /* 阅读状态的落盘防抖：翻页时别每页都写一次 localStorage */
 
 function pdfLibReady(){
@@ -11598,15 +11675,17 @@ function pdfSnapshot(){
 }
 function pdfParkHost(){
   var st=pdfState, host=st.host;
-  if(!host || !host.__pdfLive || !host.id) return null;
+  if(!host || !host.__pdfLive || !host.id || !st.key) return null;
+  /* scrollTop 一定要在摘下 DOM **之前**读：元素一旦离开文档，浏览器就把它当 0 了，
+     挂回去时再写这个 0，看着就是「切出去再切回来，阅读器跳回第一页」。 */
+  var top=0; try{ top=host.scrollTop||0; }catch(e){}
   if(host.parentNode) host.parentNode.removeChild(host);
   host.__pdfLive=0;
-  var top=0; try{ top=host.scrollTop||0; }catch(e){}
-  var old=_pdfParks[host.id];
+  var old=_pdfParks[st.key];
   if(old && old.el!==host) old.el.__pdfLive=0;
-  if(old){ var oi=_pdfParkIds.indexOf(host.id); if(oi>=0) _pdfParkIds.splice(oi,1); }
-  _pdfParks[host.id]={el:host, top:top, st:pdfSnapshot()};
-  _pdfParkIds.push(host.id);
+  if(old){ var oi=_pdfParkIds.indexOf(st.key); if(oi>=0) _pdfParkIds.splice(oi,1); }
+  _pdfParks[st.key]={el:host, top:top, st:pdfSnapshot()};
+  _pdfParkIds.push(st.key);
   while(_pdfParkIds.length>PDF_PARK_MAX){
     var drop=_pdfParkIds.shift(), d=_pdfParks[drop];
     if(d && !d.el.__pdfLive && d.el.parentNode) d.el.parentNode.removeChild(d.el);
@@ -11614,24 +11693,25 @@ function pdfParkHost(){
   }
   pdfJumpClose();
   st.host=null; st.wrap=null; st.canvas=null;
-  return _pdfParks[host.id];
+  return _pdfParks[st.key];
 }
-/* 这块 DOM 不要了（文件被移出 / 清空时调） */
-function pdfParkForget(id){
-  var rec=id?(_pdfParks[id]||null):null;
+/* 这块 DOM 不要了（文件被移出 / 清空时调）。不给 key 就把摘下来的全清掉。 */
+function pdfParkForget(key){
+  if(!key){ for(var k in _pdfParks) pdfParkForget(k); return; }
+  var rec=_pdfParks[key]||null;
   if(!rec) return;
-  delete _pdfParks[id];
-  var i=_pdfParkIds.indexOf(id); if(i>=0) _pdfParkIds.splice(i,1);
+  delete _pdfParks[key];
+  var i=_pdfParkIds.indexOf(key); if(i>=0) _pdfParkIds.splice(i,1);
   if(rec.el && !rec.el.__pdfLive && rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
 }
 /* 面板重画前调用：把正在看的阅读器摘下来留着 */
 function pdfParkLive(){ try{ pdfParkHost(); }catch(e){} }
 /* 同一份文档又要看了：把摘下来那棵原样挂回去（页码 / 缩放 / 画布 / 滚动位置全在） */
 function pdfUnpark(host, key, opts){
-  var rec=_pdfParks[host.id];
+  var rec=key?(_pdfParks[key]||null):null;
   if(!rec || !key || !rec.st || rec.st.key!==key) return false;
-  delete _pdfParks[host.id];
-  var i=_pdfParkIds.indexOf(host.id); if(i>=0) _pdfParkIds.splice(i,1);
+  delete _pdfParks[key];
+  var i=_pdfParkIds.indexOf(key); if(i>=0) _pdfParkIds.splice(i,1);
   if(host.parentNode) host.parentNode.replaceChild(rec.el, host);
   var st=pdfState, ss=rec.st;
   st.host=rec.el; st.wrap=rec.el.querySelector('.pdfv-pages'); st.canvas=null;
@@ -11641,9 +11721,19 @@ function pdfUnpark(host, key, opts){
   st.token=ss.token; st.navLock=Date.now(); st.pinch=0; st.task=null;
   st.onPage=opts.onPage||null; st.onCount=opts.onCount||null;
   rec.el.__pdfLive=1;
-  try{ rec.el.scrollTop=rec.top||0; }catch(e){}
   pdfBindScroll(rec.el);
   pdfBindPinch(rec.el);
+  /* 挂回去以后按「第几页 + 页内位置」重新落位：
+     - 面板重画 / 浏览器把 DOM 摘下再挂回时滚动位置会丢；
+     - 这期间窗口宽窄、缩放、分栏比例都可能变过，直接把旧的 scrollTop 写回去不一定对得上。
+     用 offsets + 页高换算一次最稳；算式和保存时用的是同一套（pdfViewAnchor / pdfRestoreAnchor）。 */
+  var sv=pdfReaderGet(key)||{};
+  var an=pdfSavedAnchor(sv);
+  if(an && (an.i|0)===((st.page|0)-1)) pdfRestoreAnchor(an);
+  else pdfScrollToPage(st.page||1);
+  /* 兜底：万一还是没落在目标页（旧存档页码 / 排过版的页高对不上），按「目标页顶」再摆一次。 */
+  if(pdfPageAtView()!==(st.page||1)) pdfScrollToPage(st.page||1);
+  pdfSaveView();                                  /* 落位以后回写一次，免得随后的滚动事件把页码带偏 */
   pdfSyncBar();
   if(st.onCount) st.onCount(st.num);
   if(st.onPage) st.onPage(st.page);
@@ -11683,6 +11773,7 @@ function pdfMountPdf(host, src, opts){
   if(!isFinite(wantZoom) || wantZoom<=0) wantZoom=0;
   st.host=host; st.wrap=null; st.canvas=null; st.src=src||''; st.key=key; st.num=0;
   st.doc=null; st.zoom=1; st.fit=true;         /* 读到存档前先按「适应宽度」 */
+  st.baseW=612; st.baseH=792;                  /* 别沿用上一份 PDF 的页尺寸 */
   st.page=Math.max(1, (saved.page|0) || (opts.page|0) || 1);
   st.pages=[]; st.offsets=[]; st.total=0; st.outline=null; st.navLock=0; st.pinch=0;
   st.onPage=opts.onPage||null; st.onCount=opts.onCount||null;
@@ -11889,7 +11980,8 @@ function pdfRenderPage(n){
       p.rw=base.width; p.rh=base.height;         /* 这一页和别的页不一样大：重排一次，视线别乱跳 */
       var a=pdfViewAnchor();
       pdfLayout();
-      pdfRestoreAnchor(a);
+      /* 刚跳完页的话，以「目标页在视口顶部」为准：页高重排不能把落点带偏（不然会滑到最下方）。 */
+      if(st.navLock && (Date.now()-st.navLock)<1500) pdfScrollToPage(st.page); else pdfRestoreAnchor(a);
     }
     var z=z0, cv=p.cv;
     var w=p.w||Math.max(1, Math.round((p.rw||st.baseW)*z));
@@ -17211,28 +17303,47 @@ KP_PLACE_KINDS_4.forEach(function(e){ if(!KP_FAMILY[e.k]) KP_FAMILY[e.k]=e.fam; 
 var FANCY_CLICKS=5;              /* 连点几下背景才出来 */
 var FANCY_CLICK_MS=1500;         /* 这几下必须在这个时间内点完 */
 var FANCY_MIN_W=900;             /* 窄屏（手机 / 平板竖屏）不启用 */
+/* hot 是「热点」：在 32×32 的画面坐标里指定「鼠标真正作用在哪一点」。
+   箭头类落在笔尖 / 尖角上，装饰类落在图案正中 —— 这样点哪儿看得见、点在哪儿也说得通。
+   （渲染时会按设备像素比把 hot 一起放大，见 fancyCursorCSS；不然 Retina 上热点会偏一半。） */
 var FANCY_STYLES=[
   {k:'',      n:'默认',     e:'➤', hot:[0,0]},
   {k:'pixel', n:'像素箭头', e:'➤', hot:[3,2]},
-  {k:'star',  n:'星星',     e:'★', hot:[16,16]},
-  {k:'hand',  n:'小手',     e:'☝', hot:[16,4]},
-  {k:'wand',  n:'魔法棒',   e:'🪄', hot:[25,5]},
+  {k:'star',  n:'星星',     e:'★', hot:[16,4]},
+  {k:'hand',  n:'小手',     e:'☝', hot:[19,3]},
+  {k:'wand',  n:'魔法棒',   e:'🪄', hot:[25,6]},
   {k:'glass', n:'放大镜',   e:'🔍', hot:[13,13]},
   {k:'cross', n:'十字准星', e:'✛', hot:[16,16]},
+  {k:'claw',  n:'爪痕',     e:'✖', hot:[11,5]},
+  {k:'bolt',  n:'闪电',     e:'⚡', hot:[19,4]},
   {k:'tentacle', n:'触手',  e:'🐙', hot:[16,16]},
   {k:'eye',   n:'眼球',     e:'👁', hot:[16,16]},
   {k:'skull', n:'骷髅',     e:'💀', hot:[16,16]},
   {k:'dice',  n:'骰子',     e:'🎲', hot:[16,16]},
-  {k:'book',  n:'古书',     e:'📖', hot:[8,16]},
-  {k:'candle',n:'蜡烛',     e:'🕯', hot:[16,25]},
-  {k:'sparkle',n:'闪光',    e:'✨', hot:[16,16]},
-  {k:'claw',  n:'爪痕',     e:'✖', hot:[16,24]},
-  {k:'bolt',  n:'闪电',     e:'⚡', hot:[16,16]}
+  {k:'book',  n:'古书',     e:'📖', hot:[16,16]},
+  {k:'candle',n:'蜡烛',     e:'🕯', hot:[16,16]},
+  {k:'sparkle',n:'闪光',    e:'✨', hot:[16,15]},
+  {k:'key',     n:'旧钥匙',   e:'🗝', hot:[16,14]},
+  {k:'torch',   n:'手电筒',   e:'🔦', hot:[16,16]},
+  {k:'compass', n:'指南针',   e:'🧭', hot:[16,16]},
+  {k:'map',     n:'旧地图',   e:'🗺', hot:[16,16]},
+  {k:'watch',   n:'怀表',     e:'🕰', hot:[16,16]},
+  {k:'hourglass',n:'沙漏',    e:'⌛', hot:[16,16]},
+  {k:'bone',    n:'骨头',     e:'🦴', hot:[16,16]},
+  {k:'potion',  n:'药瓶',     e:'🧪', hot:[16,16]},
+  {k:'quill',   n:'羽毛笔',   e:'🪶', hot:[16,16]},
+  {k:'mask',    n:'面具',     e:'🎭', hot:[16,16]},
+  {k:'bat',     n:'蝙蝠',     e:'🦇', hot:[16,16]},
+  {k:'spider',  n:'蜘蛛',     e:'🕷', hot:[16,16]},
+  {k:'ghost',   n:'幽灵',     e:'👻', hot:[16,16]},
+  {k:'camera',  n:'老相机',   e:'📷', hot:[16,16]}
 ];
-/* 这些直接画 emoji（跟「小手」一个路子）：不引图片文件、离线可用 */
-var FANCY_EMOJI={hand:'☝', tentacle:'🐙', eye:'👁', skull:'💀', dice:'🎲', book:'📖', candle:'🕯', sparkle:'✨'};
+/* 这几款是手工画的矢量（比 emoji 更利、更清楚）；其余的按 e 里的字符现画 emoji —— 不引图片文件、离线可用 */
+var FANCY_DRAWN={pixel:1, star:1, claw:1, bolt:1, wand:1, glass:1, cross:1};
 var FANCY_FX=[{k:'',n:'关闭'},{k:'star',n:'星星'},{k:'heart',n:'爱心'},{k:'bubble',n:'泡泡'},
-  {k:'tentacle',n:'触手'},{k:'skull',n:'骷髅'},{k:'dice',n:'骰子'},{k:'snow',n:'雪花'}];
+  {k:'tentacle',n:'触手'},{k:'skull',n:'骷髅'},{k:'dice',n:'骰子'},{k:'snow',n:'雪花'},
+  {k:'blood',n:'血滴'},{k:'fire',n:'火苗'},{k:'coin',n:'金币'},{k:'mist',n:'迷雾'},
+  {k:'gaze',n:'凝视'},{k:'feather',n:'羽毛'},{k:'ghost',n:'幽灵'},{k:'note',n:'音符'}];
 var _fancyHits=0, _fancyHitT=0, _fancyPanelOn=false, _fancyTab='cursor';
 var _fancyCache={}, _fancyResizeT=0;
 
@@ -17260,18 +17371,21 @@ function fancyDesktop(){
   return w>=FANCY_MIN_W;
 }
 /* ---------- 鼠标图案：canvas 现画成 PNG（浏览器对 PNG cursor 支持最好；SVG cursor 个别内核不认） ---------- */
-/* emoji 光标：先描一层深色影子再画本色，浅色背景上也看得见 */
+/* emoji 光标：只画一遍。以前为了在浅色背景上看得见「错开位置画两遍」，
+   但彩色 emoji 不吃 fillStyle，两遍就是同一张图错位叠一次 —— 看着就是重影 / 毛边。
+   现在改成一遍 + 一圈柔和的外发光（阴影），浅背景上一样看得清，还不会有第二张脸。 */
 function fancyDrawEmoji(g, ch){
   g.font='23px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
   g.textAlign='center'; g.textBaseline='middle';
-  g.fillStyle='#111';
-  g.fillText(ch,17.4,18.4);
+  g.shadowColor='rgba(8,10,14,.85)';
+  g.shadowBlur=2.6; g.shadowOffsetX=0; g.shadowOffsetY=1;
   g.fillText(ch,16,17);
+  g.shadowColor='transparent'; g.shadowBlur=0; g.shadowOffsetY=0;
 }
 function fancyDrawCursor(kind, g){
   g.clearRect(0,0,32,32);
   g.lineJoin='round'; g.lineCap='round';
-  var ch=FANCY_EMOJI[kind];
+  var ch=FANCY_DRAWN[kind]?'':fancyStyleOf(kind).e;
   if(ch){ fancyDrawEmoji(g, ch); return; }
   if(kind==='pixel'){
     g.lineWidth=2.2; g.strokeStyle='#101216'; g.fillStyle='#ffffff';
@@ -17360,13 +17474,20 @@ function fancyDrawCursor(kind, g){
     return;
   }
 }
+/* Retina / 高 DPI 屏上把图案画成 32×dpr 的位图，光标才不发虚；dpr 封顶 2（再大浏览器也会缩回去） */
+function fancyDPR(){
+  var d=1;
+  try{ d=window.devicePixelRatio||1; }catch(e){}
+  d=Math.round(d); if(!isFinite(d)||d<1) d=1;
+  return Math.min(2,d);
+}
+/* 画好的光标缓存：url + 当时用的倍率（热点也要按同一个倍率放大） */
 function fancyCursorURL(kind){
-  if(!kind) return '';
+  if(!kind) return null;
   if(_fancyCache[kind]) return _fancyCache[kind];
-  var url='';
+  var url='', dpr=fancyDPR();
   try{
     var c=document.createElement('canvas');
-    var dpr=Math.min(2, (window.devicePixelRatio||1));
     c.width=Math.round(32*dpr); c.height=Math.round(32*dpr);
     var g=c.getContext('2d');
     if(g){
@@ -17375,14 +17496,18 @@ function fancyCursorURL(kind){
       url=c.toDataURL('image/png');
     }
   }catch(e){ url=''; }
-  if(url) _fancyCache[kind]=url;
-  return url;
+  if(!url) return null;
+  _fancyCache[kind]={url:url, s:dpr};
+  return _fancyCache[kind];
 }
+/* 热点坐标是「32 格」里的位置，图片是按 dpr 放大的，所以热点也要 ×dpr ——
+   不然 Retina 上热点只有实际位置的一半，看着就是「点了半天点不准」。 */
 function fancyCursorCSS(kind){
-  var url=fancyCursorURL(kind);
-  if(!url) return '';
+  var c=fancyCursorURL(kind);
+  if(!c) return '';
   var st=fancyStyleOf(kind);
-  return 'url("'+url+'") '+(st.hot[0]||0)+' '+(st.hot[1]||0)+', auto';
+  var hx=Math.round((st.hot[0]||0)*c.s), hy=Math.round((st.hot[1]||0)*c.s);
+  return 'url("'+c.url+'") '+hx+' '+hy+', auto';
 }
 /* 生效 / 取消：只写一个 CSS 变量 + 一个 body 上的开关类，具体作用范围全在 style.css 里（排除交互元素） */
 function applyFancy(){
@@ -17489,7 +17614,11 @@ function fancyBuildPanel(){
 }
 function fancyCursorHTML(){
   var f=fancyState();
-  var html='<div class="fancy-grid">';
+  var html='<div class="row fancy-tools">'+
+      '<button class="small ghost" onclick="fancyPickRandom()">🎲 随机换一个</button>'+
+      '<button class="small ghost" onclick="fancyPickPrev()">↻ 上一个</button>'+
+      '<span class="hint" style="margin-left:auto">共 '+FANCY_STYLES.length+' 款（含默认）</span></div>'+
+    '<div class="fancy-grid">';
   FANCY_STYLES.forEach(function(st){
     var on=(st.k===(f.cursor||''));
     var css=st.k?fancyCursorCSS(st.k):'';
@@ -17501,10 +17630,10 @@ function fancyCursorHTML(){
 }
 function fancyFxHTML(){
   var f=fancyState();
-  var html='<div class="row" style="gap:6px">';
+  var html='<div class="fancy-fxgrid">';
   FANCY_FX.forEach(function(x){
     var on=(x.k===(f.fx||''));
-    html+='<button class="xp-tab'+(on?' on':'')+'" onclick="fancyPickFx(\''+x.k+'\')">'+esc(x.n)+'</button>';
+    html+='<button class="fancy-fxcard'+(on?' on':'')+'" onclick="fancyPickFx(\''+x.k+'\')">'+esc(x.n)+'</button>';
   });
   html+='</div><p class="hint" style="margin:10px 0 0">选了以后，在页面上点一下就会蹦出几个小东西（纯本地动画，不吃性能）。</p>'+
     '<p class="hint" style="margin:6px 0 0">偏好「少动」的话：系统开了「减弱动态效果」时下面的小东西不会显示。</p>';
@@ -17517,6 +17646,18 @@ function fancyPick(k){
   applyFancy();
   fancyBuildPanel();
   toast(k?('鼠标样式：'+fancyStyleOf(k).n):'鼠标样式：默认');
+}
+/* 随机 / 上一个：不想一格一格挑的时候用（随机也避开当前这款，免得「点了没变」） */
+function fancyPickRandom(){
+  var f=fancyState(), pool=[], i;
+  for(i=1;i<FANCY_STYLES.length;i++) if(FANCY_STYLES[i].k!==f.cursor) pool.push(FANCY_STYLES[i]);
+  if(!pool.length) return;
+  fancyPick(pool[Math.floor(Math.random()*pool.length)].k);
+}
+function fancyPickPrev(){
+  var f=fancyState(), idx=0, i;
+  for(i=0;i<FANCY_STYLES.length;i++) if(FANCY_STYLES[i].k===(f.cursor||'')) idx=i;
+  fancyPick(FANCY_STYLES[(idx+FANCY_STYLES.length-1)%FANCY_STYLES.length].k);
 }
 function fancyPickFx(k){
   var f=fancyState();
@@ -17534,7 +17675,15 @@ var FANCY_BITS={
   tentacle:{g:['🐙','◍','·'],c:['#7fd4c1','#a8e6d8','#4fa38f']},
   skull:{g:['💀','☠','·'],c:['#e8e6df','#bdb9ad','#8f8b80']},
   dice:{g:['🎲','◆','·'],c:['#e3c47f','#fff0c2','#b99a55']},
-  snow:{g:['❄','❅','✻'],c:['#dff0ff','#bfe2ff','#9ccdf5']}
+  snow:{g:['❄','❅','✻'],c:['#dff0ff','#bfe2ff','#9ccdf5']},
+  blood:{g:['🩸','•','·'],c:['#c0392b','#e05a4a','#8e2a20']},
+  fire:{g:['🔥','✦','·'],c:['#ff9a3c','#ffd166','#e0552b']},
+  coin:{g:['🪙','●','·'],c:['#f4d06a','#fff0b3','#c9a227']},
+  mist:{g:['☁','◌','·'],c:['#cfd8e3','#eef2f7','#9fb0c9']},
+  gaze:{g:['👁','◉','·'],c:['#e8e6df','#9fd3e8','#6ea8c4']},
+  feather:{g:['🪶','✧','·'],c:['#e6d9c2','#cbb894','#a38963']},
+  ghost:{g:['👻','◌','·'],c:['#e8f0ff','#c9dcff','#9fb8e8']},
+  note:{g:['♪','♫','·'],c:['#ffd75e','#ffe9a8','#e0b64a']}
 };
 function fancyBurst(x, y, kind){
   if(!fancyDesktop()) return;
