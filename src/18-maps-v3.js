@@ -218,6 +218,8 @@ function renderMapsShell(){
   renderMapLists();
   renderRoutePanel();
   var cvc=$('mapCanvas'); if(cvc) cvc.style.cursor=(mapTool==='add')?'crosshair':(mapTool==='move'?'move':'grab');
+  /* 切换地图 / 载入预设 / 删地图都打到这儿：让 KP 的「📍 现在在哪」当场换掉（靠指纹判断，不白重画） */
+  if(typeof kpNotifyMapChange==='function'){ try{ kpNotifyMapChange(); }catch(e){} }
 }
 function drawMapCanvas(){
   var cv=$('mapCanvas'); if(!cv) return;

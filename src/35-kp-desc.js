@@ -1330,6 +1330,32 @@ function kpPlaceMore(){
   kpSave();
   xpRefresh();
 }
+/* 地图换了（或图上地点增删改名了）→「📍 现在在哪」必须立刻跟着换，不用切走再切回来。
+   用「地图 id + 每个地点的 id/名字/说明」当指纹：没变就直接返回，不做任何 DOM 操作，
+   所以拖地图、画道路这些每帧都调的地方也不会白重画，更不会打扰正在输入的人。 */
+var kpMapSig=null;
+function kpMapSigOf(){
+  var m=kpMapNow(), pts=(m&&m.points)||[], out=(m&&m.id)||'', i;
+  for(i=0;i<pts.length;i++) out+='|'+pts[i].id+':'+pts[i].name+':'+(pts[i].desc||'');
+  return out;
+}
+function kpNotifyMapChange(){
+  var sig=kpMapSigOf();
+  if(sig===kpMapSig) return false;
+  kpMapSig=sig;
+  kpEnsure();
+  /* 换地图之后，旧地图上选的那个地点已经不在新图上了：清掉这个悬空选中 */
+  if(kpState.placeId){
+    var m=kpMapNow(), pts=(m&&m.points)||[], i, found=false;
+    for(i=0;i<pts.length;i++) if(String(pts[i].id)===String(kpState.placeId)){ found=true; break; }
+    if(!found){ kpSync(); kpState.placeId=''; kpSave(); }
+  }
+  /* 右半屏正开着、而且就停在 KP 这一页：立刻重画。
+     输入框里的文字、已有条件、锁定的句子都在 kpState 里，只是重新渲染，不会被清掉。 */
+  if(typeof sidePaneIsOpen==='function' && sidePaneIsOpen('extras') && xpTool==='kp' &&
+     typeof xpRefresh==='function') xpRefresh();
+  return true;
+}
 function kpSetAdv(dim,v){
   kpSync();
   if(kpState.mute) delete kpState.mute[dim+':'+v];

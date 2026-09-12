@@ -1,6 +1,8 @@
 /* ---------- 📜 剧本摘要/笔记 与 🎲 骰子：与页面平级的两个悬浮栏目 ---------- */
 var openFloatPanel=null;
 var noteTabIndex=0;
+/* 每张笔记卡自己的显示样式：面板开没开 + 落盘用的防抖计时器 */
+var noteStyleOpen=false, noteStyleT=null;
 var diceTarget=null;            // {id,name,kind,skills[]}
 var diceHistory=[];             // 本次会话保留，不再随面板关闭清空
 var diceThrSmall=1;             // 大成功阈值：1D100 掷出 ≤ 此值
@@ -82,7 +84,7 @@ function toggleFloat(kind){
   if(typeof renderFsNav==='function') renderFsNav();
 }
 function closeFloatPanel(){
-  if(openFloatPanel==='script') saveNoteFromEditor();
+  if(openFloatPanel==='script'){ saveNoteFromEditor(); noteStyleFlush(); }
   openFloatPanel=null;
   renderNav();
   var p=$('floatPanel'); if(p) p.hidden=true;
@@ -139,9 +141,122 @@ function loadNoteEditor(){
   if(noteTabIndex>=tabs.length) noteTabIndex=0;
   var ed=$('noteEditor'); if(ed) ed.innerHTML=tabs[noteTabIndex].html||'';
   var tw=$('noteTabs'); if(tw) tw.innerHTML=noteTabsHTML();
+  applyNoteStyle();
+  renderNoteStyleBox();
+}
+
+/* ---------- 笔记卡样式：三张各自独立（背景 / 字体 / 字号 / 字色 / 粗体 / 斜体 / 下划线） ----------
+   全部是系统自带字体，不下载任何字体文件；老存档里没有 style 字段就用「跟随主题」的默认值。
+   样式只写在 #noteEditor 的行内样式上，所以只影响当前这一张卡，不碰整站配色、其它笔记和别的模块。 */
+var NOTE_FONTS=[['','系统默认'],['sans','黑体 / 无衬线'],['serif','宋体 / 衬线'],['kai','楷体'],['mono','等宽']];
+var NOTE_FONT_CSS={'':'',
+  'sans':'"PingFang SC","Microsoft YaHei","Heiti SC","Noto Sans CJK SC",sans-serif',
+  'serif':'"Songti SC","SimSun","Noto Serif CJK SC",serif',
+  'kai':'"Kaiti SC","STKaiti","KaiTi",serif',
+  'mono':'ui-monospace,SFMono-Regular,Menlo,Consolas,monospace'};
+var NOTE_SIZES=[[0,'默认'],[12,'12'],[14,'14'],[16,'16'],[18,'18'],[20,'20'],[24,'24'],[28,'28'],[32,'32']];
+function noteStyleOf(i){
+  var tabs=scenarioTabs();
+  if(!(i>=0) || i>=tabs.length) i=0;
+  var t=tabs[i]; if(!t) return {};
+  if(!t.style || typeof t.style!=='object') t.style={};
+  var s=t.style;
+  if(typeof s.bg!=='string') s.bg='';
+  if(typeof s.color!=='string') s.color='';
+  if(NOTE_FONT_CSS[s.f]===undefined) s.f='';
+  s.size=num(s.size)||0;
+  s.b=!!s.b; s.i=!!s.i; s.u=!!s.u;
+  return s;
+}
+/* 把当前这张卡的样式贴到编辑区上（空值就清掉行内样式，回到主题默认） */
+function applyNoteStyle(){
+  var ed=$('noteEditor'); if(!ed) return;
+  var s=noteStyleOf(noteTabIndex);
+  ed.style.background=s.bg||'';
+  ed.style.color=s.color||'';
+  ed.style.fontFamily=NOTE_FONT_CSS[s.f]||'';
+  ed.style.fontSize=s.size? (s.size+'px') : '';
+  ed.style.fontWeight=s.b? 'bold' : '';
+  ed.style.fontStyle=s.i? 'italic' : '';
+  ed.style.textDecoration=s.u? 'underline' : '';
+}
+function noteStyleSoon(){
+  if(noteStyleT) clearTimeout(noteStyleT);
+  noteStyleT=setTimeout(function(){ noteStyleT=null; saveStateQuiet(); }, 300);
+}
+function noteStyleFlush(){
+  if(!noteStyleT) return;
+  clearTimeout(noteStyleT); noteStyleT=null; saveStateQuiet();
+}
+function noteSetStyle(k,v){
+  var s=noteStyleOf(noteTabIndex);
+  s[k]=v;
+  applyNoteStyle();
+  noteStyleSoon();
+  noteStyleSync();
+}
+function noteStyleClear(k){
+  noteSetStyle(k,'');
+  var inp=$(k==='bg'?'noteBgPick':'noteFgPick');
+  if(inp) inp.value=(k==='bg'?'#171b25':'#e8e6df');
+}
+function noteStyleToggle(k,el){
+  var s=noteStyleOf(noteTabIndex);
+  s[k]=!s[k];
+  applyNoteStyle();
+  noteStyleSoon();
+  if(el) el.classList.toggle('on', !!s[k]);
+}
+/* 只同步面板上的按钮点亮状态，不重建 DOM —— 重建会把正拖着的取色器关掉 */
+function noteStyleSync(){
+  var s=noteStyleOf(noteTabIndex);
+  var a=$('noteBgDef'), b=$('noteFgDef'), c=$('noteBold'), e2=$('noteItal'), f=$('noteUnder');
+  if(a) a.classList.toggle('on', !s.bg);
+  if(b) b.classList.toggle('on', !s.color);
+  if(c) c.classList.toggle('on', !!s.b);
+  if(e2) e2.classList.toggle('on', !!s.i);
+  if(f) f.classList.toggle('on', !!s.u);
+}
+function noteStyleBodyHTML(){
+  var s=noteStyleOf(noteTabIndex);
+  var tb=scenarioTabs()[noteTabIndex]||{};
+  return '<div class="ns-row"><span class="ns-lab">背景</span>'+
+      '<input type="color" id="noteBgPick" value="'+esc(s.bg||'#171b25')+'" oninput="noteSetStyle(\'bg\',this.value)" title="笔记背景色">'+
+      '<button class="small ghost'+(s.bg?'':' on')+'" id="noteBgDef" onclick="noteStyleClear(\'bg\')" title="清掉自定义背景，跟随主题">跟随主题</button>'+
+      '<span class="ns-lab">字色</span>'+
+      '<input type="color" id="noteFgPick" value="'+esc(s.color||'#e8e6df')+'" oninput="noteSetStyle(\'color\',this.value)" title="字体颜色">'+
+      '<button class="small ghost'+(s.color?'':' on')+'" id="noteFgDef" onclick="noteStyleClear(\'color\')" title="清掉自定义字色，跟随主题">跟随主题</button>'+
+    '</div>'+
+    '<div class="ns-row"><span class="ns-lab">字体</span>'+
+      '<select onchange="noteSetStyle(\'f\',this.value)" title="用系统自带字体，不下载字体文件">'+
+        NOTE_FONTS.map(function(f){ return '<option value="'+f[0]+'"'+(s.f===f[0]?' selected':'')+'>'+f[1]+'</option>'; }).join('')+
+      '</select>'+
+      '<span class="ns-lab">字号</span>'+
+      '<select onchange="noteSetStyle(\'size\',num(this.value))">'+
+        NOTE_SIZES.map(function(z){ return '<option value="'+z[0]+'"'+(s.size===z[0]?' selected':'')+'>'+z[1]+'</option>'; }).join('')+
+      '</select>'+
+      '<button class="small ghost'+(s.b?' on':'')+'" id="noteBold" onclick="noteStyleToggle(\'b\',this)" title="整段加粗" style="font-weight:700">B</button>'+
+      '<button class="small ghost'+(s.i?' on':'')+'" id="noteItal" onclick="noteStyleToggle(\'i\',this)" title="整段斜体" style="font-style:italic">I</button>'+
+      '<button class="small ghost'+(s.u?' on':'')+'" id="noteUnder" onclick="noteStyleToggle(\'u\',this)" title="整段下划线" style="text-decoration:underline">U</button>'+
+    '</div>'+
+    '<div class="hint ns-nub">只改这一张卡（'+(esc(tb.name||('笔记 '+(noteTabIndex+1))))+'）的显示样式，另外两张卡和整站配色都不受影响。</div>';
+}
+function renderNoteStyleBox(){
+  var box=$('noteStyleBox'); if(!box) return;
+  box.style.display=noteStyleOpen?'':'none';
+  if(noteStyleOpen){ box.innerHTML=noteStyleBodyHTML(); noteStyleSync(); }
+  else box.innerHTML='';
+  var b=$('noteStyleBtn'); if(b) b.classList.toggle('on', noteStyleOpen);
+}
+/* 「A 样式」按钮：展开 / 收起当前这张卡的样式面板 */
+function toggleNoteStyle(){
+  noteStyleOpen=!noteStyleOpen;
+  renderNoteStyleBox();
+  if(!noteStyleOpen) noteStyleFlush();
 }
 function switchNoteTab(i){
   saveNoteFromEditor();
+  noteStyleFlush();                 /* 换卡前把还没落盘的样式改动写掉 */
   var tabs=scenarioTabs();
   if(i>=0&&i<tabs.length) noteTabIndex=i;
   loadNoteEditor();
@@ -417,15 +532,20 @@ function buildFloatPanel(){
       <div class="floatbody">
         <div class="note-tabs" id="noteTabs">${noteTabsHTML()}</div>
         <div class="note-tools">
+          <button class="small ghost" id="noteStyleBtn" onclick="toggleNoteStyle()"
+            title="这一张笔记卡自己的背景 / 字体 / 字号 / 字色 / 粗斜下划线"><b class="ns-a">A</b> 样式</button>
           <span class="muted" style="font-size:12px">点角色 → 插入快捷链接：</span>
           <span id="noteActorChips">${floatActorsChips('insert')}</span>
         </div>
+        <div class="note-style" id="noteStyleBox" style="display:none"></div>
         <div class="note-editor" id="noteEditor" contenteditable="true" spellcheck="false">${tabs[noteTabIndex].html||''}</div>
         <div class="row" style="justify-content:space-between;margin-top:6px">
-          <span class="hint">3 张笔记卡可切换、可改名；点笔记里的“角色标签”打开角色详情。自动保存在本机。</span>
+          <span class="hint">3 张笔记卡可切换、可改名、各有一套样式（点「A 样式」）；点笔记里的“角色标签”打开角色详情。自动保存在本机。</span>
           <button class="small ghost" onclick="clearScenarioNote()">清空当前笔记</button>
         </div>
       </div>`;
+    renderNoteStyleBox();
+    applyNoteStyle();
   } else {
     p.innerHTML=`<div class="floathead"><b>🎲 骰子台</b>
       <span class="hint">${diceTab==='san'?'理智检定 / SAN 损失 / 疯狂症状':'几个骰子 × 几面骰，自由填数字（例：1d100、3d6）'}</span>

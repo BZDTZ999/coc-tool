@@ -478,6 +478,115 @@ const ready = new Promise((res) => {
   w.toggleFloat('script');
   w.toggleFsPanel('surveyors');
   ok('打开调查员浮层会收起笔记浮层', !w.openFloatPanel && d.body.classList.contains('fsfloat-surveyors'));
+
+  /* ---------- 本轮：三张笔记卡各有一套自己的显示样式 ---------- */
+  ok('笔记：三张卡各自独立一套样式（背景 / 字体 / 字号 / 字色 / 粗斜下划线），互不影响', (function(){
+    var uiBak=w.state.ui.scenarioTabs;
+    w.state.ui.scenarioTabs=[{name:'笔记 1',html:''},{name:'笔记 2',html:''},{name:'笔记 3',html:''}];
+    w.noteTabIndex=0;
+    w.toggleFloat('script');
+    var ed=d.getElementById('noteEditor');
+    var hasBtn=!!d.getElementById('noteStyleBtn');
+    w.toggleNoteStyle();
+    var box=d.getElementById('noteStyleBox');
+    var opened=!!box && box.style.display!=='none' && !!d.getElementById('noteBgPick') &&
+      !!d.getElementById('noteFgPick') && !!d.getElementById('noteBold') &&
+      !!d.getElementById('noteItal') && !!d.getElementById('noteUnder');
+    /* 笔记 1：黑底 + 白字 + 18px + 粗体 */
+    w.noteSetStyle('bg','#000000'); w.noteSetStyle('color','#ffffff'); w.noteSetStyle('size',18);
+    w.noteStyleToggle('b', d.getElementById('noteBold'));
+    var s1=ed.style.background==='rgb(0, 0, 0)' && ed.style.color==='rgb(255, 255, 255)' &&
+      ed.style.fontSize==='18px' && ed.style.fontWeight==='bold';
+    /* 笔记 2：米黄底 + 深字 + 14px + 斜体 */
+    w.switchNoteTab(1);
+    var cleared=ed.style.background==='' && ed.style.fontSize==='' && ed.style.fontWeight==='';
+    w.noteSetStyle('bg','#f5e9c8'); w.noteSetStyle('color','#3a2a12'); w.noteSetStyle('size',14);
+    w.noteStyleToggle('i', d.getElementById('noteItal'));
+    var s2=ed.style.background==='rgb(245, 233, 200)' && ed.style.fontSize==='14px' &&
+      ed.style.fontStyle==='italic' && ed.style.fontWeight==='';
+    /* 笔记 3：蓝底 + 20px + 下划线 */
+    w.switchNoteTab(2);
+    w.noteSetStyle('bg','#123a6b'); w.noteSetStyle('size',20);
+    w.noteStyleToggle('u', d.getElementById('noteUnder'));
+    var s3=ed.style.background==='rgb(18, 58, 107)' && ed.style.fontSize==='20px' &&
+      ed.style.textDecoration==='underline';
+    /* 回到笔记 1：还是它自己那套 */
+    w.switchNoteTab(0);
+    var back=s1 && ed.style.background==='rgb(0, 0, 0)' && ed.style.fontSize==='18px' &&
+      ed.style.fontWeight==='bold' && ed.style.fontStyle==='';
+    /* 字号 / 字色 / 粗体的即时预览：改完就地生效，不需要保存或重开 */
+    w.noteSetStyle('size',28);
+    var liveSize=ed.style.fontSize==='28px';
+    w.noteSetStyle('color','#00ff00');
+    var liveColor=ed.style.color==='rgb(0, 255, 0)';
+    w.noteStyleToggle('b', d.getElementById('noteBold'));
+    var liveBold=ed.style.fontWeight==='';
+    /* 落盘：三份 style 各自独立，跟内容存在一起 */
+    ed.innerHTML='笔记一的内容';
+    w.saveNoteFromEditor(); w.noteStyleFlush();
+    var st=w.state.ui.scenarioTabs;
+    var saved=st[0].style && st[0].style.size===28 && st[0].style.color==='#00ff00' && st[0].style.b===false &&
+      st[0].html==='笔记一的内容';
+    var indep=st[1].style.size===14 && st[1].style.i===true && st[1].style.u!==true &&
+      st[2].style.size===20 && st[2].style.u===true && st[2].style.i!==true &&
+      st[1].style.bg==='#f5e9c8' && st[2].style.bg==='#123a6b' && st[0].style.bg==='#000000';
+    w.toggleFloat('script');
+    w.state.ui.scenarioTabs=uiBak;
+    if(!(hasBtn&&opened&&s1&&cleared&&s2&&s3&&back&&liveSize&&liveColor&&liveBold&&saved&&indep))
+      console.log('   -> 按钮='+hasBtn+' 展开='+opened+' n1='+s1+' 切换即默认='+cleared+' n2='+s2+' n3='+s3+
+        ' 回n1='+back+' 实时字号='+liveSize+' 实时字色='+liveColor+' 实时粗体='+liveBold+' 落盘='+saved+' 互不影响='+indep);
+    return hasBtn && opened && s1 && cleared && s2 && s3 && back && liveSize && liveColor && liveBold && saved && indep;
+  })());
+
+  ok('笔记：三套样式跟着内容一起写进本机存档（刷新 / 重开都还在）', (function(){
+    var uiBak=w.state.ui.scenarioTabs;
+    w.state.ui.scenarioTabs=[{name:'笔记 1',html:'甲'},{name:'笔记 2',html:'乙'},{name:'笔记 3',html:'丙'}];
+    w.noteTabIndex=0;
+    w.toggleFloat('script');
+    w.switchNoteTab(0); w.noteSetStyle('bg','#000000'); w.noteSetStyle('color','#ffffff');
+    w.noteSetStyle('size',18); w.noteSetStyle('f','serif'); w.noteStyleToggle('b', d.getElementById('noteBold'));
+    w.switchNoteTab(1); w.noteSetStyle('size',14); w.noteStyleToggle('i', d.getElementById('noteItal'));
+    w.switchNoteTab(2); w.noteSetStyle('size',20); w.noteStyleToggle('u', d.getElementById('noteUnder'));
+    w.noteStyleFlush();
+    w.toggleFloat('script');
+    var saved={};
+    try{ saved=JSON.parse(w.localStorage.getItem('coc-tool-v1')||'{}'); }catch(e){}
+    var t=(saved.ui&&saved.ui.scenarioTabs)||[];
+    var inStore=t.length>=3 && !!t[0].style && !!t[1].style && !!t[2].style;
+    var ok0=inStore && t[0].style.bg==='#000000' && t[0].style.color==='#ffffff' &&
+      t[0].style.size===18 && t[0].style.f==='serif' && t[0].style.b===true;
+    var ok1=inStore && t[1].style.size===14 && t[1].style.i===true && t[1].style.bg!=='#000000' && t[1].style.b===false;
+    var ok2=inStore && t[2].style.size===20 && t[2].style.u===true && t[2].style.i===false && t[2].style.b===false;
+    var content=t[0].html==='甲' && t[1].html==='乙' && t[2].html==='丙';
+    w.state.ui.scenarioTabs=uiBak;
+    if(!(ok0&&ok1&&ok2&&content))
+      console.log('   -> 存档里有 style='+inStore+' 笔记1='+ok0+' 笔记2='+ok1+' 笔记3='+ok2+' 内容='+content);
+    return ok0 && ok1 && ok2 && content;
+  })());
+
+  ok('笔记：老存档没有 style 字段照样正常显示（用默认样式，内容不丢）', (function(){
+    var uiBak=w.state.ui.scenarioTabs;
+    w.state.ui.scenarioTabs=[{name:'老笔记 1',html:'以前写的正文'},{name:'笔记 2',html:''},{name:'笔记 3',html:''}];
+    w.noteTabIndex=0;
+    w.toggleFloat('script');
+    var ed=d.getElementById('noteEditor');
+    var okContent=ed.innerHTML==='以前写的正文';
+    var defStyle=ed.style.background==='' && ed.style.color==='' && ed.style.fontSize==='' &&
+      ed.style.fontWeight==='' && ed.style.fontStyle==='' && ed.style.textDecoration==='';
+    /* 触碰一次样式（会补上 style 字段），内容仍然还在 */
+    w.toggleNoteStyle();
+    w.noteSetStyle('size',16);
+    var noThrow=ed.innerHTML==='以前写的正文' && ed.style.fontSize==='16px';
+    w.saveNoteFromEditor(); w.noteStyleFlush();
+    var st=w.state.ui.scenarioTabs;
+    var kept=st[0].html==='以前写的正文' && st[0].style && st[0].style.size===16 && st[1].style===undefined;
+    w.toggleFloat('script');
+    w.state.ui.scenarioTabs=uiBak;
+    if(!(okContent&&defStyle&&noThrow&&kept))
+      console.log('   -> 内容='+okContent+' 默认样式='+defStyle+' 补字段后不炸='+noThrow+' 内容不丢='+kept);
+    return okContent && defStyle && noThrow && kept;
+  })());
+
   w.exitSceneFs();
   ok('返回退出全屏并收起浮层', !d.body.classList.contains('fs-map') && !d.body.classList.contains('fs-combat')
      && !d.body.classList.contains('fsfloat-surveyors') && $('fsNav').hidden === true);
@@ -2579,6 +2688,7 @@ const ready = new Promise((res) => {
   var KP_DISTRACT=/草帽|船桨|马鞍|牛铃|盔甲|王冠|香蕉|雪山|驼队/;
   function kpHits(t,re){ return (t.match(new RegExp(re.source,'g'))||[]).length; }
   function kpUniq(a){ var o={},n=0; a.forEach(function(x){ if(!o[x]){ o[x]=1; n++; } }); return n; }
+  function kpPlaceNames(){ return [].map.call(d.querySelectorAll('.kp-place .xp-chip'),function(b){ return b.textContent.trim(); }); }
   function kpDims(L){ var o={}; L.forEach(function(l){ o[l.d]=1; }); return o; }
 
   ok('KP：叙事连续性——一段围绕一件小事，「继续」按阶段把这件事往前推，不换摆件', (function(){
@@ -2875,6 +2985,95 @@ const ready = new Promise((res) => {
       ' · 全无地图时 ctx='+(none?'有':'null（降级通用）'));
     return thin.length===0 && byKind && hasStuff;
   })());
+
+  /* ---------- 本轮：地图状态一变，KP 的「📍 现在在哪」当场跟着换 ---------- */
+
+  ok('KP：切换地图后地点标签立刻换，不用切走再切回来', (function(){
+    var sa=w.demoMapSpec('hospital'), A=w.buildDemoMap(sa); A._demoKey=sa.k;
+    var sb=w.demoMapSpec('docks'),    B=w.buildDemoMap(sb); B._demoKey=sb.k;
+    A.id=w.uid('map'); B.id=w.uid('map');
+    var mapsBak=w.state.maps, actBak=w.state.activeMapId, placeBak=w.kpState.placeId;
+    w.state.maps=[A,B]; w.state.activeMapId=A.id;
+    w.renderMapsShell();
+    w.xpSetTool('kp');
+    var before=kpPlaceNames();
+    var pt=A.points.filter(function(p){ return /停尸/.test(p.name); })[0];
+    w.kpPlaceTag(pt.id);
+    /* 真实路径：下拉框选 B → onMapSelect（用户点一下地图） */
+    var sel=d.getElementById('mapSel');
+    sel.value=B.id;
+    w.onMapSelect();
+    var after=kpPlaceNames();
+    var swapped=after.length>0 && after.indexOf('泊位1')>=0 && after.indexOf('停尸间')<0 &&
+      before.indexOf('停尸间')>=0;
+    /* 再切回来：又变回医院 */
+    sel.value=A.id; w.onMapSelect();
+    var back=kpPlaceNames();
+    var backOk=back.indexOf('停尸间')>=0 && back.indexOf('泊位1')<0;
+    /* 载入预设地图这条路径也要当场换 */
+    w.confirmBox=function(){ return true; };
+    w.loadDemoMap('coast');
+    var coast=kpPlaceNames();
+    var coastOk=coast.indexOf('渔村')>=0 && coast.indexOf('停尸间')<0 && coast.indexOf('泊位1')<0;
+    w.state.maps=mapsBak; w.state.activeMapId=actBak; w.kpState.placeId=placeBak;
+    w.renderMapsShell();
+    if(!(swapped&&backOk&&coastOk))
+      console.log('   -> A:'+before.join('/')+' → B:'+after.join('/')+' → A:'+back.join('/')+' → coast:'+coast.join('/'));
+    return swapped && backOk && coastOk;
+  })());
+
+  ok('KP：换地图不碰用户输入 / 锁定句，悬空的「现在在哪」自动清掉', (function(){
+    var sa=w.demoMapSpec('hospital'), A=w.buildDemoMap(sa); A._demoKey=sa.k;
+    var sb=w.demoMapSpec('docks'),    B=w.buildDemoMap(sb); B._demoKey=sb.k;
+    A.id=w.uid('map'); B.id=w.uid('map');
+    var mapsBak=w.state.maps, actBak=w.state.activeMapId, placeBak=w.kpState.placeId, txtBak=w.kpState.text;
+    var linesBak=w.kpState.lines;
+    w.state.maps=[A,B]; w.state.activeMapId=A.id; w.renderMapsShell();
+    w.xpSetTool('kp');
+    var pt=A.points.filter(function(p){ return /停尸/.test(p.name); })[0];
+    w.kpClear(); w.kpPlaceTag(pt.id);
+    w.kpState.text='这里有一具刚刚发现的尸体'; w.kpGen();
+    var n0=w.kpState.lines.length, first=w.kpState.lines[0].t;
+    w.kpState.lines[0].lock=true; w.kpSave();
+    d.getElementById('mapSel').value=B.id; w.onMapSelect();
+    var keptText=w.kpState.text==='这里有一具刚刚发现的尸体';
+    var keptLines=w.kpState.lines.length===n0 && w.kpState.lines[0].t===first && w.kpState.lines[0].lock===true;
+    var placeCleared=w.kpState.placeId==='';
+    var ctx=w.kpPlaceCtx({});
+    var ctxOk=!!ctx && ctx.mapName===B.name && ctx.tier==='map';
+    /* 同一个地图里换地点，语境当场跟着换（本来就走实时读取，这里复核） */
+    var pr=A.points.filter(function(p){ return /药房/.test(p.name); })[0];
+    w.state.activeMapId=A.id; w.renderMapsShell(); w.kpPlaceTag(pr.id);
+    var c2=w.kpPlaceCtx({});
+    var sameMapOk=!!c2 && c2.tier==='place' && c2.kind && c2.kind.k==='pharmacy';
+    w.state.maps=mapsBak; w.state.activeMapId=actBak; w.kpState.placeId=placeBak; w.kpState.text=txtBak;
+    w.kpState.lines=linesBak;
+    if(!(keptText&&keptLines&&placeCleared&&ctxOk&&sameMapOk))
+      console.log('   -> 文字保住='+keptText+' 锁定句保住='+keptLines+' 地点已清='+placeCleared+
+        ' 语境='+(ctx&&(ctx.mapName+'/'+ctx.tier))+' 同图换地点='+(c2&&c2.kind&&c2.kind.k));
+    return keptText && keptLines && placeCleared && ctxOk && sameMapOk;
+  })());
+
+  ok('KP：图上加点 / 删点 / 改名，地点标签当场跟着变', (function(){
+    kpUseMap('hospital',/停尸/);
+    w.xpSetTool('kp');
+    var m=w.kpMapNow();
+    var np={id:w.uid('p'),name:'新挖的暗门',icon:'🚪',desc:'刚被撬开',x:300,y:300};
+    m.points.push(np);
+    w.renderMapLists();
+    var added=kpPlaceNames().indexOf('新挖的暗门')>=0;
+    /* 改名：走 onPointInput 这条真实路径 */
+    var idx=m.points.indexOf(np);
+    w.onPointInput({dataset:{p:String(idx),k:'name'}, value:'改过名的暗门'});
+    var renamed=kpPlaceNames().indexOf('改过名的暗门')>=0 && kpPlaceNames().indexOf('新挖的暗门')<0;
+    m.points=m.points.filter(function(p){ return p.id!==np.id; });
+    w.renderMapLists();
+    var gone=kpPlaceNames().indexOf('改过名的暗门')<0;
+    if(!(added&&renamed&&gone))
+      console.log('   -> 加点='+added+' 改名='+renamed+' 删点='+gone);
+    return added && renamed && gone;
+  })());
+
 
   w.state.maps=kpMapBak.maps; w.state.activeMapId=kpMapBak.active;
   w.kpState.placeId=kpMapBak.placeId||'';

@@ -140,6 +140,8 @@ function distBetween(m,a,b){ return Math.sqrt(Math.pow(m.points[a].x-m.points[b]
 function renderMapLists(){
   var m=currentMap(); var pc=$('mapPointsCard'), lc=$('mapLegsCard');
   if(!pc||!lc) return;
+  /* 地图 / 地点变了，「📍 现在在哪」要立刻跟着换（内部有指纹比对，没变就什么都不做） */
+  if(typeof kpNotifyMapChange==='function'){ try{ kpNotifyMapChange(); }catch(e){} }
   /* 没有地图时不要把两块编辑区清空（看起来像“功能没了”），给一句提示 + 一个新建入口。 */
   if(!m){
     var noMap='<details class="card ccard" open><summary>📍 地点</summary><div class="hint" style="padding:6px">当前还没有地图：'+
@@ -198,6 +200,7 @@ function onPointInput(e){
   var pt=m.points[num(e.dataset.p)]; if(!pt)return;
   pt[e.dataset.k]=e.value;
   saveStateQuiet(); drawMapCanvas();
+  if(typeof kpNotifyMapChange==='function'){ try{ kpNotifyMapChange(); }catch(e){} }   /* 改名 / 改说明，标签跟着换 */
 }
 function delPoint(i){ var m=currentMap(); if(!m)return; if(!confirmBox('删除地点与相关道路？'))return;
   m.points.splice(i,1);
