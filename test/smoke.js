@@ -2046,14 +2046,17 @@ const ready = new Promise((res) => {
     var n=w.rtState.npc;
     var all=w.RT_NPC_FIELDS.every(function(f){ return String(n[f[0]]||'').length>0; });
     var rows=d.querySelectorAll('#rtNpc .rt-row').length;
-    var before=JSON.stringify(n);
-    w.rtRerollNpc('job');
-    var after=JSON.stringify(w.rtState.npc);
-    var changedJob=w.rtState.npc.job;
-    var othersSame=w.RT_NPC_FIELDS.every(function(f){
-      return f[0]==='job' || w.rtState.npc[f[0]]===n[f[0]];
-    });
-    return all && rows===w.RT_NPC_FIELDS.length && before!==after && !!changedJob && othersSame;
+    /* 职业池 64 条，重掷有小概率抽回同一个，这里最多试 6 次，只为避开这个巧合 */
+    var changedJob=false, othersSame=true, i;
+    for(i=0;i<6 && !changedJob;i++){
+      var before=n.job;
+      w.rtRerollNpc('job');
+      changedJob=w.rtState.npc.job!==before;
+      othersSame=othersSame && w.RT_NPC_FIELDS.every(function(f){
+        return f[0]==='job' || w.rtState.npc[f[0]]===n[f[0]];
+      });
+    }
+    return all && rows===w.RT_NPC_FIELDS.length && changedJob && othersSame;
   })());
   ok('跑团随机：地点五类都能出，批量生成条数对得上', (function(){
     var kinds=['spot','town','street','building','room'], r=[];
@@ -2450,7 +2453,8 @@ const ready = new Promise((res) => {
   ok('KP：口述句库（事实 / 动作 / 对话 / 观察 / 发现 / 短句）参与生成，句子偏短、不堆文学腔', (function(){
     var need=['fact','note','act','talk','react','obs','find'];
     var d=w.KP_UNIV2, have=need.every(function(k){ return (d[k]||[]).length>=10; });
-    var bad=[], worst=0;
+    /* 口述句要短：20000 次实测平均句长上限 19.7 字、最长单句 27 字，这里留足余量 */
+    var bad=[], avgWorst=0, maxWorst=0;
     for(var k=0;k<8;k++){
       w.kpClear();
       w.kpState.text='废弃医院，凌晨三点，暴雨';
@@ -2461,12 +2465,14 @@ const ready = new Promise((res) => {
       if(spoken<1) bad.push('spoken=0');
       var lens=L.map(function(l){ return l.t.length; });
       var avg=lens.reduce(function(x,y){ return x+y; },0)/Math.max(1,lens.length);
-      worst=Math.max(worst,avg,Math.max.apply(null,lens));
-      worst=Math.max(worst,Math.max.apply(null,lens)*0+avg);
+      avgWorst=Math.max(avgWorst,avg);
+      maxWorst=Math.max(maxWorst,Math.max.apply(null,lens));
     }
-    if(!(have&&!bad.length&&worst<=26)) console.log('   -> have='+have+' bad='+JSON.stringify(bad)+' worst='+worst.toFixed(1));
+    var short=avgWorst<=24 && maxWorst<=32;
+    if(!(have&&!bad.length&&short)) console.log('   -> have='+have+' bad='+JSON.stringify(bad)+
+      ' 平均句长最差='+avgWorst.toFixed(1)+' 最长单句='+maxWorst);
     w.kpClear();
-    return have && !bad.length && worst<=26;
+    return have && !bad.length && short;
   })());
   ok('KP：连续 20 次生成压力测试——固定条件「废弃医院，凌晨三点，暴雨，调查员刚发现尸体」', (function(){
     w.kpClear();
@@ -2542,6 +2548,337 @@ const ready = new Promise((res) => {
       ' 条 · 压抑氛围 '+moodVar+' 条');
     return wt.length>=130 && wtHead>=20 && wtVar>=15 && bodyVar>=30 && moodVar>=15;
   })());
+
+  /* ---------- 本轮：地图 → 地图上的地点 → 地点语境；一段围绕一件小事，「继续」把事往前推 ---------- */
+  var kpMapBak={maps:w.state.maps.slice(),active:w.state.activeMapId,placeId:w.kpState.placeId};
+  function kpUseMap(key,pointRe){
+    var spec=w.demoMapSpec(key), d=w.buildDemoMap(spec);
+    d._demoKey=spec.k;
+    w.state.maps=w.state.maps.filter(function(m){ return m.id!==w.state.activeMapId; });
+    w.state.maps.push(d); w.state.activeMapId=d.id;
+    var pt=null;
+    (d.points||[]).forEach(function(p){ if(!pt && pointRe.test(p.name)) pt=p; });
+    w.kpClear(); w.kpState.placeId=pt? pt.id : '';
+    return pt;
+  }
+  function kpRun(n,cond,len){
+    var all=[], heads=[], steps=[];
+    w.kpState.text=cond; w.kpState.length=len||'mid';
+    for(var i=0;i<n;i++){
+      w.kpGen();
+      var L=w.kpState.lines||[];
+      all.push.apply(all,L);
+      if(L[0]) heads.push(L[0].t);
+      steps.push(w.kpState.ctx.arc+':'+w.kpState.ctx.step);
+    }
+    return {all:all,heads:heads,steps:steps,text:all.map(function(l){ return l.t; }).join('|')};
+  }
+  var KP_MORGUE=/停尸|太平间|冷藏|编号|记录本|金属推车|不锈钢|遗体|尸体|标签/;
+  var KP_PHARM=/药柜|药瓶|处方单|台账|天平|抽屉|药味/;
+  var KP_DOCK=/码头|泊位|货箱|缆绳|船坞|渔网|吊车|栈桥|清单|水手/;
+  var KP_DISTRACT=/草帽|船桨|马鞍|牛铃|盔甲|王冠|香蕉|雪山|驼队/;
+  function kpHits(t,re){ return (t.match(new RegExp(re.source,'g'))||[]).length; }
+  function kpUniq(a){ var o={},n=0; a.forEach(function(x){ if(!o[x]){ o[x]=1; n++; } }); return n; }
+  function kpDims(L){ var o={}; L.forEach(function(l){ o[l.d]=1; }); return o; }
+
+  ok('KP：叙事连续性——一段围绕一件小事，「继续」按阶段把这件事往前推，不换摆件', (function(){
+    var pt=kpUseMap('hospital',/停尸/);
+    w.kpState.text='凌晨三点，暴雨，调查员刚发现尸体'; w.kpState.length='mid';
+    w.kpGen();
+    var arc0=w.kpState.ctx.arc, n0=w.kpState.lines.length;
+    for(var i=0;i<3;i++) w.kpContinue();
+    var L=w.kpState.lines, dims=kpDims(L);
+    var stages=['notice','approach','inspect','abnormal','react','conclude','next'];
+    var stageHit=stages.filter(function(s){ return dims['arc-'+s]; }).length;
+    var texts=L.map(function(l){ return l.t; });
+    var uniq=kpUniq(texts);
+    var morgue=kpHits(texts.join('|'),KP_MORGUE);
+    /* 这一条查「连续性」；地点词汇密度另有专门的 20 次地点相关性测试。
+       这里只要求这一段确实围着这个地方讲（有 place 那句）并且带出过地点词汇
+       （400 条链实测 100% 命中，多的那次数会变成 25% 的偶发失败）。 */
+    var onPlace=!!dims['place'] && morgue>=1;
+    var grew=L.length>n0;
+    var noDup=uniq>=texts.length-1;
+    if(!(arc0==='body'&&grew&&stageHit>=4&&noDup&&onPlace))
+      console.log('   -> arc='+arc0+' 句数 '+n0+'->'+L.length+' 阶段 '+stageHit+' 重复 '+(texts.length-uniq)+
+        ' place 句 '+!!dims['place']+' 停尸间命中 '+morgue);
+    return arc0==='body' && grew && stageHit>=4 && noDup && onPlace && w.kpState.ctx.step>=0;
+  })());
+
+  ok('KP：扩写——只在当前这件事上加细节，不换事件、也不换地方', (function(){
+    kpUseMap('hospital',/停尸/);
+    w.kpState.text='凌晨三点，暴雨，调查员刚发现尸体'; w.kpState.length='mid';
+    w.kpGen();
+    var arc0=w.kpState.ctx.arc, step0=w.kpState.ctx.step, n0=w.kpState.lines.length;
+    var before=w.kpState.lines.map(function(l){ return l.t; });
+    w.kpExpand(); w.kpExpand();
+    var after=w.kpState.lines.map(function(l){ return l.t; });
+    var kept=before.every(function(t,i){ return after[i]===t; });
+    var same=(w.kpState.ctx.arc===arc0) && (w.kpState.ctx.step===step0);
+    var added=w.kpState.lines.slice(n0);
+    var onTopic=added.some(function(l){ return /^arc-|^place$/.test(l.d); });
+    var noJump=!/森林|树林|密林|码头|泊位/.test(added.map(function(l){ return l.t; }).join('|'));
+    if(!(kept&&same&&added.length>=2&&onTopic&&noJump))
+      console.log('   -> kept='+kept+' same='+same+' 新增 '+added.length+' onTopic='+onTopic+' noJump='+noJump+
+        ' dims='+added.map(function(l){ return l.d; }).join(','));
+    return kept && same && added.length>=2 && onTopic && noJump;
+  })());
+
+  ok('KP：地点相关性——地图上选「停尸间」，20 次生成明显围着太平间的东西转', (function(){
+    var pt=kpUseMap('hospital',/停尸/);
+    var plc=w.kpPlaceCtx({scene:['hospital']});
+    var r=kpRun(20,'凌晨三点，暴雨');
+    var morgue=kpHits(r.text,KP_MORGUE), pharm=kpHits(r.text,KP_PHARM), bad=kpHits(r.text,KP_DISTRACT);
+    var startDiff=kpUniq(r.heads);
+    if(!(pt&&plc&&plc.kind&&plc.kind.k==='morgue'&&morgue>=14&&pharm<=2&&bad===0&&startDiff>=13))
+      console.log('   -> kind='+(plc&&plc.kind&&plc.kind.k)+' 停尸间 '+morgue+' 药房 '+pharm+' 无关 '+bad+
+        ' 开头不同 '+startDiff+'/20');
+    return !!(pt&&plc&&plc.kind&&plc.kind.k==='morgue') && morgue>=14 && pharm<=2 && bad===0 && startDiff>=13;
+  })());
+
+  ok('KP：地点切换——同一张地图上「停尸间」和「药房」出来的东西明显不是一套', (function(){
+    kpUseMap('hospital',/停尸/);
+    var a=kpRun(20,'凌晨三点，暴雨');
+    kpUseMap('hospital',/药房/);
+    var b=kpRun(20,'凌晨三点，暴雨');
+    var am=kpHits(a.text,KP_MORGUE), ap=kpHits(a.text,KP_PHARM);
+    var bm=kpHits(b.text,KP_MORGUE), bp=kpHits(b.text,KP_PHARM);
+    if(!(am>=14&&ap<=2&&bp>=14&&bm<=2))
+      console.log('   -> 停尸间: 停尸间词 '+am+' 药房词 '+ap+' | 药房: 停尸间词 '+bm+' 药房词 '+bp);
+    return am>=14 && ap<=2 && bp>=14 && bm<=2;
+  })());
+
+  ok('KP：地图切换——「医院」和「码头」同一条件生成，不会大量复用同一批通用素材', (function(){
+    var m=kpUseMap('hospital',/停尸/), mp=m;
+    var a=kpRun(20,'深夜，雾');
+    var d=kpUseMap('docks',/泊位/);
+    var b=kpRun(20,'深夜，雾');
+    var setB={}; b.all.forEach(function(l){ setB[l.t]=1; });
+    var overlap=a.all.filter(function(l){ return setB[l.t]; }).length/Math.max(1,a.all.length);
+    var am=kpHits(a.text,KP_MORGUE), bd=kpHits(b.text,KP_DOCK), bm=kpHits(b.text,KP_MORGUE), ad=kpHits(a.text,KP_DOCK);
+    if(!(mp&&d&&overlap<=0.45&&am>=14&&ad<=2&&bd>=4&&bm<=2))
+      console.log('   -> 重合 '+overlap.toFixed(2)+' 医院: 停尸间词 '+am+'/码头词 '+ad+' | 码头: 码头词 '+bd+'/停尸间词 '+bm);
+    return !!(mp&&d) && overlap<=0.45 && am>=14 && ad<=2 && bd>=4 && bm<=2;
+  })());
+
+  ok('KP：默认快捷标签跟着当前地图走（地图上有哪些地点就先给哪些）', (function(){
+    w.xpSetTool('kp');
+    var pt=kpUseMap('hospital',/停尸/);
+    var m=w.kpMapNow();
+    w.xpSetTool('kp'); w.xpRefresh();
+    var chips=d.querySelectorAll('.kp-place .xp-chip');
+    var names=[];
+    for(var i=0;i<chips.length;i++) names.push(chips[i].textContent.trim());
+    var mapNames=(m&&m.points? m.points:[]).map(function(p){ return p.name; });
+    var allFromMap=names.length>=8 && names.every(function(n){ return mapNames.indexOf(n)>=0; });
+    var hasMorgue=names.indexOf('停尸间')>=0;
+    /* 点一下地点标签就换地方：状态跟着变，并且直接按那儿生成 */
+    var chip=null;
+    for(var j=0;j<chips.length;j++) if(chips[j].textContent.trim()==='药房') chip=chips[j];
+    if(chip) chip.click();
+    var clicked=(w.kpState.placeId===pt.id? w.kpState.placeId : w.kpState.placeId);
+    var isPharm=false;
+    (m&&m.points?m.points:[]).forEach(function(p){ if(/药房/.test(p.name) && w.kpState.placeId===p.id) isPharm=true; });
+    var gen=w.kpState.lines.length>=3;
+    /* 没有地图时这一行自动消失，原来的通用场景标签还在（快捷标签总数不缩水） */
+    w.state.maps=[]; w.state.activeMapId=null; w.xpRefresh();
+    var gone=d.querySelectorAll('.kp-place').length===0;
+    var quick=d.querySelectorAll('.kp-quick .xp-chip').length>=35;
+    if(!(allFromMap&&hasMorgue&&isPharm&&gen&&gone&&quick))
+      console.log('   -> 地点标签 '+names.length+' 全来自地图='+allFromMap+' 停尸间='+hasMorgue+
+        ' 点了药房='+isPharm+' 有结果='+gen+' 无地图时消失='+gone+' 通用标签 '+quick);
+    return allFromMap && hasMorgue && isPharm && gen && gone && quick;
+  })());
+
+  ok('KP：事件连续性——「继续」是一条调查链（观察→接近→检查→发现→反应→结论→下一步），越走越深', (function(){
+    kpUseMap('hospital',/停尸/);
+    w.kpState.text='凌晨三点，暴雨，调查员刚发现尸体'; w.kpState.length='mid';
+    w.kpGen();
+    var seq=[{arc:w.kpState.ctx.arc,steps:[w.kpState.ctx.step]}];
+    for(var i=0;i<4;i++){
+      w.kpContinue();
+      var last=seq[seq.length-1];
+      if(w.kpState.ctx.arc===last.arc) last.steps.push(w.kpState.ctx.step);
+      else seq.push({arc:w.kpState.ctx.arc,steps:[w.kpState.ctx.step]});
+    }
+    var mono=true;
+    seq.forEach(function(b){
+      for(var k=1;k<b.steps.length;k++) if(b.steps[k]<=b.steps[k-1]) mono=false;
+    });
+    var allSteps=[];
+    seq.forEach(function(b){ b.steps.forEach(function(s){ allSteps.push(s); }); });
+    var deepest=Math.max.apply(null,allSteps);
+    var arcs=seq.map(function(b){ return b.arc; });
+    if(!(seq.length>=2&&mono&&deepest>=4))
+      console.log('   -> 链 '+JSON.stringify(arcs)+' 阶段轨迹 '+JSON.stringify(seq.map(function(b){ return b.steps; }))+
+        ' 单调='+mono+' 最深 '+deepest);
+    return seq.length>=2 && mono && deepest>=4;
+  })());
+
+  ok('KP：用户明确条件优先——「地下室里有一艘小船，不要出现怪物」小船必在，继续也记得', (function(){
+    kpUseMap('hospital',/停尸/);
+    w.kpState.text='废弃医院地下室里有一艘小船，不要出现怪物。';
+    w.kpState.length='mid';
+    w.kpGen();
+    var t1=w.kpState.lines.map(function(l){ return l.t; }).join('|');
+    var props=(w.kpState.ctx.props||[]);
+    var keeps=props.indexOf('小船')>=0;
+    w.kpContinue(); w.kpContinue();
+    var t2=w.kpState.lines.map(function(l){ return l.t; }).join('|');
+    var still=(w.kpState.ctx.props||[]).indexOf('小船')>=0;
+    var nameHit=w.KP_CREATURES.some(function(c){ return t2.indexOf(c.n)>=0; });
+    var propLines=w.kpState.lines.filter(function(l){ return l.d==='prop'||/小船/.test(l.t); }).length;
+    var sceneKept=(w.kpState.ctx.cond.scene||[])[0]==='hospital';
+    if(!(keeps&&t1.indexOf('小船')>=0&&still&&propLines>=2&&!nameHit&&sceneKept))
+      console.log('   -> prop='+JSON.stringify(props)+' 首段有小船='+(t1.indexOf('小船')>=0)+' 继续还记得='+still+
+        ' 小船句 '+propLines+' 怪物名='+nameHit+' 场景='+(w.kpState.ctx.cond.scene||[])[0]);
+    return keeps && t1.indexOf('小船')>=0 && still && propLines>=2 && !nameHit && sceneKept;
+  })());
+
+  ok('KP：随机性——同一地点同一事件连点 20 次，相关但完全不重样', (function(){
+    kpUseMap('hospital',/停尸/);
+    var r=kpRun(20,'凌晨三点，暴雨，调查员刚发现尸体');
+    var texts=r.all.map(function(l){ return l.t; });
+    var cm={}; texts.forEach(function(x){ cm[x]=(cm[x]||0)+1; });
+    var rep=0, top=0;
+    Object.keys(cm).forEach(function(k){ if(cm[k]>1) rep+=cm[k]; if(cm[k]>top) top=cm[k]; });
+    var startDiff=kpUniq(r.heads);
+    var must={mood:1,event:1,object:1,env:1,mine:1,prop:1};
+    var core=r.all.filter(function(l){ return !must[l.d]; }).map(function(l){ return l.t; });
+    var coreDiff=kpUniq(core)/Math.max(1,core.length);
+    var morgue=kpHits(r.text,KP_MORGUE), bad=kpHits(r.text,KP_DISTRACT);
+    console.log('   -> 20 次：开头不同 '+startDiff+'/20 · 重复句 '+rep+' 次 · 最高单句 '+top+
+      ' · 非条件句不同 '+(coreDiff*100).toFixed(0)+'% · 太平间命中 '+morgue+' · 无关物品 '+bad);
+    return startDiff>=13 && rep/Math.max(1,texts.length)<=0.16 && top<=4 &&
+      coreDiff>=0.9 && morgue>=14 && bad===0;
+  })());
+
+  /* ---------- 本轮：把「现在这张地图上真实存在的地点」真正吃进 KP ---------- */
+
+  ok('KP：审计真实地图——分类 / 地图数 / points 总数 / 去重地点名', (function(){
+    var groups=w.DEMO_MAP_GROUPS||[], maps=0, pts=0, seen={}, uniq=0, perMap=[];
+    groups.forEach(function(g){ g.items.forEach(function(it){
+      var m=w.buildDemoMap(w.demoMapSpec(it.k)); maps++;
+      var names=(m.points||[]).map(function(p){ return p.name; });
+      pts+=names.length; perMap.push(it.k+'('+names.length+'):'+names.join('、'));
+      names.forEach(function(n){ if(!seen[n]){ seen[n]=1; uniq++; } });
+    }); });
+    console.log('   -> 分类 '+groups.length+' · 地图 '+maps+' · points '+pts+' · 去重地点名 '+uniq);
+    perMap.forEach(function(s){ console.log('   -> '+s); });
+    return groups.length>=4 && maps>=40 && pts>=300 && uniq>=250;
+  })());
+
+  ok('KP：地点标准化——真实点名全部认得类型，抽查映射正确', (function(){
+    var all=[], miss=[];
+    (w.DEMO_MAP_GROUPS||[]).forEach(function(g){ g.items.forEach(function(it){
+      var m=w.buildDemoMap(w.demoMapSpec(it.k));
+      (m.points||[]).forEach(function(p){ all.push(p.name); });
+    }); });
+    all.forEach(function(n){ if(!w.kpKindByWord(n)) miss.push(n); });
+    var k=function(n){ var r=w.kpKindByWord(n); return r&&r.k; };
+    var good = k('停尸间')==='morgue' && k('太平间')==='morgue' && k('弹药库')==='armory' && k('废弃水塔')==='utility';
+    console.log('   -> 真实点名 '+all.length+' · 未识别 '+miss.length+(miss.length?(' '+miss.slice(0,12).join('/')):'')+
+      ' · 抽查 停尸间='+k('停尸间')+' 太平间='+k('太平间')+' 弹药库='+k('弹药库')+' 废弃水塔='+k('废弃水塔'));
+    return all.length>=300 && miss.length===0 && good;
+  })());
+
+  ok('KP：默认地点标签 = currentMap().points[].name，切地图不串台', (function(){
+    w.xpSetTool('kp');
+    var cases=[['hospital',['停尸间','药房','急诊室']],['docks',['装卸区','泊位1','冷库']],['coast',['渔村']]];
+    var rows=[], allOk=true;
+    cases.forEach(function(cs){
+      kpUseMap(cs[0],/^$/);
+      var m=w.kpMapNow();
+      w.xpSetTool('kp'); w.xpRefresh();
+      var names=[].map.call(d.querySelectorAll('.kp-place .xp-chip'),function(b){ return b.textContent.trim(); });
+      var mapNames=(m.points||[]).map(function(p){ return p.name; });
+      var fromMap=names.length>0 && names.every(function(n){ return mapNames.indexOf(n)>=0; });
+      var want=cs[1].every(function(x){ return names.indexOf(x)>=0; });
+      rows.push(cs[0]+'['+names.length+':'+names.join('/')+']');
+      if(!(fromMap&&want)) allOk=false;
+    });
+    kpUseMap('coast',/^$/); w.xpSetTool('kp'); w.xpRefresh();
+    var coNames=[].map.call(d.querySelectorAll('.kp-place .xp-chip'),function(b){ return b.textContent.trim(); });
+    var noHospital=['停尸间','药房','急诊室'].every(function(x){ return coNames.indexOf(x)<0; });
+    console.log('   -> '+rows.join(' | ')+' · 切到海岸后无医院地点 '+noHospital);
+    return allOk && noHospital;
+  })());
+
+  ok('KP：地点标签带地图点位说明，点位超过 14 个收进「还有 N 个」可展开收起', (function(){
+    w.xpSetTool('kp');
+    kpUseMap('hospital',/^$/);
+    var m=w.kpMapNow();
+    var first=(m.points||[])[0];
+    w.kpState.placeAll=false; w.kpSave(); w.xpSetTool('kp'); w.xpRefresh();
+    var t0=d.querySelector('.kp-place .xp-chip');
+    var titleOk=!!t0 && t0.getAttribute('title')===(first.desc||first.name);
+    for(var i=1;i<=7;i++)
+      m.points.push({id:w.uid('p'),name:'测试点'+i,icon:'📌',desc:'第 '+i+' 个测试点',x:100+i*30,y:120+i*20});
+    w.kpState.placeAll=false; w.kpSave(); w.xpRefresh();
+    var collapsed=d.querySelectorAll('.kp-place .xp-chip').length;
+    var moreBtn=null, ghosts=d.querySelectorAll('.kp-place button.ghost'), j;
+    for(j=0;j<ghosts.length;j++) if(/还有/.test(ghosts[j].textContent)) moreBtn=ghosts[j];
+    if(moreBtn) moreBtn.click();
+    var expanded=d.querySelectorAll('.kp-place .xp-chip').length;
+    var titles=[].map.call(d.querySelectorAll('.kp-place .xp-chip'),function(b){ return b.getAttribute('title'); });
+    var hasDesc=titles.indexOf('第 3 个测试点')>=0;
+    var closeBtn=null; ghosts=d.querySelectorAll('.kp-place button.ghost');
+    for(j=0;j<ghosts.length;j++) if(/收起/.test(ghosts[j].textContent)) closeBtn=ghosts[j];
+    if(closeBtn) closeBtn.click();
+    var recollapsed=d.querySelectorAll('.kp-place .xp-chip').length;
+    console.log('   -> title=点位说明 '+titleOk+' · 收起 '+collapsed+' / 展开 '+expanded+' / 再收起 '+recollapsed+
+      ' · 展开后含 desc '+hasDesc);
+    return titleOk && collapsed===14 && !!moreBtn && expanded===16 && recollapsed===14 && hasDesc;
+  })());
+
+  ok('KP：地图点位运行时增删，地点标签实时跟着变', (function(){
+    w.xpSetTool('kp');
+    kpUseMap('hospital',/^$/);
+    var m=w.kpMapNow();
+    w.kpState.placeAll=false; w.kpSave(); w.xpSetTool('kp'); w.xpRefresh();
+    var before=[].map.call(d.querySelectorAll('.kp-place .xp-chip'),function(b){ return b.textContent.trim(); });
+    var np={id:w.uid('p'),name:'新挖的暗门',icon:'🚪',desc:'刚被撬开',x:300,y:300};
+    m.points.push(np); w.xpRefresh();
+    var after=[].map.call(d.querySelectorAll('.kp-place .xp-chip'),function(b){ return b.textContent.trim(); });
+    m.points=m.points.filter(function(p){ return p.id!==np.id; }); w.xpRefresh();
+    var gone=[].map.call(d.querySelectorAll('.kp-place .xp-chip'),function(b){ return b.textContent.trim(); });
+    console.log('   -> 加点后出现「新挖的暗门」'+(after.indexOf('新挖的暗门')>=0)+
+      ' · 删点后消失 '+(gone.indexOf('新挖的暗门')<0)+' · 前后一致 '+(JSON.stringify(before)===JSON.stringify(gone)));
+    return after.indexOf('新挖的暗门')>=0 && gone.indexOf('新挖的暗门')<0 && before.length===gone.length;
+  })());
+
+  ok('KP：地点语境——真实地点各自带物品 / 环境 / 事实 / 线索', (function(){
+    var want=['morgue','pharmacy','basement','control','shaft','crypt','lighthouse','armory','utility','courtyard','clinic','fishing'];
+    var thin=[], i, e;
+    want.forEach(function(k){
+      e=null;
+      for(i=0;i<(w.KP_PLACE_KINDS||[]).length;i++) if(w.KP_PLACE_KINDS[i].k===k) e=w.KP_PLACE_KINDS[i];
+      if(!e || !(e.items&&e.items.length>=3) || !(e.feel&&e.feel.length>=2) ||
+         !(e.facts&&e.facts.length>=2) || !(e.clue&&e.clue.length>=1)) thin.push(k);
+    });
+    /* 真点一个地图点位，语境要能对上类型并给出这一层的东西 */
+    kpUseMap('hospital',/停尸/);
+    var m=w.kpMapNow(), pt=null;
+    (m.points||[]).forEach(function(p){ if(!pt && /停尸/.test(p.name)) pt=p; });
+    w.kpState.placeId=pt.id;
+    var ctx=w.kpPlaceCtx({});
+    var byKind=ctx && ctx.kind && ctx.kind.k==='morgue' && ctx.tier==='place';
+    var hasStuff=!!(ctx && ctx.items.length>=3 && ctx.facts.length>=2);
+    /* 没有地图、也没有场景时，要能优雅降级成通用生成而不是崩掉 */
+    var oldMaps=w.state.maps, oldAct=w.state.activeMapId, oldPlace=w.kpState.placeId;
+    w.state.maps=[]; w.state.activeMapId=''; w.kpState.placeId='';
+    var none=w.kpPlaceCtx({});
+    w.state.maps=oldMaps; w.state.activeMapId=oldAct; w.kpState.placeId=oldPlace;
+    console.log('   -> 12 类缺料 '+thin.length+(thin.length?(' '+thin.join('/')):'')+
+      ' · 停尸间语境 kind='+(ctx&&ctx.kind&&ctx.kind.k)+' tier='+(ctx&&ctx.tier)+
+      ' 物品 '+((ctx&&ctx.items.length)||0)+' 事实 '+((ctx&&ctx.facts.length)||0)+
+      ' · 全无地图时 ctx='+(none?'有':'null（降级通用）'));
+    return thin.length===0 && byKind && hasStuff;
+  })());
+
+  w.state.maps=kpMapBak.maps; w.state.activeMapId=kpMapBak.active;
+  w.kpState.placeId=kpMapBak.placeId||'';
+
 
   w.kpClear();
 

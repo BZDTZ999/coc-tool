@@ -20,7 +20,7 @@ var KP_NEGN_KEYS=['creature','blood','gore','supernatural','sound','attack','dea
 var kpState={
   tab:'scene', text:'', quick:{}, adv:{}, forbidden:{}, delay:{}, restriction:'',
   length:'mid', showAdv:false, creature:'', cdim:{}, mine:[], draft:null, mute:{}, recent:null,
-  lines:[], hint:'', notes:[], ctx:null, seq:0, loaded:false
+  placeId:'', placeAll:false, lines:[], hint:'', notes:[], ctx:null, seq:0, loaded:false
 };
 function kpEnsure(){
   if(kpState.loaded) return;
@@ -42,6 +42,8 @@ function kpEnsure(){
   if(s.mine && s.mine.length) kpState.mine=s.mine;
   if(s.mute && typeof s.mute==='object') kpState.mute=s.mute;
   if(s.recent && typeof s.recent==='object') kpState.recent=s.recent;
+  if(typeof s.placeId==='string') kpState.placeId=s.placeId;
+  if(s.placeAll) kpState.placeAll=true;
   if(s.lines && s.lines.length){
     kpState.lines=s.lines; kpState.hint=s.hint||''; kpState.notes=s.notes||[];
     kpState.ctx=s.ctx||null; kpState.seq=s.seq||s.lines.length;
@@ -54,7 +56,7 @@ function kpSave(){
     delay:kpState.delay, restriction:kpState.restriction, length:kpState.length, tab:kpState.tab,
     creature:kpState.creature, cdim:kpState.cdim, mine:kpState.mine, lines:kpState.lines,
     mute:kpState.mute, hint:kpState.hint, notes:kpState.notes, ctx:kpState.ctx, seq:kpState.seq,
-    recent:kpState.recent};
+    recent:kpState.recent, placeId:kpState.placeId, placeAll:kpState.placeAll};
   saveStateQuiet();
 }
 function kpNextId(){ kpState.seq=(kpState.seq||0)+1; return 'kp'+kpState.seq; }
@@ -85,11 +87,11 @@ function kpTidy(t){
 /* ================= 最近使用记录 / 叙述入口 / 段落结构（防重复用） =================
    连点「再来一段」不能老是同一批句子、同一种开头、同一批意象。所以每次生成都记一笔：
    开头类型 / 段落结构 / 句式签名 / 用过的整句 / 用过的意象，接下来几段里这些都会被降权。 */
-var KP_RECENT_MAX={open:9,struct:10,imag:36,mat:150,sig:40};
+var KP_RECENT_MAX={open:9,struct:10,imag:36,mat:150,sig:40,arc:5};
 function kpRec(){
   if(!kpState.recent || typeof kpState.recent!=='object') kpState.recent={};
   var r=kpState.recent;
-  ['open','struct','imag','mat','sig'].forEach(function(k){ if(!Array.isArray(r[k])) r[k]=[]; });
+  ['open','struct','imag','mat','sig','arc'].forEach(function(k){ if(!Array.isArray(r[k])) r[k]=[]; });
   return r;
 }
 function kpRecHas(k,v){ return kpHasIn(kpRec()[k],v); }
@@ -200,6 +202,10 @@ function kpPickPlan(cands,want,cond){
   if((cond.object||[]).length) force.push('object');
   (cond.focus||[]).forEach(function(f){ var d=KP_FOCUS2DIM[f]; if(d) force.push(d); });
   if(avail.mine) force.push('mine');
+  /* 现在在哪 + 这件事的来龙去脉 + 用户自己点名带的东西：都要在段落里占一格 */
+  if(avail.place) force.push('place');
+  if(avail.arc) force.push('arc');
+  if(avail.prop && (cond.props||[]).length) force.push('prop');
   /* 天气和时间各占一格：用户明确给了就得让它们出现 */
   if(avail.env && ((cond.weather||[]).length || (cond.time||[]).length)) force.push('env');
   var rec=kpRec();
@@ -335,6 +341,31 @@ function kpMatchOpts(text,dim){
   return out;
 }
 var KP_TEXT_DIMS=['time','weather','mood','light','emotion','anomaly','supernatural','event','object','focus'];
+/* 用户一句话里自己点名带来的东西：「地下室里有一艘小船」—— 这是硬条件：
+   生成时一定出现，点「继续」也还记得它，绝不会因为「医院地下室不该有船」就被地点语境挤掉。 */
+var KP_PROP_JUNK='的地得了着过和与在是就都也又很太非常然后之而且把被给让使做用从到向对为停摆放藏挂走落掉开关拉推倒立靠散堆压盖垂漂溅响';
+var KP_PROP_SUF='子头儿面板门器机本册车船箱柜架台身';
+var KP_PROP_KEEP=['东西','地方','事情','事儿','时候','问题','声音','味道','东西'];
+function kpPropsIn(raw){
+  var text=String(raw==null?'':raw), out=[], i;
+  /* 只在「有 / 放着 / 藏着…」这种「这儿有这么个东西」的句子里认，免得把「不要出现具体怪物」当成道具 */
+  var re=/(?:有|藏着|放着|摆着|停着|挂着|堆着|安着)(?:一)?(?:艘|条|把|个|只|辆|台|架|根|张|块|面|匹|顶|盏|座|具)([\u4e00-\u9fa5]{2,6})/g, m;
+  while((m=re.exec(text))){
+    var s=String(m[1]||''), buf='';
+    var before=text.slice(Math.max(0,m.index-10),m.index);
+    if(/不要|别|没有|不出现|不写|不给|不许/.test(before)) continue;
+    for(i=0;i<s.length;i++){
+      var ch=s.charAt(i);
+      if(KP_PROP_JUNK.indexOf(ch)>=0) break;
+      if(i>=2 && KP_PROP_SUF.indexOf(ch)<0) break;   /* 顶多「冷藏柜」，再往后多半是动词了 */
+      buf+=ch;
+    }
+    if(buf.length>=2 && buf.length<=3 && kpHasIn(KP_PROP_KEEP,buf)===false && !kpHasIn(out,buf)) out.push(buf);
+  }
+  return out;
+}
+/* 一句话里的东西怎么被说出口（{prop} 换成用户说的那个东西） */
+function kpPropFill(t,v){ return String(t==null?'':t).split('{prop}').join(v||'那个东西'); }
 function kpParseText(raw){
   var res={cond:{},forbidden:{},delay:{},notes:[]};
   var text=String(raw==null?'':raw);
@@ -412,6 +443,12 @@ function kpResolve(){
     if(kpState.forbidden && kpState.forbidden[k]) fo[k]=true;
     if(kpState.delay && kpState.delay[k]) dly[k]=true;
   });
+  /* 用户自己点名带来的东西（「地下室里有一艘小船」）：当硬条件走，继续的时候也记得 */
+  var props=[];
+  kpPropsIn(kpState.text||'').concat(kpPropsIn(kpState.restriction||'')).forEach(function(p){
+    if(props.length<3 && !kpHasIn(props,p)) props.push(p);
+  });
+  if(props.length) cond.props=props; else delete cond.props;
   /* 被 × 掉的条件：不管它是从文本认出来的还是点出来的，一律不再参与 */
   var mute=kpState.mute||{};
   Object.keys(cond).forEach(function(dim){
@@ -421,12 +458,12 @@ function kpResolve(){
   /* 怪物维度（怪物描写页签） */
   var cdim=[];
   KP_CDIM_KEYS.forEach(function(k){ if(kpState.cdim && kpState.cdim[k]) cdim.push(k); });
-  return {cond:cond, forbidden:fo, delay:dly, notes:notes, cdim:cdim,
+  return {cond:cond, forbidden:fo, delay:dly, notes:notes, cdim:cdim, props:props,
     restriction:kpList(kpState.restriction)};
 }
 /* 「当前条件」那一行显示什么 —— 也用来做删除 */
 function kpCondItems(r){
-  var items=[], dims=['scene','creature','time','weather','mood','light','emotion','event','object','focus','anomaly','supernatural'];
+  var items=[], dims=['scene','creature','time','weather','mood','light','emotion','event','object','focus','anomaly','supernatural','props'];
   dims.forEach(function(dim){
     (r.cond[dim]||[]).forEach(function(v){
       if(dim==='anomaly' && v==='none') return;
@@ -522,8 +559,12 @@ function kpMinePick(cond){
 function kpCands(cond,fo,dly){
   var c=[], sc=(cond.scene||[])[0]? kpFindScene(cond.scene[0]) : null;
   var slots=kpSlots(cond);
-  function add(t,d,must){ t=kpFill(t,slots); if(t && kpTextOK(t,d,fo)) c.push({t:t,d:d,must:must?1:0}); }
+  /* rel=相关度：越贴当前地点的东西越容易被选中（用户明确要求的 must 仍然最优先） */
+  function add(t,d,must,rel){ t=kpFill(t,slots); if(t && kpTextOK(t,d,fo)) c.push({t:t,d:d,must:must?1:0,rel:rel||0}); }
   /* ① 明确说了的氛围 / 事件 / 物体：先保证它们出现（标成 must，选句时一定排进去） */
+  (cond.props||[]).forEach(function(p){
+    KP_PROP_SAY.forEach(function(x){ add(kpPropFill(x,p),'prop',1,60); });
+  });
   (cond.mood||[]).forEach(function(m){
     var arr=KP_MOOD_SAY[m]||(KP_MOOD_CLAUSE[m]? [KP_MOOD_CLAUSE[m]] : []);
     arr.forEach(function(x){ add(x,'mood',1); });
@@ -571,6 +612,15 @@ function kpCands(cond,fo,dly){
   Object.keys(KP_UNIV2).forEach(function(d){
     kpShuffled(KP_UNIV2[d]||[]).forEach(function(x){ add(x,d); });
   });
+  /* ③.6 现在在哪：地图上的具体地点 / 地图 / 场景 —— 这一层先于通用素材，
+     太平间里就容易挑到冷藏柜和编号，药房里就容易挑到药柜和台账。 */
+  var plc=kpPlaceCtx(cond);
+  if(plc){
+    plc.facts.forEach(function(x){ add(x,'place',0,plc.rel.fact); });
+    kpShuffled(plc.items).forEach(function(x){
+      kpShuffled(KP_PLACE_ITEM_T).forEach(function(t){ add(String(t).split('{obj}').join(x),'place',0,plc.rel.item); });
+    });
+  }
   /* ④ 天气 / 时间 / 氛围 / 光线 / 情绪的通用写法 */
   var w=wv, t=tv;
   if(w && KP_UNIV.weather[w]) kpShuffled(KP_UNIV.weather[w]).forEach(function(e){ add(kpUVal(e),kpUDim(e,'air')); });
@@ -597,6 +647,215 @@ function kpCands(cond,fo,dly){
   });
   return c;
 }
+/* ================= 现在在哪：地图 → 地图上的具体地点 → 地点语境 =================
+   生成器不再只认「场景」这一个词。它先看地图上调查员站在哪（点过「现在在哪」就是那儿），
+   往上一层看是哪张地图，再往上一层看用户嘴上说的场景。三层里哪层能对上就用哪层：
+     ① 地图上的具体地点（用户在面板里点过）  ② 地图 / 地图分类  ③ 用户说的场景  ④ 什么都没有 → 原来的通用生成
+   地点这一层的作用不是「太平间里有一张床、一辆推车」这种罗列，而是换掉素材与事件的选择概率：
+   items / feel / facts / clue 变成候选，谁更容易被选中由 rel（相关度）决定，仍然是随机的。
+   用户明确说的条件（must）永远压过地点权重 —— 「地下室里有一艘小船」不会因为地点像医院就被删掉。 */
+function kpMapNow(){
+  var m=null;
+  try{ m=(typeof currentMap==='function')? currentMap() : null; }catch(e){ m=null; }
+  return (m && m.id)? m : null;
+}
+function kpMapKindOf(m){
+  if(!m) return null;
+  var key=m._demoKey;
+  if(key && KP_MAP_KIND[key]) return kpKindOf(KP_MAP_KIND[key]);   /* 预设地图：按地图本身认 */
+  return kpKindByWord(m.name);                                     /* 自建地图：名字里带「医院 / 教堂 / 地下室」也认 */
+}
+/* 地图上的下一个地点（按道路连着的那个；没连就随便挑一个别的）——给「下一步」用 */
+function kpNextPointName(m,ptId){
+  var pts=(m&&m.points)||[], legs=(m&&m.legs)||[], idx=-1, i, j;
+  for(i=0;i<pts.length;i++) if(pts[i].id===ptId){ idx=i; break; }
+  if(idx<0) return '';
+  for(i=0;i<legs.length;i++){
+    var L=legs[i], other=-1;
+    if(L.a===idx) other=L.b; else if(L.b===idx) other=L.a;
+    if(other>=0 && pts[other]) return pts[other].name;
+  }
+  for(j=0;j<pts.length;j++) if(j!==idx) return pts[j].name;
+  return '';
+}
+/* 逐层解析「现在在哪」。任何一层缺失都能优雅降级，一层都没有就返回 null（走原来的通用生成）。 */
+/* 家族不一样才算「对不上」；common（门 / 楼梯 / 卫生间 / 通道这类哪张地图都有的结构）永远不算对不上 */
+function kpFamDiff(a,b){
+  return !!a && !!b && a!=='common' && b!=='common' && a!==b;
+}
+function kpPlaceCtx(cond){
+  var m=kpMapNow(), pts=(m&&m.points)||[], want=String(kpState.placeId||''), i, pt=null;
+  for(i=0;i<pts.length;i++) if(pts[i].id===want){ pt=pts[i]; break; }
+  var mapKind=m? kpMapKindOf(m) : null;
+  var sceneV=(cond&&cond.scene||[])[0]||'';
+  var sceneKind=sceneV? kpKindOf(KP_SCENE_KIND[sceneV]||'') : null;
+  var sceneFam=sceneKind? (KP_FAMILY[sceneKind.k]||'') : '';
+  var kKind=(want.indexOf('k:')===0)? kpKindOf(want.slice(2)) : null;
+  var kind=null, tier='', name='', ptKind=pt? kpKindByWord(pt.name) : null;
+  if(kKind){ kind=kKind; tier='map'; name=kKind.n; }
+  else if(pt){ kind=ptKind||mapKind; tier='place'; name=pt.name; }
+  else if(mapKind){ kind=mapKind; tier='map'; name=(m&&m.name)||mapKind.n; }
+  /* 用户嘴上说的场景跟地图这一层不是一类（在教堂地图里说废弃医院）：
+     听用户的。地图上的具体地点是用户自己点的，仍然算数。 */
+  if(sceneKind && (!kind || (kpFamDiff(KP_FAMILY[kind.k]||'',sceneFam) && tier!=='place'))){
+    kind=sceneKind; tier='scene'; name=kpOptName('scene',sceneV);
+  }
+  if(!kind && !pt) return null;
+  var rel=tier==='place'? {fact:34,item:50} : tier==='map'? {fact:20,item:26} : {fact:12,item:14};
+  return {kind:kind, tier:tier, name:name, pt:pt,
+    fam:kind? (KP_FAMILY[kind.k]||'') : '',
+    mapName:(m&&m.name)||'', items:(kind&&kind.items)||[], feel:(kind&&kind.feel)||[],
+    facts:(kind&&kind.facts)||[], clue:(kind&&kind.clue)||[],
+    nextName:(pt&&m)? kpNextPointName(m,pt.id) : '', rel:rel};
+}
+/* 地图上的地点 / 地图本身长什么样，直接给「现在在哪」那一行当标签用 */
+function kpPlaceChips(){
+  var m=kpMapNow(), out=[], i, pts=(m&&m.points)||[], cap=14;
+  if(pts.length){
+    /* 直接读当前地图真实的 points[]：id 用来记「现在在哪」，name 是地图上的原名，desc 当悬停说明 */
+    for(i=0;i<pts.length;i++){
+      if(i>=cap && !kpState.placeAll){ out.push(['#more','…还有 '+(pts.length-cap)+' 个地点']); break; }
+      out.push([pts[i].id, pts[i].name, pts[i].desc]);
+    }
+    return out;
+  }
+  var k=kpMapKindOf(m);
+  if(k) return [['k:'+k.k, k.n]];
+  return [];
+}
+
+/* ================= 叙事组件：一段话围绕一件小事，按阶段往下走 =================
+   生成时先定一件事（发现并检查尸体 / 追查声音 / 检查门和出入口…），再按阶段铺：
+   观察 → 接近 → 检查 → 发现异常 → 反应 → 结论 → 下一步。
+   「再来一段」换一件事重开；「继续」把当前这件事往前推一步；「扩写」只在当前这一步里加细节。 */
+function kpArcOf(k){
+  for(var i=0;i<KP_ARC_KINDS.length;i++) if(KP_ARC_KINDS[i].k===k) return KP_ARC_KINDS[i];
+  return null;
+}
+/* 这件事跟当前地点 / 用户说的事件有多对得上：越对得上越容易被选中 */
+function kpArcFit(a,plc,cond){
+  var f=0, i;
+  if(plc && plc.kind && kpHasIn(a.kinds,plc.kind.k)) f+=40;
+  else if(plc && plc.fam){
+    for(i=0;i<a.kinds.length;i++) if((KP_FAMILY[a.kinds[i]]||'')===plc.fam){ f+=12; break; }
+  }
+  for(i=0;i<(a.ev||[]).length;i++) if(kpHasIn((cond&&cond.event)||[],a.ev[i])) f+=60;
+  if(!(a.kinds||[]).length) f+=4;      /* 搜查 / 勘察这种到哪都能用 */
+  return f;
+}
+/* 换一件事：对得上的里面随机挑，并且避开最近这几段用过的那几件 */
+function kpArcPick(cond,plc,avoidKey){
+  var rec=kpRec(), arr=[], i, maxf=-9999;
+  for(i=0;i<KP_ARC_KINDS.length;i++){
+    var a=KP_ARC_KINDS[i];
+    if(avoidKey && a.k===avoidKey) continue;
+    var f=kpArcFit(a,plc,cond);
+    if(f>maxf) maxf=f;
+    arr.push({a:a,f:f});
+  }
+  if(!arr.length) return null;
+  var best=arr.filter(function(x){ return x.f>=maxf-6; });
+  var fresh=best.filter(function(x){ return !kpHasIn(rec.arc,x.a.k); });
+  if(!fresh.length) fresh=arr.filter(function(x){ return !kpHasIn(rec.arc,x.a.k); });
+  if(!fresh.length) fresh=best.length? best : arr;
+  return kpRandOne(fresh).a;
+}
+/* 把这件小事要用的东西 / 线索 / 下一个地点填进阶段句里 */
+function kpArcCan(t,plc,ctx){
+  var s=String(t==null?'':t), props=(ctx&&ctx.props)||[];
+  if(s.indexOf('{prop}')>=0 && !props.length) return false;
+  if(s.indexOf('{next}')>=0 && !(plc&&plc.nextName)) return false;
+  if(s.indexOf('{obj}')>=0 && !(plc&&plc.items&&plc.items.length)) return false;
+  if(s.indexOf('{clue}')>=0 && !(plc&&plc.clue&&plc.clue.length)) return false;
+  return true;
+}
+function kpArcFill(t,plc,ctx){
+  var s=String(t==null?'':t);
+  var props=(ctx&&ctx.props)||[];
+  s=s.split('{prop}').join(props.length? kpRandOne(props):'那个东西');
+  s=s.split('{p}').join((plc&&plc.name)||'这里');
+  s=s.split('{next}').join((plc&&plc.nextName)||'别的地方');
+  s=s.split('{clue}').join((plc&&plc.clue&&plc.clue.length)? kpRandOne(plc.clue):'这里的痕迹');
+  s=s.split('{obj}').join((plc&&plc.items&&plc.items.length)? kpRandOne(plc.items):'手里的东西');
+  return kpTidy(s);
+}
+/* 从某一个阶段里挑一句（避开本段已经排进去的、最近用过的整句，以及跟上一句一样的开头） */
+function kpArcLine(step,plc,ctx,keys,prev){
+  var rec=kpRec(), pool=kpShuffled(KP_STEP_LINES[step]||[]), i, t, alt='';
+  var p3=prev? String(prev).slice(0,3) : '';
+  for(i=0;i<pool.length;i++){
+    if(!kpArcCan(pool[i],plc,ctx)) continue;
+    t=kpArcFill(pool[i],plc,ctx);
+    if(!t || (keys&&keys[t]) || kpHasIn(rec.mat,t)) continue;
+    if(p3 && t.slice(0,3)===p3){ if(!alt) alt=t; continue; }   /* 连着两句一个开头最像机器写的 */
+    return t;
+  }
+  return alt;
+}
+/* 同一个阶段里的若干句（「扩写」用：不换阶段，只在这一步里多说几句） */
+function kpArcEmitStep(step,cnt,plc,ctx,keys){
+  var out=[], i, t, prev=kpState.lines.length? kpState.lines[kpState.lines.length-1].t : '';
+  for(i=0;i<cnt;i++){
+    t=kpArcLine(step,plc,ctx,keys,prev);
+    if(!t) break;
+    prev=t;
+    keys[t]=1; kpRecPush('mat',t); kpRecPush('sig',kpSig(t));
+    kpImagKeys(t).forEach(function(x){ kpRecPush('imag',x); });
+    out.push({t:t,d:'arc-'+step,arc:1});
+  }
+  return out;
+}
+/* 按阶段往下走若干步（「继续」用） */
+function kpArcEmit(arc,from,count,plc,ctx,keys,cap){
+  var out=[], i;
+  for(i=0;i<count;i++){
+    var at=from+i;
+    if(!arc || at>=arc.steps.length) break;
+    var got=kpArcEmitStep(arc.steps[at],1,plc,ctx,keys);
+    if(got.length) out.push(got[0]);
+    if(cap && out.length>=cap) break;
+  }
+  return out;
+}
+/* 接着上文往下说的那一句（「继续」开头用） */
+function kpCarryLine(plc,ctx,keys){
+  var rec=kpRec(), pool=kpShuffled(KP_CARRY_LINES), i, t;
+  /* 用户自己点名带的东西还在场：先把「小船还在那儿」这种句子排前面 */
+  if(((ctx&&ctx.props)||[]).length){
+    var withProp=pool.filter(function(x){ return x.indexOf('{prop}')>=0; });
+    if(withProp.length) pool=withProp.concat(pool);
+  }
+  for(i=0;i<pool.length;i++){
+    if(!kpArcCan(pool[i],plc,ctx)) continue;
+    t=kpArcFill(pool[i],plc,ctx);
+    if(!t || (keys&&keys[t]) || kpHasIn(rec.mat,t)) continue;
+    keys[t]=1; kpRecPush('mat',t); kpRecPush('sig',kpSig(t));
+    return {t:t,d:'carry',arc:1};
+  }
+  return null;
+}
+/* 这件事查到头了：把「下一步去哪」说明白，然后换一件新的事继续 */
+function kpArcNext(cond,plc,avoidKey){
+  return kpArcPick(cond,plc,avoidKey);
+}
+/* 生成时先用的那几个阶段（观察 / 接近 / 检查）：一段话从这里开头，剩下交给「继续」推进 */
+function kpArcPool(arc,from,count){
+  var list=[], i, j;
+  for(i=0;i<count;i++){
+    var at=from+i;
+    if(!arc || at>=arc.steps.length) break;
+    var arr=KP_STEP_LINES[arc.steps[at]]||[];
+    for(j=0;j<arr.length;j++) list.push(arr[j]);
+  }
+  return list;
+}
+/* 这件小事的开场几步，作为候选加入（相关度给得高，所以一段里基本都会出现一句） */
+function kpArcCands(arc,plc,ctx,rel){
+  var list=kpArcPool(arc,0,3), c=[], i;
+  for(i=0;i<list.length;i++) c.push({t:kpArcFill(list[i],plc,ctx),d:'arc',rel:rel||44});
+  return c;
+}
+
 /* 组段：按「段落结构」排句子 —— 每个槽位取该维度里最近没用过的一句；用户明确要求的条件一定排进去。
    同时避开最近几段用过的整句 / 句式 / 意象，所以连点「再来一段」不会老是同一批句子。 */
 function kpSelect(cands,want,keys,out,plan){
@@ -605,12 +864,13 @@ function kpSelect(cands,want,keys,out,plan){
     c=cands[i]; if(!c || !c.t) continue;
     tx=kpTidy(c.t); if(!tx || keys[tx]) continue;
     if(!c.must && kpHasIn(rec.mat,tx)) continue;          /* 最近几段用过的整句不重复（用户明确要求的条件句除外，它必须出现） */
-    pool.push({t:tx,d:c.d||'air',must:c.must?1:0,idx:i,sig:kpSig(tx),im:kpImagKeys(tx)});
+    pool.push({t:tx,d:c.d||'air',must:c.must?1:0,rel:c.rel||0,idx:i,sig:kpSig(tx),im:kpImagKeys(tx)});
   }
   var byDim={};
   for(i=0;i<pool.length;i++){ var o=pool[i]; (byDim[o.d]||(byDim[o.d]=[])).push(o); }
   var used={}, chosen=[];
-  function score(o){ return kpRecentScore(o,rec); }
+  /* 最近用过的扣分 - 相关度：越贴当前地点的素材越先被取，但仍然会被「最近用过」压下去 */
+  function score(o){ return kpRecentScore(o,rec)-(o.rel||0); }
   function takeDim(d){
     var q=byDim[d]||[], k, best=null, bs=Infinity;
     for(k=0;k<q.length;k++){
@@ -667,7 +927,7 @@ function kpSelect(cands,want,keys,out,plan){
   return out;
 }
 /* 一次生成：先选「叙述入口」，再选「段落结构」，再按结构铺素材（开头 / 结构 / 维度 / 素材每次都会重挑） */
-function kpBuild(r,want,keys,cmode){
+function kpBuild(r,want,keys,cmode,rep){
   var cond=r.cond, out=[], i, op, t1;
   if(cmode===undefined) cmode=kpCreatureMode(r);
   if(cmode) kpState.creature=cmode;
@@ -700,6 +960,17 @@ function kpBuild(r,want,keys,cmode){
   }
   if(op){ out.push({t:op.t,d:'open'}); kpRecPush('open',op.type); }
   var cands2=kpCands(cond,r.forbidden,r.delay);
+  /* 先定一件「小事」：跟着当前地点和用户说的事件挑，换一段就换一件（避开最近用过的那几件） */
+  var plc=kpPlaceCtx(cond), arc=null, step=-1;
+  if(plc && want-out.length>=3){
+    arc=kpArcPick(cond,plc);
+    if(arc){
+      kpRecPush('arc',arc.k);
+      cands2=cands2.concat(kpArcCands(arc,plc,r,44));
+      step=0;
+    }
+  }
+  if(rep){ rep.arc=arc; rep.step=step; rep.place=plc? (plc.pt? plc.pt.id : '') : ''; }
   var want3=want-out.length;
   if(want3>0){
     var plan3=kpPickPlan(cands2,want3,cond);
@@ -755,14 +1026,29 @@ function kpCreatureMode(r){
 /* ================= 生成 / 撤销 / 继续 / 扩写 / 长度 ================= */
 function kpDegradeNote(r,got,want){
   var h=[];
+  /* 用户自己点了地点也算「给了条件」，不再提示「没给条件」（没点地点时还是照旧提示） */
+  var plc=kpPlaceCtx(r.cond), userPlace=!!(plc && plc.tier==='place' && kpState.placeId);
   var anyCond=Object.keys(r.cond).some(function(k){ return (r.cond[k]||[]).length; });
+  anyCond=anyCond || userPlace;
   if(!anyCond) h.push('没给条件，先按通用素材出了一段；写一句话或点个标签会更贴合。');
-  else if(!(r.cond.scene||[]).length && !(r.cond.creature||[]).length)
+  else if(!(r.cond.scene||[]).length && !(r.cond.creature||[]).length && !userPlace)
     h.push('没有具体场景，已按你的时间／天气／氛围用通用素材生成。');
   if(got<want) h.push('当前素材较少，已用通用素材补足，部分条件可能不够具体。');
   if(r.forbidden.creature && !r.delay.creature)
     h.push('已按「不要出现怪物」处理：只写异常、温度、灯光和痕迹，不会有具体怪物。');
+  var pn=kpPlaceNote(r.cond);
+  if(pn) h.push(pn);
   kpState.hint=h.join(' ');
+}
+/* 用户说的场景跟当前地图不是一类时，说清楚按哪个来（不弹窗，只写一行） */
+function kpPlaceNote(cond){
+  var m=kpMapNow();
+  if(!m) return '';
+  var pk=kpMapKindOf(m), sv=(cond.scene||[])[0];
+  var sk=sv? kpKindOf(KP_SCENE_KIND[sv]||'') : null;
+  if(pk && sk && kpFamDiff(KP_FAMILY[pk.k]||'',KP_FAMILY[sk.k]||'') && !kpState.placeId)
+    return '你说的场景跟当前地图不是一类，这一段按你说的场景来；想贴地图就点「📍 现在在哪」里的地点。';
+  return '';
 }
 function kpGen(){
   kpSync();
@@ -770,8 +1056,10 @@ function kpGen(){
   kpState.notes=r.notes||[];
   var want=KP_LEN_N[kpState.length]||6, keys={};
   var cmode=kpCreatureMode(r);
-  var out=kpBuild(r,want,keys,cmode);
-  kpState.ctx={cond:r.cond,forbidden:r.forbidden,delay:r.delay,used:keys,creature:cmode||''};
+  var rep={};
+  var out=kpBuild(r,want,keys,cmode,rep);
+  kpState.ctx={cond:r.cond,forbidden:r.forbidden,delay:r.delay,used:keys,creature:cmode||'',
+    props:r.props||[], arc:rep.arc? rep.arc.k : '', step:(rep.step>=0? rep.step : 0)};
   kpState.lines=out.map(function(o){ return {i:kpNextId(),t:o.t,d:o.d,lock:false}; });
   if(cmode){
     var cr=kpFindCreature(cmode);
@@ -795,22 +1083,70 @@ function kpAppend(n,mode){
   var ctx=kpState.ctx;
   if(!ctx) return 0;
   var keys=ctx.used||(ctx.used={}), out=[];
-  var cands=kpCandsOfCtx(ctx);
-  if(mode==='expand'){
-    var seen={};
-    kpState.lines.forEach(function(l){ seen[l.d]=1; });
-    var prefer=cands.filter(function(c){ return !seen[c.d]; });
-    if(prefer.length) cands=prefer;
+  var plc=kpPlaceCtx(ctx.cond);
+  var arc=ctx.arc? kpArcOf(ctx.arc) : null;
+  /* ① 「继续」= 把这件事往前推一步；「扩写」= 只在当前这一步里多说几句（不换事、不换地方） */
+  if(plc && arc){
+    if(mode==='expand'){
+      var st=Math.max(0,Math.min((ctx.step||0),arc.steps.length-1));
+      /* 只在这一步里再补一句，其余用地点细节和上下文补，免得连着四五句一个腔调 */
+      kpArcEmitStep(arc.steps[st],1,plc,ctx,keys).forEach(function(o){ out.push(o); });
+    } else {
+      var at=(ctx.step||0)+1;
+      if(at>=arc.steps.length){
+        /* 这件事查到头了：先把「下一步去哪」说明白，再换一件新的事接着讲 */
+        kpArcEmitStep(arc.steps[arc.steps.length-1],1,plc,ctx,keys).forEach(function(o){ out.push(o); });
+        var nx=kpArcNext(ctx.cond,plc,arc.k);
+        if(nx){ kpRecPush('arc',nx.k); arc=nx; ctx.arc=nx.k; at=0; }
+        else at=arc.steps.length-1;
+      }
+      /* 用户自己点名带的东西（「有一艘小船」）要留一格，继续的时候也得在场 */
+      var cap=n-out.length;
+      if(((ctx.props)||[]).length && cap>1) cap-=1;
+      var got=kpArcEmit(arc,at,cap,plc,ctx,keys,cap);
+      got.forEach(function(o){ out.push(o); });
+      if(got.length) ctx.step=Math.min(at+got.length-1,arc.steps.length-1);
+      if(out.length<n){ var cr=kpCarryLine(plc,ctx,keys); if(cr) out.push(cr); }
+    }
   }
-  var plan=kpPickPlan(cands,n,ctx.cond);
-  kpRecPush('struct',plan.join('>'));
-  kpSelect(cands,n,keys,out,plan);
+  /* ② 还差几句就用原来的候选补（明确条件句 / 地点 / 场景 / 口述句），不会因为接了地点就少给句子 */
   if(out.length<n){
-    var k2={}; out.forEach(function(o){ k2[o.t]=1; });
-    kpSelect(cands,n-out.length,k2,out,plan);
+    var cands=kpCandsOfCtx(ctx);
+    if(mode==='expand'){
+      var seen={};
+      kpState.lines.forEach(function(l){ seen[l.d]=1; });
+      var prefer=cands.filter(function(c){ return !seen[c.d]; });
+      if(prefer.length) cands=prefer;
+    }
+    cands=cands.concat(kpArcExtra(ctx,plc,arc,mode));
+    var plan=kpPickPlan(cands,n-out.length,ctx.cond);
+    kpRecPush('struct',plan.join('>'));
+    kpSelect(cands,n-out.length,keys,out,plan);
+    if(out.length<n){
+      var k3={}; out.forEach(function(o){ k3[o.t]=1; });
+      kpSelect(cands,n-out.length,k3,out,plan);
+    }
   }
   out.forEach(function(o){ kpState.lines.push({i:kpNextId(),t:o.t,d:o.d,lock:false}); });
   return out.length;
+}
+/* 补句时给「继续 / 扩写」留的候选：地点相关的东西 + 当前这一步还没用过的句子 */
+function kpArcExtra(ctx,plc,arc,mode){
+  var c=[], i, st;
+  if(!plc) return c;
+  /* 「继续」只往后看，不会又把「观察」那一步重说一遍；「扩写」不再堆同一步的句子，改用地点细节 */
+  if(arc && mode!=='expand'){
+    var from=Math.min((ctx.step||0)+1,arc.steps.length-1);
+    for(i=from;i<arc.steps.length;i++){
+      st=arc.steps[i];
+      (KP_STEP_LINES[st]||[]).forEach(function(t){ c.push({t:kpArcFill(t,plc,ctx),d:'arc-'+st,rel:20}); });
+    }
+  }
+  plc.facts.forEach(function(x){ c.push({t:kpFill(x,{}),d:'place',rel:plc.rel.fact}); });
+  kpShuffled(plc.items).forEach(function(x){
+    kpShuffled(KP_PLACE_ITEM_T).forEach(function(t){ c.push({t:String(t).split('{obj}').join(x),d:'place',rel:plc.rel.item}); });
+  });
+  return c;
 }
 function kpContinue(){
   kpSync();
@@ -837,7 +1173,11 @@ function kpAgain(){
   }
   var keys={}, out=[];
   locked.forEach(function(l){ keys[l.t]=1; });
-  out=kpBuild({cond:ctx.cond,forbidden:ctx.forbidden,delay:ctx.delay},want-locked.length,keys,ctx.creature||'');
+  var rep={};
+  out=kpBuild({cond:ctx.cond,forbidden:ctx.forbidden,delay:ctx.delay,props:ctx.props||[]},
+    want-locked.length,keys,ctx.creature||'',rep);
+  ctx.arc=rep.arc? rep.arc.k : '';
+  ctx.step=(rep.step>=0? rep.step : 0);
   var it=0, res=[];
   kpState.lines.forEach(function(l){
     if(l.lock) res.push(l);
@@ -970,6 +1310,26 @@ function kpTag(dim,v,alsoGen){
 }
 /* 点场景标签：直接出结果（一键场景生成） */
 function kpTagGen(dim,v){ kpTag(dim,v,true); }
+/* 点「现在在哪」里的地点：这一段就按地图上那个地点的语境生成（再点别的地点会直接换过去） */
+function kpPlaceTag(v){
+  kpSync();
+  kpState.placeId=String(v==null?'':v);
+  kpSave();
+  kpGen();
+}
+function kpPlaceClear(){
+  kpSync();
+  kpState.placeId='';
+  kpSave();
+  xpRefresh();
+}
+/* 这张地图地点太多时，先给一批，其余的收在「还有 N 个」后面 */
+function kpPlaceMore(){
+  kpSync();
+  kpState.placeAll=!kpState.placeAll;
+  kpSave();
+  xpRefresh();
+}
 function kpSetAdv(dim,v){
   kpSync();
   if(kpState.mute) delete kpState.mute[dim+':'+v];
@@ -1105,10 +1465,28 @@ function kpResultHTML(){
       kpState.notes.map(function(n){ return '<div class="kp-noteline">· '+esc(n)+'</div>'; }).join('')+'</details>':'')+
   '</div>';
 }
+/* 「📍 现在在哪」：默认快捷标签优先给当前地图上的地点（点一下就用这儿的语境生成）。
+   地图上没有地点时就退成地图本身的标签；再没有就不显示这一行，仍走下面的通用场景标签。 */
+function kpPlaceRowHTML(){
+  var m=kpMapNow(), chips=kpPlaceChips(), cur=String(kpState.placeId||''), i, on=false;
+  if(!chips.length) return '';
+  for(i=0;i<chips.length;i++) if(chips[i][0]===cur) on=true;
+  return '<div class="kp-qrow kp-place"><span class="kp-qlab">📍 现在在哪</span><span class="xp-chips">'+
+    chips.map(function(it){
+      if(it[0]==='#more')
+        return '<button class="small ghost" onclick="kpPlaceMore()" title="这张地图上的地点不止这些">'+esc(it[1])+'</button>';
+      return '<button class="small xp-chip'+(it[0]===cur?' on':'')+'" title="'+esc(it[2]||it[1])+'" '+
+        'onclick="kpPlaceTag(\''+it[0]+'\')">'+esc(it[1])+'</button>';
+    }).join('')+
+    (on? '<button class="small ghost" onclick="kpPlaceClear()" title="不用地点语境">✕ 不用地点</button>':'')+
+    ((kpState.placeAll && chips.length>14)? '<button class="small ghost" onclick="kpPlaceMore()">收起</button>':'')+
+    '</span><span class="hint">'+((on&&m)? esc(m.name) : '点一个地点，生成会贴这儿的人和东西')+'</span></div>';
+}
 function kpSceneHTML(){
   var r=kpResolve();
   var selScene=(r.cond.scene||[]), selTime=(r.cond.time||[]), selW=(r.cond.weather||[]), selMood=(r.cond.mood||[]);
   kpRendered.text=kpState.text;
+  var placeRow=kpPlaceRowHTML();
   return kpTabBarHTML()+
     '<div class="xp-box">'+
       '<textarea class="kp-in" id="kpText" rows="2" oninput="kpOnText(this.value)" '+
@@ -1118,6 +1496,7 @@ function kpSceneHTML(){
         '<span class="hint">中文自然语言就行；说「不要…」会当成禁止条件</span></div>'+
     '</div>'+
     '<div class="xp-box kp-quick">'+
+      (placeRow? placeRow+'<div class="hint">这一行来自当前地图；点「场景」则是原来的通用场景标签</div>' : '')+
       kpChipRow('场景',KP_SCENES.map(function(s){ return [s.v,s.n]; }),selScene,'kpTagGen','scene')+
       kpChipRow('时间',KP_OPTS.time.map(function(o){ return [o.v,o.n]; }),selTime,'kpTag','time')+
       kpChipRow('天气',KP_OPTS.weather.map(function(o){ return [o.v,o.n]; }),selW,'kpTag','weather')+
