@@ -160,6 +160,34 @@ function idbDel(key, cb){
   }, function(){ if(cb) cb(); });
 }
 /* ---- 整份文件列表存成一条记录（PDF / 图片存 blob，Word / 文本存排好的正文） ---- */
+/* 发一个不会跟现有文件撞的 id。
+   为什么要这么麻烦：老存档里的 id 是「m+数字」，但 moduleSeq 每次刷新都从 0 开始 ——
+   恢复完再传一份新文件，新文件会拿到跟老文件一样的 id。id 一撞：
+   moduleActive() 只认第一份、两份标签同时亮起、点第二份时 moduleSelect 以为「已经在看这份了」直接返回，
+   表现就是**点标签没反应**（修复前 28 号文件里的真实复现：ids = m1 / m2 / m1）。 */
+function moduleHasId(id){
+  for(var i=0;i<moduleFiles.length;i++) if(moduleFiles[i].id===id) return true;
+  return false;
+}
+function moduleNewId(){
+  var id;
+  do{ id='m'+(++moduleSeq); }while(moduleHasId(id));
+  return id;
+}
+/* 恢复存档后把计数器抬到已有的最大号，并修掉老存档里已经撞在一起的那几份（撞过的一份当场发新 id） */
+function moduleSeedSeq(){
+  var seen={}, fixed=false, i, f;
+  for(i=0;i<moduleFiles.length;i++){
+    var m=/^m(\d+)$/.exec(String(moduleFiles[i].id||''));
+    if(m && +m[1]>moduleSeq) moduleSeq=+m[1];
+  }
+  for(i=0;i<moduleFiles.length;i++){
+    f=moduleFiles[i];
+    if(!f.id || seen[f.id]){ f.id='m'+(++moduleSeq); fixed=true; }
+    seen[f.id]=1;
+  }
+  return fixed;
+}
 function moduleSaveStore(){
   var items=moduleFiles.map(function(f){
     if(f.kind==='pdf'||f.kind==='image') return {id:f.id, name:f.name, kind:f.kind, size:f.size, blob:f.blob||null};
@@ -170,7 +198,7 @@ function moduleSaveStore(){
 function moduleRestoreStore(cb){
   idbGet('moduleList', function(rec){
     if(rec && rec.items && rec.items.length){
-      moduleFiles=rec.items.map(function(it){
+      var restored=rec.items.map(function(it){
         var f={id:it.id||('m'+(++moduleSeq)), name:it.name||'模组', kind:it.kind||'text', size:it.size||0};
         if(it.kind==='pdf'||it.kind==='image'){
           f.blob=it.blob||null;
@@ -179,7 +207,13 @@ function moduleRestoreStore(cb){
         } else f.text=it.text||'';
         return f;
       });
-      moduleActiveId=moduleFiles[0].id;
+      /* 存档是异步读回来的：万一这中间用户已经拖进来文件了，别把他的顶掉，按文件名并在一起 */
+      if(moduleFiles.length){
+        var have={}; moduleFiles.forEach(function(f){ have[f.name]=1; });
+        restored.forEach(function(f){ if(!have[f.name]) moduleFiles.push(f); });
+      } else moduleFiles=restored;
+      if(moduleSeedSeq()) moduleSaveStore();      /* 老存档里有撞 id 的：当场修好并写回去 */
+      if(!moduleActiveId || !moduleActive()) moduleActiveId=moduleFiles[0].id;
       if(cb) cb(true);
       return;
     }
@@ -212,7 +246,7 @@ function onModulePick(ev){
 /* 读一个文件 → item（PDF / 图片走 object URL，Word 解析成 HTML，文本直接读） */
 function moduleReadOne(file, cb){
   var kind=moduleKindOf(file.name, file.type);
-  var item={id:'m'+(++moduleSeq), name:file.name, kind:kind, size:file.size||0};
+  var item={id:moduleNewId(), name:file.name, kind:kind, size:file.size||0};
   if(kind==='pdf'||kind==='image'){
     item.blob=file;
     item.url=(window.URL&&URL.createObjectURL)?URL.createObjectURL(file):null;

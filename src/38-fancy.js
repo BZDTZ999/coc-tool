@@ -15,9 +15,21 @@ var FANCY_STYLES=[
   {k:'hand',  n:'小手',     e:'☝', hot:[16,4]},
   {k:'wand',  n:'魔法棒',   e:'🪄', hot:[25,5]},
   {k:'glass', n:'放大镜',   e:'🔍', hot:[13,13]},
-  {k:'cross', n:'十字准星', e:'✛', hot:[16,16]}
+  {k:'cross', n:'十字准星', e:'✛', hot:[16,16]},
+  {k:'tentacle', n:'触手',  e:'🐙', hot:[16,16]},
+  {k:'eye',   n:'眼球',     e:'👁', hot:[16,16]},
+  {k:'skull', n:'骷髅',     e:'💀', hot:[16,16]},
+  {k:'dice',  n:'骰子',     e:'🎲', hot:[16,16]},
+  {k:'book',  n:'古书',     e:'📖', hot:[8,16]},
+  {k:'candle',n:'蜡烛',     e:'🕯', hot:[16,25]},
+  {k:'sparkle',n:'闪光',    e:'✨', hot:[16,16]},
+  {k:'claw',  n:'爪痕',     e:'✖', hot:[16,24]},
+  {k:'bolt',  n:'闪电',     e:'⚡', hot:[16,16]}
 ];
-var FANCY_FX=[{k:'',n:'关闭'},{k:'star',n:'星星'},{k:'heart',n:'爱心'},{k:'bubble',n:'泡泡'}];
+/* 这些直接画 emoji（跟「小手」一个路子）：不引图片文件、离线可用 */
+var FANCY_EMOJI={hand:'☝', tentacle:'🐙', eye:'👁', skull:'💀', dice:'🎲', book:'📖', candle:'🕯', sparkle:'✨'};
+var FANCY_FX=[{k:'',n:'关闭'},{k:'star',n:'星星'},{k:'heart',n:'爱心'},{k:'bubble',n:'泡泡'},
+  {k:'tentacle',n:'触手'},{k:'skull',n:'骷髅'},{k:'dice',n:'骰子'},{k:'snow',n:'雪花'}];
 var _fancyHits=0, _fancyHitT=0, _fancyPanelOn=false, _fancyTab='cursor';
 var _fancyCache={}, _fancyResizeT=0;
 
@@ -45,9 +57,19 @@ function fancyDesktop(){
   return w>=FANCY_MIN_W;
 }
 /* ---------- 鼠标图案：canvas 现画成 PNG（浏览器对 PNG cursor 支持最好；SVG cursor 个别内核不认） ---------- */
+/* emoji 光标：先描一层深色影子再画本色，浅色背景上也看得见 */
+function fancyDrawEmoji(g, ch){
+  g.font='23px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  g.fillStyle='#111';
+  g.fillText(ch,17.4,18.4);
+  g.fillText(ch,16,17);
+}
 function fancyDrawCursor(kind, g){
   g.clearRect(0,0,32,32);
   g.lineJoin='round'; g.lineCap='round';
+  var ch=FANCY_EMOJI[kind];
+  if(ch){ fancyDrawEmoji(g, ch); return; }
   if(kind==='pixel'){
     g.lineWidth=2.2; g.strokeStyle='#101216'; g.fillStyle='#ffffff';
     g.beginPath();
@@ -68,12 +90,27 @@ function fancyDrawCursor(kind, g){
     g.lineWidth=2.2; g.strokeStyle='#3a2a05'; g.stroke();
     return;
   }
-  if(kind==='hand'){
-    g.font='23px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-    g.textAlign='center'; g.textBaseline='middle';
-    g.fillStyle='#111';
-    g.fillText('☝',17.4,18.4);                 /* 先描一层深色影子，浅色背景上也看得见 */
-    g.fillText('☝',16,17);
+  if(kind==='claw'){                             /* 爪痕：三道带深色描边的抓痕 */
+    var claws=[[5.5,27,4.5,14,11,4],[14,28.5,15,15,20.5,5],[22.5,27,25.5,17,29.5,11]];
+    g.lineCap='round';
+    g.lineWidth=5.2; g.strokeStyle='#3a0f12';
+    for(var ci=0;ci<claws.length;ci++){
+      var c=claws[ci];
+      g.beginPath(); g.moveTo(c[0],c[1]); g.quadraticCurveTo(c[2],c[3],c[4],c[5]); g.stroke();
+    }
+    g.lineWidth=2.6; g.strokeStyle='#e0554d';
+    for(var cj=0;cj<claws.length;cj++){
+      var c2=claws[cj];
+      g.beginPath(); g.moveTo(c2[0],c2[1]); g.quadraticCurveTo(c2[2],c2[3],c2[4],c2[5]); g.stroke();
+    }
+    return;
+  }
+  if(kind==='bolt'){                             /* 闪电：一笔画出来的折线，比 emoji 更利 */
+    g.beginPath();
+    g.moveTo(19.5,2.5); g.lineTo(8,18.5); g.lineTo(14.8,18.5); g.lineTo(11.5,29.5); g.lineTo(24,12.5); g.lineTo(17,12.5);
+    g.closePath();
+    g.fillStyle='#ffe066'; g.fill();
+    g.lineWidth=2.2; g.strokeStyle='#5a4300'; g.stroke();
     return;
   }
   if(kind==='wand'){
@@ -290,7 +327,11 @@ function fancyPickFx(k){
 var FANCY_BITS={
   star:{g:['★','✦','✧'],c:['#ffd75e','#ffe9a8','#ffc94a']},
   heart:{g:['❤','♥','💗'],c:['#ff7a9c','#ffb3c7','#ff4d79']},
-  bubble:{g:['○','◌','●'],c:['#8fd3ff','#bde6ff','#6fb7e8']}
+  bubble:{g:['○','◌','●'],c:['#8fd3ff','#bde6ff','#6fb7e8']},
+  tentacle:{g:['🐙','◍','·'],c:['#7fd4c1','#a8e6d8','#4fa38f']},
+  skull:{g:['💀','☠','·'],c:['#e8e6df','#bdb9ad','#8f8b80']},
+  dice:{g:['🎲','◆','·'],c:['#e3c47f','#fff0c2','#b99a55']},
+  snow:{g:['❄','❅','✻'],c:['#dff0ff','#bfe2ff','#9ccdf5']}
 };
 function fancyBurst(x, y, kind){
   if(!fancyDesktop()) return;

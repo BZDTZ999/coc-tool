@@ -9436,6 +9436,34 @@ function idbDel(key, cb){
   }, function(){ if(cb) cb(); });
 }
 /* ---- 整份文件列表存成一条记录（PDF / 图片存 blob，Word / 文本存排好的正文） ---- */
+/* 发一个不会跟现有文件撞的 id。
+   为什么要这么麻烦：老存档里的 id 是「m+数字」，但 moduleSeq 每次刷新都从 0 开始 ——
+   恢复完再传一份新文件，新文件会拿到跟老文件一样的 id。id 一撞：
+   moduleActive() 只认第一份、两份标签同时亮起、点第二份时 moduleSelect 以为「已经在看这份了」直接返回，
+   表现就是**点标签没反应**（修复前 28 号文件里的真实复现：ids = m1 / m2 / m1）。 */
+function moduleHasId(id){
+  for(var i=0;i<moduleFiles.length;i++) if(moduleFiles[i].id===id) return true;
+  return false;
+}
+function moduleNewId(){
+  var id;
+  do{ id='m'+(++moduleSeq); }while(moduleHasId(id));
+  return id;
+}
+/* 恢复存档后把计数器抬到已有的最大号，并修掉老存档里已经撞在一起的那几份（撞过的一份当场发新 id） */
+function moduleSeedSeq(){
+  var seen={}, fixed=false, i, f;
+  for(i=0;i<moduleFiles.length;i++){
+    var m=/^m(\d+)$/.exec(String(moduleFiles[i].id||''));
+    if(m && +m[1]>moduleSeq) moduleSeq=+m[1];
+  }
+  for(i=0;i<moduleFiles.length;i++){
+    f=moduleFiles[i];
+    if(!f.id || seen[f.id]){ f.id='m'+(++moduleSeq); fixed=true; }
+    seen[f.id]=1;
+  }
+  return fixed;
+}
 function moduleSaveStore(){
   var items=moduleFiles.map(function(f){
     if(f.kind==='pdf'||f.kind==='image') return {id:f.id, name:f.name, kind:f.kind, size:f.size, blob:f.blob||null};
@@ -9446,7 +9474,7 @@ function moduleSaveStore(){
 function moduleRestoreStore(cb){
   idbGet('moduleList', function(rec){
     if(rec && rec.items && rec.items.length){
-      moduleFiles=rec.items.map(function(it){
+      var restored=rec.items.map(function(it){
         var f={id:it.id||('m'+(++moduleSeq)), name:it.name||'模组', kind:it.kind||'text', size:it.size||0};
         if(it.kind==='pdf'||it.kind==='image'){
           f.blob=it.blob||null;
@@ -9455,7 +9483,13 @@ function moduleRestoreStore(cb){
         } else f.text=it.text||'';
         return f;
       });
-      moduleActiveId=moduleFiles[0].id;
+      /* 存档是异步读回来的：万一这中间用户已经拖进来文件了，别把他的顶掉，按文件名并在一起 */
+      if(moduleFiles.length){
+        var have={}; moduleFiles.forEach(function(f){ have[f.name]=1; });
+        restored.forEach(function(f){ if(!have[f.name]) moduleFiles.push(f); });
+      } else moduleFiles=restored;
+      if(moduleSeedSeq()) moduleSaveStore();      /* 老存档里有撞 id 的：当场修好并写回去 */
+      if(!moduleActiveId || !moduleActive()) moduleActiveId=moduleFiles[0].id;
       if(cb) cb(true);
       return;
     }
@@ -9488,7 +9522,7 @@ function onModulePick(ev){
 /* 读一个文件 → item（PDF / 图片走 object URL，Word 解析成 HTML，文本直接读） */
 function moduleReadOne(file, cb){
   var kind=moduleKindOf(file.name, file.type);
-  var item={id:'m'+(++moduleSeq), name:file.name, kind:kind, size:file.size||0};
+  var item={id:moduleNewId(), name:file.name, kind:kind, size:file.size||0};
   if(kind==='pdf'||kind==='image'){
     item.blob=file;
     item.url=(window.URL&&URL.createObjectURL)?URL.createObjectURL(file):null;
@@ -17184,9 +17218,21 @@ var FANCY_STYLES=[
   {k:'hand',  n:'小手',     e:'☝', hot:[16,4]},
   {k:'wand',  n:'魔法棒',   e:'🪄', hot:[25,5]},
   {k:'glass', n:'放大镜',   e:'🔍', hot:[13,13]},
-  {k:'cross', n:'十字准星', e:'✛', hot:[16,16]}
+  {k:'cross', n:'十字准星', e:'✛', hot:[16,16]},
+  {k:'tentacle', n:'触手',  e:'🐙', hot:[16,16]},
+  {k:'eye',   n:'眼球',     e:'👁', hot:[16,16]},
+  {k:'skull', n:'骷髅',     e:'💀', hot:[16,16]},
+  {k:'dice',  n:'骰子',     e:'🎲', hot:[16,16]},
+  {k:'book',  n:'古书',     e:'📖', hot:[8,16]},
+  {k:'candle',n:'蜡烛',     e:'🕯', hot:[16,25]},
+  {k:'sparkle',n:'闪光',    e:'✨', hot:[16,16]},
+  {k:'claw',  n:'爪痕',     e:'✖', hot:[16,24]},
+  {k:'bolt',  n:'闪电',     e:'⚡', hot:[16,16]}
 ];
-var FANCY_FX=[{k:'',n:'关闭'},{k:'star',n:'星星'},{k:'heart',n:'爱心'},{k:'bubble',n:'泡泡'}];
+/* 这些直接画 emoji（跟「小手」一个路子）：不引图片文件、离线可用 */
+var FANCY_EMOJI={hand:'☝', tentacle:'🐙', eye:'👁', skull:'💀', dice:'🎲', book:'📖', candle:'🕯', sparkle:'✨'};
+var FANCY_FX=[{k:'',n:'关闭'},{k:'star',n:'星星'},{k:'heart',n:'爱心'},{k:'bubble',n:'泡泡'},
+  {k:'tentacle',n:'触手'},{k:'skull',n:'骷髅'},{k:'dice',n:'骰子'},{k:'snow',n:'雪花'}];
 var _fancyHits=0, _fancyHitT=0, _fancyPanelOn=false, _fancyTab='cursor';
 var _fancyCache={}, _fancyResizeT=0;
 
@@ -17214,9 +17260,19 @@ function fancyDesktop(){
   return w>=FANCY_MIN_W;
 }
 /* ---------- 鼠标图案：canvas 现画成 PNG（浏览器对 PNG cursor 支持最好；SVG cursor 个别内核不认） ---------- */
+/* emoji 光标：先描一层深色影子再画本色，浅色背景上也看得见 */
+function fancyDrawEmoji(g, ch){
+  g.font='23px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  g.fillStyle='#111';
+  g.fillText(ch,17.4,18.4);
+  g.fillText(ch,16,17);
+}
 function fancyDrawCursor(kind, g){
   g.clearRect(0,0,32,32);
   g.lineJoin='round'; g.lineCap='round';
+  var ch=FANCY_EMOJI[kind];
+  if(ch){ fancyDrawEmoji(g, ch); return; }
   if(kind==='pixel'){
     g.lineWidth=2.2; g.strokeStyle='#101216'; g.fillStyle='#ffffff';
     g.beginPath();
@@ -17237,12 +17293,27 @@ function fancyDrawCursor(kind, g){
     g.lineWidth=2.2; g.strokeStyle='#3a2a05'; g.stroke();
     return;
   }
-  if(kind==='hand'){
-    g.font='23px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
-    g.textAlign='center'; g.textBaseline='middle';
-    g.fillStyle='#111';
-    g.fillText('☝',17.4,18.4);                 /* 先描一层深色影子，浅色背景上也看得见 */
-    g.fillText('☝',16,17);
+  if(kind==='claw'){                             /* 爪痕：三道带深色描边的抓痕 */
+    var claws=[[5.5,27,4.5,14,11,4],[14,28.5,15,15,20.5,5],[22.5,27,25.5,17,29.5,11]];
+    g.lineCap='round';
+    g.lineWidth=5.2; g.strokeStyle='#3a0f12';
+    for(var ci=0;ci<claws.length;ci++){
+      var c=claws[ci];
+      g.beginPath(); g.moveTo(c[0],c[1]); g.quadraticCurveTo(c[2],c[3],c[4],c[5]); g.stroke();
+    }
+    g.lineWidth=2.6; g.strokeStyle='#e0554d';
+    for(var cj=0;cj<claws.length;cj++){
+      var c2=claws[cj];
+      g.beginPath(); g.moveTo(c2[0],c2[1]); g.quadraticCurveTo(c2[2],c2[3],c2[4],c2[5]); g.stroke();
+    }
+    return;
+  }
+  if(kind==='bolt'){                             /* 闪电：一笔画出来的折线，比 emoji 更利 */
+    g.beginPath();
+    g.moveTo(19.5,2.5); g.lineTo(8,18.5); g.lineTo(14.8,18.5); g.lineTo(11.5,29.5); g.lineTo(24,12.5); g.lineTo(17,12.5);
+    g.closePath();
+    g.fillStyle='#ffe066'; g.fill();
+    g.lineWidth=2.2; g.strokeStyle='#5a4300'; g.stroke();
     return;
   }
   if(kind==='wand'){
@@ -17459,7 +17530,11 @@ function fancyPickFx(k){
 var FANCY_BITS={
   star:{g:['★','✦','✧'],c:['#ffd75e','#ffe9a8','#ffc94a']},
   heart:{g:['❤','♥','💗'],c:['#ff7a9c','#ffb3c7','#ff4d79']},
-  bubble:{g:['○','◌','●'],c:['#8fd3ff','#bde6ff','#6fb7e8']}
+  bubble:{g:['○','◌','●'],c:['#8fd3ff','#bde6ff','#6fb7e8']},
+  tentacle:{g:['🐙','◍','·'],c:['#7fd4c1','#a8e6d8','#4fa38f']},
+  skull:{g:['💀','☠','·'],c:['#e8e6df','#bdb9ad','#8f8b80']},
+  dice:{g:['🎲','◆','·'],c:['#e3c47f','#fff0c2','#b99a55']},
+  snow:{g:['❄','❅','✻'],c:['#dff0ff','#bfe2ff','#9ccdf5']}
 };
 function fancyBurst(x, y, kind){
   if(!fancyDesktop()) return;

@@ -1755,6 +1755,31 @@ const ready = new Promise((res) => {
     var back=!!box && !box.classList.contains('zoom');
     return shown && zoomed && back;
   })());
+  /* 回归：撞 id 会让「点标签没反应」。根因是老存档里的 id 是「m+数字」，
+     而 moduleSeq 每次刷新都从 0 开始 —— 恢复完再传一份新文件就会拿到一样的 id，
+     于是两份标签一起亮、moduleActive() 只认第一份、点第二份被 moduleSelect 的提前返回吃掉。 */
+  ok('模组：恢复存档后 id 不会撞（moduleSeq 追上最大号，已撞的当场拆开）', (function(){
+    var savedFiles=w.moduleFiles, savedActive=w.moduleActiveId, savedSeq=w.moduleSeq;
+    try{
+      w.moduleFiles=[{id:'m1',name:'老甲.txt',kind:'text',text:'甲'},{id:'m2',name:'老乙.txt',kind:'text',text:'乙'}];
+      w.moduleSeq=0;
+      var repaired=w.moduleSeedSeq();
+      var ids=w.moduleFiles.map(function(f){ return f.id; });
+      var seqAfterSeed=w.moduleSeq;                 /* 先记下来：moduleNewId 会把计数器再往前推 */
+      var next=w.moduleNewId();
+      var normal=repaired===false && ids.join(',')==='m1,m2' && seqAfterSeed===2 && next==='m3';
+      w.moduleFiles=[{id:'m1',name:'甲',kind:'text'},{id:'m1',name:'乙',kind:'text'},{id:'m2',name:'丙',kind:'text'}];
+      w.moduleSeq=0;
+      var repaired2=w.moduleSeedSeq();
+      var ids2=w.moduleFiles.map(function(f){ return f.id; });
+      var seen={}, dup=false;
+      ids2.forEach(function(i){ if(seen[i]) dup=true; seen[i]=1; });
+      var broke=repaired2===true && ids2.join(',')==='m1,m3,m2' && !dup;
+      return normal && broke;
+    } finally {
+      w.moduleFiles=savedFiles; w.moduleActiveId=savedActive; w.moduleSeq=savedSeq;
+    }
+  })());
   ok('模组：老格式（.doc / .pptx）给「另存为 PDF」的提示，不当作正文乱排', (function(){
     var kinds=w.moduleKindOf('旧的.doc','application/msword')==='other' &&
       w.moduleKindOf('幻灯.pptx','')==='other' &&
@@ -3357,8 +3382,24 @@ const ready = new Promise((res) => {
     var saved=(w.state.ui.fancy||{}).cursor==='star';
     w.fancyPick('');
     var off=!d.body.classList.contains('fancycursor') && d.body.style.getPropertyValue('--fancy-cursor')==='';
-    return names.length>=6 && names.join('').indexOf('默认')>=0 && names.join('').indexOf('像素箭头')>=0 &&
-      names.join('').indexOf('十字准星')>=0 && on && saved && off;
+    var all=names.join('');
+    return names.length>=14 && all.indexOf('默认')>=0 && all.indexOf('像素箭头')>=0 &&
+      all.indexOf('十字准星')>=0 && all.indexOf('触手')>=0 && all.indexOf('骷髅')>=0 && all.indexOf('闪电')>=0 &&
+      on && saved && off;
+  })());
+  ok('彩蛋：点击特效也加到 8 档（触手 / 骷髅 / 骰子 / 雪花），选一档点下去会蹦出小节点', (function(){
+    w.fancySetTab('fx');
+    var btns=[].slice.call(d.querySelectorAll('#fancyBody .xp-tab')).map(function(b){ return b.textContent; });
+    var labels=btns.join('');
+    var eight=btns.length>=8 && labels.indexOf('雪花')>=0 && labels.indexOf('触手')>=0 && labels.indexOf('骰子')>=0;
+    w.fancyPickFx('snow');
+    var bits=d.querySelectorAll('.fancy-bit').length;
+    var saved=(w.state.ui.fancy||{}).fx==='snow';
+    var lit=d.querySelectorAll('#fancyBody .xp-tab.on').length;
+    w.fancyPickFx('');
+    var cleared=(w.state.ui.fancy||{}).fx==='';
+    w.fancySetTab('cursor');
+    return eight && bits>0 && saved && lit===1 && cleared;   /* 小节点靠动画跑完自己删，不在这里断言 */
   })());
   ok('彩蛋：手机 / 触屏完全不挂（连鼠标样式都不生成），窄窗口也一样', (function(){
     var old=w.isCoarseTouch;
