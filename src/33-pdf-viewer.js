@@ -15,8 +15,10 @@ var PDF_PAGE_PAD=10;          /* 第一页上面的留白（要和 .pdfv-pages �
 var PDF_NEAR=1;               /* 视口上下各多画一页，滑起来看不到空白 */
 var PDF_KEEP=3;               /* 离视口这么远的页就把画布放掉，省内存（318 页的规则书也扛得住） */
 var PDF_JUMP_MAX=420;         /* 跳页面板最多画多少个页码按钮，超了就每 N 页一个 */
+var PDF_VIEW_KEEP=24;         /* 最多记住 24 份文档的阅读状态，免得 localStorage 无限长大 */
+var PDF_PARK_MAX=2;           /* 最多把两份「暂时摘下」的阅读器 DOM 留在内存里（模组 + 规则书各一份） */
 var pdfState={
-  host:null, wrap:null, canvas:null, doc:null, src:'', num:0, page:1, zoom:1, fit:true,
+  host:null, wrap:null, canvas:null, doc:null, src:'', key:'', num:0, page:1, zoom:1, fit:true,
   baseW:612, baseH:792, task:null, token:0, onPage:null, onCount:null,
   pages:[], offsets:[], total:0, outline:null, navLock:0, pinch:0
 };
@@ -25,6 +27,8 @@ var _pdfLibWaiters=null;      /* 在线版第一次加载 pdf.js 时排队等它
 var _pdfOutlineStore=null, _pdfOutlineN=0;   /* 书签条目：面板里只放一个编号，点的时候再算它在第几页 */
 var _pdfJumpTab='num';                       /* 跳页面板当前看「页码」还是「目录」（有书签的 PDF 才有得选） */
 var _pdfScrollRaf=0, _pdfScrollTimer=0;
+var _pdfParks={}, _pdfParkIds=[];            /* 被面板重画暂时摘下、等会儿原样挂回去的阅读器 DOM */
+var _pdfViewSaveT=0;                         /* 阅读状态的落盘防抖：翻页时别每页都写一次 localStorage */
 
 function pdfLibReady(){
   try{ return typeof pdfjsLib!=='undefined' && !!pdfjsLib && typeof pdfjsLib.getDocument==='function'; }
@@ -73,6 +77,123 @@ function pdfDocCacheGet(src){
   pr['catch'](function(){ if(_pdfDocCache[src]===pr) delete _pdfDocCache[src]; });
   return pr;
 }
+/* ---------- 阅读状态（按文档）：看到第几页 / 放大到多少 / 滚到哪儿 ----------
+   规则书传 key='rulebook'，模组传 key='mod:'+文件 id —— 都是跨刷新稳定的标识
+   （规则书 / 模组的 PDF 都是运行时解出来的 blob: URL，每次刷新都会变，不能拿它当钥匙）。
+   老存档没有这份文档的状态：就按第一页 + 适应宽度开始。 */
+function pdfReaderStore(){
+  if(typeof state==='undefined' || !state) return {};
+  if(!state.ui) state.ui={};
+  if(!state.ui.pdfView || typeof state.ui.pdfView!=='object' || Array.isArray(state.ui.pdfView)) state.ui.pdfView={};
+  return state.ui.pdfView;
+}
+function pdfDocKey(src){
+  var s=String(src||''); if(!s) return '';
+  return 'u:'+s.length+':'+s.slice(0,32)+':'+s.slice(-32);
+}
+function pdfReaderGet(key){ if(!key) return null; return pdfReaderStore()[key]||null; }
+function pdfReaderSave(key, patch){
+  if(!key) return;
+  var store=pdfReaderStore(), v=store[key]||{}, k;
+  for(k in patch) if(Object.prototype.hasOwnProperty.call(patch,k)) v[k]=patch[k];
+  v.t=Date.now();
+  store[key]=v;
+  var keys=Object.keys(store);
+  if(keys.length>PDF_VIEW_KEEP){
+    keys.sort(function(a,b){ return (store[a].t||0)-(store[b].t||0); });
+    for(var i=0;i<keys.length-PDF_VIEW_KEEP;i++) delete store[keys[i]];
+  }
+  pdfReaderFlush();
+}
+function pdfReaderFlush(){
+  if(_pdfViewSaveT) return;
+  _pdfViewSaveT=setTimeout(function(){ _pdfViewSaveT=0; try{ saveStateQuiet(); }catch(e){} }, 500);
+}
+/* 关页面 / 切到后台时把还没落盘的那一点状态补上（不然刚翻页就关掉会丢） */
+function pdfReaderBindFlush(){
+  if(document.__pdfViewFlush) return;
+  document.__pdfViewFlush=1;
+  window.addEventListener('pagehide', function(){ if(_pdfViewSaveT){ clearTimeout(_pdfViewSaveT); _pdfViewSaveT=0; try{ saveStateQuiet(); }catch(e){} } });
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden && _pdfViewSaveT){ clearTimeout(_pdfViewSaveT); _pdfViewSaveT=0; try{ saveStateQuiet(); }catch(e){} }
+  });
+}
+/* 把「现在这一眼」记下来：第几页 + 页内位置（换算成 0~1，换过缩放 / 窗口大小也能对上） */
+function pdfSaveView(){
+  var st=pdfState;
+  if(!st.key || !st.doc) return;
+  var a=pdfViewAnchor(), patch={page:st.page||1, zoom:Math.round((st.zoom||1)*1000)/1000, fit:!!st.fit};
+  if(a){ patch.pi=a.i; patch.pf=Math.round(a.frac*1000)/1000; }
+  pdfReaderSave(st.key, patch);
+}
+function pdfSavedAnchor(v){
+  if(!v || !(v.pi>0)) return null;
+  var f=parseFloat(v.pf);
+  return {i:v.pi|0, frac:(isFinite(f)&&f>0)?Math.min(1,f):0};
+}
+/* ---------- 「面板重画时别把阅读器扔了」 ----------
+   右半屏换内容时整块 innerHTML 会被重写，正在看的 PDF 跟着被销毁、重画、跳回第一页 —— 看着就是「卡一下 + 闪一下」。
+   这里在重画之前把整棵阅读器 DOM 摘下来（画布、页码、滚动位置都留着），下次还要看同一份就原样挂回去，等于没动过。 */
+function pdfSnapshot(){
+  var st=pdfState;
+  return {doc:st.doc, src:st.src, key:st.key, num:st.num, page:st.page, zoom:st.zoom, fit:st.fit,
+    baseW:st.baseW, baseH:st.baseH, pages:st.pages, offsets:st.offsets, total:st.total,
+    outline:st.outline, token:st.token};
+}
+function pdfParkHost(){
+  var st=pdfState, host=st.host;
+  if(!host || !host.__pdfLive || !host.id) return null;
+  if(host.parentNode) host.parentNode.removeChild(host);
+  host.__pdfLive=0;
+  var top=0; try{ top=host.scrollTop||0; }catch(e){}
+  var old=_pdfParks[host.id];
+  if(old && old.el!==host) old.el.__pdfLive=0;
+  if(old){ var oi=_pdfParkIds.indexOf(host.id); if(oi>=0) _pdfParkIds.splice(oi,1); }
+  _pdfParks[host.id]={el:host, top:top, st:pdfSnapshot()};
+  _pdfParkIds.push(host.id);
+  while(_pdfParkIds.length>PDF_PARK_MAX){
+    var drop=_pdfParkIds.shift(), d=_pdfParks[drop];
+    if(d && !d.el.__pdfLive && d.el.parentNode) d.el.parentNode.removeChild(d.el);
+    delete _pdfParks[drop];
+  }
+  pdfJumpClose();
+  st.host=null; st.wrap=null; st.canvas=null;
+  return _pdfParks[host.id];
+}
+/* 这块 DOM 不要了（文件被移出 / 清空时调） */
+function pdfParkForget(id){
+  var rec=id?(_pdfParks[id]||null):null;
+  if(!rec) return;
+  delete _pdfParks[id];
+  var i=_pdfParkIds.indexOf(id); if(i>=0) _pdfParkIds.splice(i,1);
+  if(rec.el && !rec.el.__pdfLive && rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+}
+/* 面板重画前调用：把正在看的阅读器摘下来留着 */
+function pdfParkLive(){ try{ pdfParkHost(); }catch(e){} }
+/* 同一份文档又要看了：把摘下来那棵原样挂回去（页码 / 缩放 / 画布 / 滚动位置全在） */
+function pdfUnpark(host, key, opts){
+  var rec=_pdfParks[host.id];
+  if(!rec || !key || !rec.st || rec.st.key!==key) return false;
+  delete _pdfParks[host.id];
+  var i=_pdfParkIds.indexOf(host.id); if(i>=0) _pdfParkIds.splice(i,1);
+  if(host.parentNode) host.parentNode.replaceChild(rec.el, host);
+  var st=pdfState, ss=rec.st;
+  st.host=rec.el; st.wrap=rec.el.querySelector('.pdfv-pages'); st.canvas=null;
+  st.doc=ss.doc; st.src=ss.src; st.key=ss.key; st.num=ss.num; st.page=ss.page;
+  st.zoom=ss.zoom; st.fit=ss.fit; st.baseW=ss.baseW; st.baseH=ss.baseH;
+  st.pages=ss.pages; st.offsets=ss.offsets; st.total=ss.total; st.outline=ss.outline;
+  st.token=ss.token; st.navLock=Date.now(); st.pinch=0; st.task=null;
+  st.onPage=opts.onPage||null; st.onCount=opts.onCount||null;
+  rec.el.__pdfLive=1;
+  try{ rec.el.scrollTop=rec.top||0; }catch(e){}
+  pdfBindScroll(rec.el);
+  pdfBindPinch(rec.el);
+  pdfSyncBar();
+  if(st.onCount) st.onCount(st.num);
+  if(st.onPage) st.onPage(st.page);
+  if(typeof modRenderToc==='function') modRenderToc();
+  return true;
+}
 /* 工具条（规则书 / 模组共用同一套 id —— 两个面板同时只开一个）
    手机上按钮里的说明文字会被藏起来只留图标（见 style.css 的 .pdfv-bar .lbl），免得把正文挤没。 */
 function pdfControlsHTML(extra){
@@ -88,20 +209,31 @@ function pdfControlsHTML(extra){
       '<button class="small ghost" onclick="pdfFitWidth()" title="回到适应宽度（手机上看全页）">适宽</button>'+
     '</span>'+(extra||'');
 }
-/* 把一份 PDF 挂进 host（host 是滚动容器；里面一整列页面画布，滑到哪儿画到哪儿） */
+/* 把一份 PDF 挂进 host（host 是滚动容器；里面一整列页面画布，滑到哪儿画到哪儿）
+   opts.key：这份文档的稳定标识（规则书 'rulebook'、模组 'mod:<文件 id>'），用来记住 / 恢复阅读状态。
+   同一份文档刚被面板重画摘下来过的话，直接把那棵 DOM 挂回去 —— 不重建画布、不闪、不跳页。 */
 function pdfMountPdf(host, src, opts){
   opts=opts||{};
   var st=pdfState;
   if(!host) return;
+  var key=opts.key || pdfDocKey(src);
+  if(pdfUnpark(host, key, opts)) return;
   if(st.task){ try{ st.task.cancel(); }catch(e){} st.task=null; }
   pdfJumpClose();
-  st.host=host; st.wrap=null; st.canvas=null; st.src=src||''; st.page=Math.max(1, opts.page||1); st.num=0;
-  st.zoom=1; st.fit=(opts.fit!==false); st.doc=null;
+  pdfReaderBindFlush();
+  var saved=pdfReaderGet(key)||{};
+  var wantFit=(saved.fit==null)?(opts.fit!==false):!!saved.fit;
+  var wantZoom=parseFloat(saved.zoom);
+  if(!isFinite(wantZoom) || wantZoom<=0) wantZoom=0;
+  st.host=host; st.wrap=null; st.canvas=null; st.src=src||''; st.key=key; st.num=0;
+  st.doc=null; st.zoom=1; st.fit=true;         /* 读到存档前先按「适应宽度」 */
+  st.page=Math.max(1, (saved.page|0) || (opts.page|0) || 1);
   st.pages=[]; st.offsets=[]; st.total=0; st.outline=null; st.navLock=0; st.pinch=0;
   st.onPage=opts.onPage||null; st.onCount=opts.onCount||null;
   var token=++st.token;
   if(!src){ host.innerHTML=pdfNoteHTML('找不到这份 PDF'); return; }
-  host.innerHTML='<div class="pdfv-load">正在打开 PDF…</div>';
+  /* 已经缓存过的文档（换标签回来）不要先闪一行「正在打开 PDF…」：等一个微任务就直接画了 */
+  if(!_pdfDocCache[src]) host.innerHTML='<div class="pdfv-load">正在打开 PDF…</div>';
   pdfSyncBar();                                  /* 工具条先显示这份文件的页码，别留着上一份的 */
   pdfEnsureLib(function(){
     pdfDocCacheGet(src).then(function(doc){
@@ -110,19 +242,23 @@ function pdfMountPdf(host, src, opts){
       pdfBaseSize(1).then(function(bs){
         if(token!==st.token) return;
         if(bs && bs.width && bs.height){ st.baseW=bs.width; st.baseH=bs.height; }
-        st.zoom=pdfFitZoom();                    /* 起手「一页占满宽度」，跟纸书一样一眼一整页 */
+        st.fit=wantFit;
+        /* 存档里有缩放就接着用；没有 / 头一回打开才「一页占满宽度」 */
+        st.zoom=(!wantFit && wantZoom>0) ? Math.max(PDF_MIN_ZOOM, Math.min(PDF_MAX_ZOOM, wantZoom)) : pdfFitZoom();
         host.innerHTML='<div class="pdfv-pages"></div>';
         st.wrap=host.querySelector('.pdfv-pages');
         pdfBuildPages();
         pdfLayout();
         pdfBindPinch(host);
         pdfBindScroll(host);
-        pdfSyncBar();
         if(st.onCount) st.onCount(st.num);
-        pdfPaint();
-        st.navLock=Date.now();                   /* 停在上次看到的那一页：先别让滚动事件改页码 */
-        pdfScrollToPage(st.page);
+        st.navLock=Date.now();                   /* 停在上次看到的地方：先别让滚动事件改页码 */
+        var anchor=pdfSavedAnchor(saved);
+        if(anchor) pdfRestoreAnchor(anchor); else pdfScrollToPage(st.page);
+        pdfSyncBar();
+        pdfPaint();                              /* 先回到位置再画：不会先亮一下第一页再跳走 */
         pdfLoadOutline(doc);
+        host.__pdfLive=1;
       });
     }, function(err){
       if(token!==st.token) return;
@@ -156,11 +292,11 @@ function pdfBuildPages(){
   var st=pdfState, html='';
   st.pages=[]; st.offsets=[];
   if(!st.wrap) return;
-  for(var i=0;i<st.num;i++) html+='<div class="pdfv-page"><canvas class="pdfv-canvas"></canvas></div>';
+  for(var i=0;i<st.num;i++) html+='<div class="pdfv-page"><canvas class="pdfv-canvas"></canvas><div class="pdfv-text"></div></div>';
   st.wrap.innerHTML=html;
-  var cvs=st.wrap.querySelectorAll('canvas.pdfv-canvas');
+  var cvs=st.wrap.querySelectorAll('canvas.pdfv-canvas'), tls=st.wrap.querySelectorAll('.pdfv-text');
   for(var k=0;k<cvs.length;k++)
-    st.pages.push({cv:cvs[k], w:st.baseW, h:st.baseH, rw:st.baseW, rh:st.baseH, on:false, busy:false, z:0, task:null});
+    st.pages.push({cv:cvs[k], tl:tls[k]||null, tlZ:'', w:st.baseW, h:st.baseH, rw:st.baseW, rh:st.baseH, on:false, busy:false, z:0, task:null});
 }
 /* 按当前倍率排版（每页多大、每页从哪儿开始），起始位置记进 offsets —— 找当前页只看这张表 */
 function pdfLayout(){
@@ -249,13 +385,45 @@ function pdfReleasePage(n){
   p.on=false; p.z=0;
   try{ p.cv.classList.remove('ready'); }catch(e){}
   try{ p.cv.width=1; p.cv.height=1; }catch(e){}
+  pdfReleaseText(p);                              /* 文字层跟着放掉，别留着旧坐标 */
+}
+/* 文字层：画布是「图」，这层是盖在上面的透明文字 —— 鼠标能拖选、Cmd/Ctrl+C 能复制。 */
+function pdfReleaseText(p){
+  if(!p) return;
+  p.tlZ='';
+  if(p.tl){ try{ p.tl.innerHTML=''; }catch(e){} }
+}
+function pdfTextLayer(page, p, z){
+  if(!p || !p.tl || !page) return;
+  try{
+    if(typeof pdfjsLib==='undefined' || typeof pdfjsLib.renderTextLayer!=='function') return;
+    if(typeof page.getTextContent!=='function') return;
+  }catch(e){ return; }
+  var tag=String(z);
+  if(p.tlZ===tag && p.tl.firstChild) return;     /* 这一页这个倍率的文字层已经铺好了 */
+  p.tlZ=tag;
+  var tl=p.tl, token=pdfState.token;
+  try{ tl.innerHTML=''; }catch(e){}
+  /* pdf.js 3.x 要求容器上有 --scale-factor，且值要和 viewport.scale 一致，位置才对得上画布 */
+  tl.style.setProperty('--scale-factor', tag);
+  var pr;
+  try{ pr=page.getTextContent(); }catch(e){ return; }
+  if(!pr || typeof pr.then!=='function') return;
+  pr.then(function(tc){
+    if(token!==pdfState.token || !tl.parentNode || p.tlZ!==tag) return;
+    try{
+      var task=pdfjsLib.renderTextLayer({textContentSource:tc, container:tl,
+        viewport:page.getViewport({scale:z}), textDivs:[]});
+      if(task && task.promise && task.promise['catch']) task.promise['catch'](function(){});
+    }catch(e){}
+  }, function(){});
 }
 /* 画第 n 页：画布按当前倍率，高清屏按 dpr 放大后备缓冲 */
 function pdfRenderPage(n){
   var st=pdfState, p=st.pages[n-1];
   if(!p || p.on || p.busy) return;
   p.busy=true;
-  var token=st.token;
+  var token=st.token, z0=st.zoom||1;
   st.doc.getPage(n).then(function(page){
     p.busy=false;
     if(token!==st.token) return;
@@ -267,7 +435,7 @@ function pdfRenderPage(n){
       pdfLayout();
       pdfRestoreAnchor(a);
     }
-    var z=st.zoom||1, cv=p.cv;
+    var z=z0, cv=p.cv;
     var w=p.w||Math.max(1, Math.round((p.rw||st.baseW)*z));
     var h=p.h||Math.max(1, Math.round((p.rh||st.baseH)*z));
     var dpr=Math.min(2, dprOf());
@@ -282,6 +450,7 @@ function pdfRenderPage(n){
       task=page.render({canvasContext:g, viewport:page.getViewport({scale:z}), transform:(dpr!==1?[dpr,0,0,dpr,0,0]:null)});
     }catch(e){ pdfMarkPageReady(p, z); return; }
     p.task=task; st.task=task;
+    pdfTextLayer(page, p, z);                    /* 图与文字两层一起铺，缩放后仍然对得上 */
     return task.promise.then(function(){
       p.task=null; if(st.task===task) st.task=null;
       pdfMarkPageReady(p, z);
@@ -319,6 +488,7 @@ function pdfGoPage(p){
   pdfScrollToPage(n);
   if(st.onPage) st.onPage(n);
   pdfSyncBar(); pdfPaint();
+  pdfSaveView();
 }
 function pdfPrev(){ pdfGoPage(pdfState.page-1); }
 function pdfNext(){ pdfGoPage(pdfState.page+1); }
@@ -350,6 +520,7 @@ function pdfOnScroll(){
     pdfSyncBar();
   }
   pdfPaint();
+  pdfSaveView();
 }
 function pdfBindScroll(host){
   if(!host || host.__pdfScrollBound) return;
@@ -363,12 +534,14 @@ function pdfZoomSet(z){
   st.fit=false;
   pdfRender();
   pdfSyncBar();
+  pdfSaveView();
 }
 function pdfFitWidth(){
   var st=pdfState; if(!st.doc) return;
   st.fit=true; st.zoom=pdfFitZoom();
   pdfRender();
   pdfSyncBar();
+  pdfSaveView();
 }
 /* 翻页 / 缩放后把工具条上的页码与百分比对齐（两个面板共用这套 id） */
 function pdfSyncBar(){
@@ -458,7 +631,7 @@ function pdfJumpGo(){
 /* PDF 自带书签（pdf.js 的 outline）：有就先把目录列出来，点书签直接跳过去 */
 function pdfLoadOutline(doc){
   var st=pdfState, token=st.token;
-  if(!doc || typeof doc.getOutline!=='function') return;
+  if(!doc || typeof doc.getOutline!=='function'){ if(typeof modRenderToc==='function') modRenderToc(true); return; }
   var pr;
   try{ pr=doc.getOutline(); }catch(e){ return; }
   if(!pr || typeof pr.then!=='function') return;
@@ -466,7 +639,8 @@ function pdfLoadOutline(doc){
     if(token!==st.token || st.doc!==doc) return;
     st.outline=(items && items.length)?items:null;
     if(st.outline && $('pdfJumpBody')) pdfJumpRebuild();
-  }, function(){});
+    if(typeof modRenderToc==='function') modRenderToc(true);   /* 模组面板左边的目录 */
+  }, function(){ if(typeof modRenderToc==='function') modRenderToc(true); });
 }
 function pdfOutlineHTML(items){
   if(!items || !items.length) return '';
@@ -490,7 +664,7 @@ function pdfOutlineGo(id){
   if(typeof dest==='string' && typeof doc.getDestination==='function') pr=doc.getDestination(dest);
   pr.then(function(d){
     if(!d || !d.length || typeof doc.getPageIndex!=='function') return null;
-    return doc.getPageIndex(d[0]).then(function(idx){ pdfJumpTo(idx+1); });
+    return doc.getPageIndex(d[0]).then(function(idx){ pdfGoPage(idx+1); });
   })['catch'](function(){});
 }
 /* 双指捏合缩放：两指时先给整列页面加 CSS 缩放（跟手），松手再按新倍率重画一遍高清图 */

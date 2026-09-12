@@ -101,6 +101,7 @@ function sidePaneNarrow(){ return window.innerWidth < 900; }
 function renderSidePane(){
   var pane=$('sidePane'); if(!pane) return;
   var c=sidePaneCfg();
+  if(typeof pdfParkLive==='function') pdfParkLive();   /* 正在看的 PDF 先整棵摘下来留着：换回来时原样挂回去，不闪不重载 */
   if(!c.open){ pane.innerHTML=''; return; }
   if(c.kind==='rulebook') renderRulebookPane(pane);
   else if(c.kind==='extras') renderExtrasPane(pane);
@@ -340,6 +341,7 @@ function moduleCloseOne(id){
   var i=-1;
   moduleFiles.forEach(function(f,k){ if(f.id===id) i=k; });
   if(i<0) return;
+  if(typeof pdfParkForget==='function') pdfParkForget('spPdfHost');
   var f=moduleFiles[i];
   if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){}
   moduleFiles.splice(i,1);
@@ -347,6 +349,7 @@ function moduleCloseOne(id){
   moduleSaveStore(); renderSidePane();
 }
 function moduleClear(){
+  if(typeof pdfParkForget==='function') pdfParkForget('spPdfHost');
   moduleFiles.forEach(function(f){ if(f.url) try{ URL.revokeObjectURL(f.url); }catch(e){} });
   moduleFiles=[]; moduleActiveId=null;
   idbDel('moduleList'); idbDel('module');
@@ -361,30 +364,113 @@ function moduleSizeText(n){
 function renderModulePane(pane){
   var m=moduleActive();
   var many=moduleFiles.length>1;
-  var head='<div class="sp-head"><b>📖 模组</b>'+
-    '<span class="hint">'+(many?('共 '+moduleFiles.length+' 份，点标签页换着看'):'左边照常带团，右边看模组')+'</span>'+
+  var isPdf=!!(m && m.kind==='pdf');
+  /* PDF 模式下这一条尽量扁：屏幕留给正文，说明文字收进 title */
+  var head='<div class="sp-head'+(isPdf?' sp-head-slim':'')+'"><b>📖 模组</b>'+
+    (isPdf?'':'<span class="hint">'+(many?('共 '+moduleFiles.length+' 份，点标签页换着看'):'左边照常带团，右边看模组')+'</span>')+
     '<div class="row sp-tools">'+
       '<label class="btn small btnfile" for="moduleFileInput" title="可以一次选多个文件（PDF / Word / 图片 / txt）"><span>⬆ 添加文件</span></label>'+
       (moduleCanPickFolder()?'<label class="btn small btnfile" for="moduleFolderInput" title="选一整个文件夹，里面的 PDF / Word / 图片会全部加进来"><span>📁 文件夹</span></label>':'')+
       (moduleFiles.length?'<button class="small ghost" onclick="moduleClear()" title="从本机清除（不删你自己的文件）">🗑 全部清除</button>':'')+
+      /* 目录开关跟规则书一样放在这一行（工具条那一行地方不够，会被挤到看不见） */
+      (isPdf?'<button class="small ghost" id="modTocBtn" hidden onclick="modToggleToc()" title="展开 / 收起左侧目录">☰ 收起目录</button>':'')+
       '<button class="ghost small" onclick="closeSidePane()" title="收起右半屏">✕</button>'+
     '</div></div>';
   var body=moduleBodyHTML(m);
-  var drop='<div class="sp-drop" id="spDrop">⬇ 把模组文件或<b>整个文件夹</b>拖到这里（PDF · Word · 图片 · txt/md'+
+  /* PDF 模式下不再单出一条虚线拖放提示（拖到窗口里任何地方都收，功能不受影响） */
+  var drop=isPdf?'':'<div class="sp-drop" id="spDrop">⬇ 把模组文件或<b>整个文件夹</b>拖到这里（PDF · Word · 图片 · txt/md'+
     (moduleFiles.length?'，可以继续加':'')+'）——拖到窗口里任何地方都行</div>';
-  pane.innerHTML=head+moduleTabsHTML()+'<div class="sp-body'+(m&&m.kind==='pdf'?' sp-body-fill':'')+'">'+body+drop+'</div>'+
+  /* PDF：正文那一段直接套规则书那套结构（sp-body + rb-wrap + rb-side + rb-main），目录与正文并排 */
+  pane.innerHTML=head+moduleTabsHTML()+'<div class="sp-body'+(isPdf?' rb-wrap':'')+'">'+body+drop+'</div>'+
     '<input type="file" id="moduleFileInput" class="file-hidden" accept=".pdf,.docx,.txt,.md,.markdown,.csv,.json,.log,image/*" multiple onchange="onModulePick(event)">'+
     '<input type="file" id="moduleFolderInput" class="file-hidden" webkitdirectory directory multiple onchange="onModulePick(event)">';
-  /* PDF 交给自带阅读器（手机 / 平板上也能翻页、缩放）；每份文件记住自己看到第几页 */
-  if(m && m.kind==='pdf' && m.url){
+  /* PDF 交给自带阅读器（手机 / 平板上也能翻页、缩放）；阅读状态（页码 / 缩放 / 滚动位置）按文件记在 state.ui.pdfView 里 */
+  if(isPdf && m.url){
+    _modTocReady=false;
+    modApplyToc();
     pdfMountPdf($('spPdfHost'), m.url, {
+      key: 'mod:'+m.id,
       page: modulePdfPage[m.id]||1,
-      onPage: function(n){ modulePdfPage[m.id]=n; }
+      onPage: function(n){ modulePdfPage[m.id]=n; modSyncToc(); }
     });
+    modRenderToc();
   }
   moduleBindDrop();
   moduleScrollActiveTab();
   moduleFitTabs();
+}
+/* ---- 模组的侧边目录：和规则书同一套 DOM / 样式 / 开关逻辑（左边的书签目录，正文照常看） ---- */
+function modWrapHTML(){
+  return '<div class="rb-side" id="modSide">'+
+      '<div class="rb-toc" id="modToc"></div>'+
+    '</div>'+
+    '<div class="rb-main">'+
+      '<div class="rb-bar">'+
+        pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="pdfOpenInTab()" title="在新标签页用系统的阅读器打开">↗<span class="lbl"> 新窗口</span></button>')+
+      '</div>'+
+      '<div class="pdfv-host" id="spPdfHost" role="region" aria-label="模组 PDF 阅读区"></div>'+
+    '</div>';
+}
+var _modTocReady=false;          /* 目录读完了没：没读完先别下结论说「这本没有书签」 */
+function modTocHas(){ return !!(pdfState.outline && pdfState.outline.length); }
+function modTocHidden(){
+  /* 手机 / 平板：默认收起 —— 模组正文是整页 PDF，目录占着一条会把正文挤到看不见；
+     想看目录点一下「☰ 展开目录」就有（用户自己点过就按他点的来）。 */
+  if(!state) return sidePaneNarrow();
+  if(!state.ui) state.ui={};
+  if(typeof state.ui.modTocHide!=='boolean') return sidePaneNarrow();
+  return state.ui.modTocHide;
+}
+function modTocBtnLabel(){ return modTocHidden() ? '☰ 展开目录' : '☰ 收起目录'; }
+function modApplyToc(){
+  var el=$('modSide'); if(!el) return;
+  /* 没有书签目录的 PDF（很多自制模组）：这一列和按钮都不占地方。
+     书签还没读完（_modTocReady=false）时也先收起 —— 别让一条空目录栏把正文挤走。 */
+  el.classList.toggle('hide', modTocHas() ? modTocHidden() : true);
+  var b=$('modTocBtn');
+  if(b){ b.hidden=_modTocReady && !modTocHas(); b.textContent=modTocBtnLabel(); }
+}
+function modToggleToc(){
+  if(!state) return;
+  if(!state.ui) state.ui={};
+  state.ui.modTocHide=!modTocHidden();
+  saveStateQuiet();
+  modApplyToc();
+}
+function modTocItemHTML(items, lv){
+  var out='';
+  for(var i=0;i<items.length;i++){
+    var it=items[i]||{};
+    if(!_pdfOutlineStore) _pdfOutlineStore={};
+    var id='o'+(_pdfOutlineN++);
+    _pdfOutlineStore[id]=it;
+    var l=Math.min(3, lv||1);
+    out+='<div class="rb-tocitem lv'+l+'" data-o="'+id+'" onclick="modTocGo(\''+id+'\')">'+esc(it.title||'（无标题）')+'</div>';
+    if(it.items && it.items.length) out+=modTocItemHTML(it.items, l+1);
+  }
+  return out;
+}
+var _modTocOn='';
+function modTocGo(id){
+  _modTocOn=id||'';
+  modSyncToc();
+  pdfOutlineGo(id);
+}
+function modRenderToc(ready){
+  if(ready) _modTocReady=true;
+  var box=$('modToc');
+  if(box){
+    if(modTocHas()) box.innerHTML=modTocItemHTML(pdfState.outline, 1);
+    else box.innerHTML='<div class="hint" style="padding:8px">这份 PDF 没有内置书签目录。用工具条上的「☰ 跳页」按页码翻。</div>';
+  }
+  modApplyToc();
+  modSyncToc();
+}
+/* 目录里把最近点过的那一条点亮（书签在第几页是点的时候才算出来的，没点过就不点亮） */
+function modSyncToc(){
+  var side=$('modSide'); if(!side) return;
+  var items=side.querySelectorAll('.rb-tocitem');
+  for(var i=0;i<items.length;i++) items[i].classList.toggle('on', !!_modTocOn && items[i].dataset.o===_modTocOn);
 }
 /* 多文件时顶上这一排标签页：点一下换一份，✕ 把这份移出去 */
 function moduleTabsHTML(){
@@ -398,7 +484,8 @@ function moduleTabsHTML(){
       moduleIcon(f.kind)+'<span class="sp-tabname">'+esc(f.name)+'</span>'+
       '<i class="sp-tabx" title="移出这一份" onclick="event.stopPropagation();moduleCloseOne(\''+f.id+'\')">✕</i></span>';
   }).join('');
-  return '<div class="sp-tabs" id="spTabs">'+tabs+'</div>';
+  var m=moduleActive();
+  return '<div class="sp-tabs'+(m&&m.kind==='pdf'?' sp-tabs-slim':'')+'" id="spTabs">'+tabs+'</div>';
 }
 /* ---- 标签页：拖动换顺序 + 横向放不下时自动压缩名字（全称 → … → 两个字） ---- */
 var moduleTabDragId=null;
@@ -497,11 +584,7 @@ function moduleBodyHTML(m){
   var bar='<div class="sp-filebar"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span>';
   if(m.kind==='pdf'){
     if(!m.url) return moduleLostHTML(m);
-    /* 手机 / 平板上这一行会被 CSS 收掉（.sp-filebar-pdf）：文件名在标签页上已经有了 */
-    return '<div class="sp-filebar sp-filebar-pdf"><span class="sp-fname" title="'+esc(m.name)+'">'+moduleIcon(m.kind)+' '+esc(m.name)+'</span>'+
-      '<span class="hint">'+moduleSizeText(m.size)+'</span></div>'+
-      '<div class="pdfv-bar">'+pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="pdfOpenInTab()" title="在新标签页用系统的阅读器打开">↗<span class="lbl"> 新窗口</span></button>')+'</div>'+
-      '<div class="pdfv-host" id="spPdfHost" title="模组 PDF"></div>';
+    return modWrapHTML();
   }
   if(m.kind==='image'){
     if(!m.url) return moduleLostHTML(m);
@@ -1083,7 +1166,7 @@ function renderRulebookPane(pane){
         '<div class="rb-bar">'+
           pdfControlsHTML('<button class="small ghost" style="margin-left:auto" onclick="rbOpenTab()" title="在新标签页打开原版 PDF">↗<span class="lbl"> 新窗口</span></button>')+
         '</div>'+
-        '<div class="pdfv-host" id="rbFrame" title="COC7th 核心规则书"></div>'+
+        '<div class="pdfv-host" id="rbFrame" role="region" aria-label="COC7th 核心规则书阅读区"></div>'+
       '</div>'+
     '</div>';
   rbApplyToc();
@@ -1105,6 +1188,7 @@ function rbMountPdf(){
     return;
   }
   pdfMountPdf(host, src, {
+    key: 'rulebook',
     page: rulebookPage,
     onPage: function(n){
       rulebookPage=n;

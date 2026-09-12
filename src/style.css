@@ -988,10 +988,13 @@ label.btnfile,.btnfile{display:inline-flex;align-items:center;gap:4px;cursor:poi
 .sp-hit{background:rgba(227,196,127,.32);color:inherit;border-radius:3px}
 .sp-hit.on{background:var(--gold);color:#1a1e2b}
 .sp-fname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--gold)}
-.sp-body-fill{overflow:hidden}
-.sp-body-fill .pdfv-host{flex:1 1 auto;min-height:240px}
 /* 标签页这一条固定高度：正文很长时（Word / txt）不能让 flex 把它压扁（以前会从 39px 缩到 24px，标签只剩一条细缝） */
 .sp-tabs{flex:0 0 39px;height:39px;min-height:39px;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;padding:6px 8px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02);scrollbar-width:thin}
+/* 看 PDF 时这几条都压扁一点，屏幕留给正文（不是把按钮缩小到点不着，只是少留空） */
+.sp-head-slim{padding:2px 8px;gap:6px}
+.sp-head-slim .hint{display:none}
+.sp-tabs.sp-tabs-slim{flex:0 0 32px;height:32px;min-height:32px;padding:4px 8px}
+.sp-tabs.sp-tabs-slim .sp-tab{height:24px}
 /* 横向滚动条压到 6px 并且不占额外高度：标签再多这一条也始终是 39px */
 .sp-tabs::-webkit-scrollbar{height:6px}
 .sp-tabs::-webkit-scrollbar-track{background:transparent}
@@ -1144,7 +1147,13 @@ body.bgcustom .kp-hint{background:var(--uic-a)}
 .pdfv-host{flex:1 1 auto;min-height:0;width:100%;overflow:auto;background:#2a2d33;touch-action:pan-x pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 body.bgcustom .pdfv-host{background:var(--uic-d)}
 .pdfv-pages{display:flex;flex-direction:column;align-items:center;width:max-content;min-width:100%;gap:10px;padding:10px 0 12px}
-.pdfv-page{line-height:0}
+.pdfv-page{position:relative;line-height:0}
+/* PDF.js 的「文字层」：画布上面盖一层透明文字 —— 鼠标能拖选、Cmd/Ctrl+C 能复制（规则书 / 模组共用）。
+   这一层必须能接收鼠标事件，所以千万别给它 pointer-events:none。 */
+.pdfv-text{position:absolute;left:0;top:0;overflow:hidden;line-height:1;text-align:initial;text-size-adjust:none;forced-color-adjust:none;transform-origin:0 0;caret-color:CanvasText;z-index:1}
+.pdfv-text span,.pdfv-text br{color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%}
+.pdfv-text span.markedContent{top:0;height:0}
+.pdfv-text ::selection{background:rgba(116,166,255,.42)}
 .pdfv-canvas{display:block;background:transparent;box-shadow:none}
 .pdfv-canvas.ready{background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.4)}
 .pdfv-load{padding:20px;text-align:center;color:var(--muted)}
@@ -1246,7 +1255,36 @@ body.fs-map .splitwrap,body.fs-combat .splitwrap{display:block}
   .sp-head .hint{display:none}
   .sp-filebar{padding:3px 8px;font-size:12px}
   .sp-filebar .hint{display:none}
-  .sp-filebar-pdf{display:none}
 }
 /* iPad 横屏这类窄分栏：目录栏收窄一点，正文区多留些地方 */
 @media(min-width:901px) and (max-width:1200px){ .rb-side{width:200px} }
+
+/* ================= ✨ 隐藏彩蛋「花里胡哨」（桌面端） ================= */
+/* 面板：平时不存在，在背景上连点 5 下才建出来；手机 / 平板根本不挂这套逻辑 */
+.fancypanel{top:auto;bottom:22px;width:min(560px,calc(100vw - 24px));z-index:82}
+.fancypanel .floatbody{max-height:min(64vh,520px)}
+.fancy-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.fancy-card{display:flex;flex-direction:column;align-items:center;gap:6px;padding:9px 6px;border-radius:10px;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--ink);font-size:12px}
+.fancy-card:hover{border-color:var(--acc);color:var(--gold)}
+.fancy-card.on{border-color:var(--gold);background:rgba(227,196,127,.14);color:var(--gold)}
+.fancy-pre{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:9px;
+  background:rgba(0,0,0,.22);font-size:19px;line-height:1}
+.fancy-nm{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 换鼠标：只作用在「背景 / 普通内容 / 面板 / 卡片 / 阅读区外层」这些地方。
+   输入框、按钮、链接、可拖拽、拖分栏、拖宽手柄、PDF 画布与文字层都各自保留自己的 cursor —— 所以不许用 *{cursor:...} */
+body.fancycursor,body.fancycursor main,body.fancycursor footer,body.fancycursor #splitWrap,body.fancycursor section.tab,
+body.fancycursor .card,body.fancycursor .sidepane,body.fancycursor .floatpanel,body.fancycursor .modal,
+body.fancycursor .sp-body,body.fancycursor .rb-wrap,body.fancycursor .xp-body{cursor:var(--fancy-cursor)}
+/* 点击小特效：从鼠标位置散开就消失（CSS 动画，跑完 JS 把节点删掉） */
+.fancy-bit{position:fixed;z-index:120;pointer-events:none;line-height:1;user-select:none;
+  transform:translate(-50%,-50%);animation:fancybit .74s ease-out forwards}
+@keyframes fancybit{
+  0%{opacity:1;transform:translate(-50%,-50%) scale(.55) rotate(0deg)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--dx,0px)),calc(-50% + var(--dy,0px))) scale(1.15) rotate(var(--rot,0deg))}
+}
+@media(prefers-reduced-motion:reduce){ .fancy-bit{display:none} }
+body.bgcustom .fancy-card{background:var(--uic-d);border-color:var(--uic-line)}
+body.bgcustom .fancy-card.on{border-color:var(--gold);background:var(--uic-a)}
+/* 看 PDF 时顶部那几个「添加文件 / 文件夹 / 全部清除」也压扁一点（高度跟小按钮对齐） */
+.sp-head-slim .btnfile{padding:2px 8px;font-size:12px}

@@ -85,7 +85,11 @@ const dom = new JSDOM(HTML, {
   url: 'http://localhost/',
   runScripts: 'dangerously',
   pretendToBeVisual: true,
-  beforeParse(w){ w.HTMLCanvasElement.prototype.getContext = function(){ return makeCtx(); }; }
+  beforeParse(w){
+    w.HTMLCanvasElement.prototype.getContext = function(){ return makeCtx(); };
+    /* jsdom 没有 canvas 包，toDataURL 会直接抛 —— 彩蛋的鼠标图案是 canvas 现画的 PNG，这里给个假的 */
+    w.HTMLCanvasElement.prototype.toDataURL = function(){ return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg=='; };
+  }
 });
 const w = dom.window, d = w.document;
 const $ = (id) => d.getElementById(id);
@@ -106,11 +110,24 @@ const ready = new Promise((res) => {
         getPage: function(){
           return Promise.resolve({
             getViewport: function(o){ var s = (o && o.scale) || 1; return { width: 612 * s, height: 792 * s }; },
+            getTextContent: function(){ return Promise.resolve({ items:[
+              { str:'Call of Cthulhu', dir:'ltr', width:60, height:10, transform:[10,0,0,10,20,30], fontName:'g_d0_f1' }
+            ], styles:{ g_d0_f1:{ fontFamily:'sans-serif', ascent:0.8, descent:-0.2, vertical:false } } }); },
             render: function(){ return { promise: Promise.resolve(), cancel: function(){} }; }
           });
         },
         destroy: function(){ return Promise.resolve(); }
       }) };
+    },
+    /* 文字层：真 pdf.js 会往容器里塞 <span>，这里照样塞一个，好验「画布上面盖了一层能选中的字」 */
+    renderTextLayer: function(o){
+      var c=o.container, items=(o.textContentSource && o.textContentSource.items) || [];
+      for(var i=0;i<items.length;i++){
+        var s=c.ownerDocument.createElement('span');
+        s.textContent=items[i].str;
+        c.appendChild(s);
+      }
+      return { promise: Promise.resolve(), cancel: function(){} };
     }
   };
   const S = w.state;
@@ -1486,12 +1503,12 @@ const ready = new Promise((res) => {
     }, 60);
   });
   ok('PDF：自带书签时跳页面板多一个「目录」页签，列书签、点一下跳到那一页', pdfOutlineTabs && pdfOutlineListed && pdfOutlineJumped);
-  ok('手机 / 平板：PDF 工具条只留图标、上方说明文字收掉，跳页面板也跟着主题变色', (function(){
+  ok('手机 / 平板：PDF 工具条只留图标、看 PDF 时头部压扁把屏幕留给正文，跳页面板也跟着主题变色', (function(){
     var flat=cssText.replace(/\s+/g,'');
     return flat.indexOf('.pdfv-bar.lbl,.rb-bar.lbl{display:none')>=0 &&
       flat.indexOf('.sp-head.hint{display:none')>=0 &&
       flat.indexOf('.pdfv-bar.rb-pagenoinput,.rb-bar.rb-pagenoinput{width:52px')>=0 &&
-      flat.indexOf('.sp-filebar-pdf{display:none')>=0 &&
+      flat.indexOf('.sp-head-slim{padding:2px8px')>=0 &&
       flat.indexOf('.pdfv-bar,.rb-bar{flex-wrap:nowrap')>=0 &&
       flat.indexOf('.pdfv-pages{display:flex')>=0 &&
       flat.indexOf('body.bgcustom.pdfv-jump{')>=0 &&
@@ -3199,6 +3216,187 @@ const ready = new Promise((res) => {
     if (bad.length) console.log('   -> ' + bad.map(function(b){return b.file+':'+b.line+' '+b.name;}).join(', '));
     return bad.length===0;
   })());
+
+  /* ---------- 本轮：PDF / 模组阅读器体验 + 隐藏彩蛋「花里胡哨」 ---------- */
+  /* 装一份「模组 PDF」：src/33 的阅读器只看 url，假 pdf.js 认得所有 url */
+  function useModulePdf(id, name, url){
+    w.moduleFiles=[{id:id, name:name, kind:'pdf', size:1234, url:url}];
+    w.moduleActiveId=id;
+    if(!w.sidePaneIsOpen('module')) w.toggleSidePane('module');
+    else w.renderSidePane();
+  }
+  function fakeDocToc(){
+    var doc=w.pdfState.doc;
+    if(!doc) return;
+    doc.getOutline=function(){ return Promise.resolve([{title:'第一章 调查员', items:[{title:'一之一', dest:'named'}]}]); };
+    doc.getPageIndex=function(){ return Promise.resolve(19); };
+    doc.getDestination=function(){ return Promise.resolve(['r1']); };
+  }
+  useModulePdf('pdfA','废弃医院.pdf','blob:coc-mod-a');
+  await new Promise(r => setTimeout(r, 120));
+  ok('模组：PDF 用上规则书那套侧边目录（rb-side / rb-tocitem），正文照常并排显示', (function(){
+    var pane=$('sidePane');
+    var side=pane.querySelector('#modSide'), main=pane.querySelector('.rb-main');
+    return !!side && !!main && !!pane.querySelector('#spPdfHost') &&
+      !!pane.querySelector('#modTocBtn') && !pane.querySelector('.sp-filebar') &&
+      pane.querySelector('.sp-body').classList.contains('rb-wrap');
+  })());
+  await new Promise(function(done){
+    fakeDocToc();
+    w.pdfLoadOutline(w.pdfState.doc);
+    setTimeout(done, 80);
+  });
+  await new Promise(function(done){
+    w.pdfJumpClose();                                  /* 前面的用例可能开着「跳页」面板，先关掉 */
+    var items=$('sidePane').querySelectorAll('#modToc .rb-tocitem');
+    var btn=$('modTocBtn');
+    var shown=!!btn && !btn.hidden && items.length>=2;
+    if(!shown){ ok('模组：书签目录列在左侧，点一条就跳到那一页（不再是底部弹出的目录）', false, '目录条目 '+items.length); return done(); }
+    items[items.length-1].click();                     /* 点「有页码的叶子条目」；跳页是异步的，等一拍再断言 */
+    setTimeout(function(){
+      var jumped=w.pdfState.page===20;
+      var lit=$('modSide').querySelector('.rb-tocitem.on');
+      w.modToggleToc();
+      var closed=$('modSide').classList.contains('hide');
+      w.modToggleToc();
+      var reopened=!$('modSide').classList.contains('hide');
+      ok('模组：书签目录列在左侧，点一条就跳到那一页（不再是底部弹出的目录）',
+        shown && jumped && !!lit && closed && reopened && !$('pdfJumpMask'),
+        JSON.stringify({page:w.pdfState.page, jumped:jumped, lit:!!lit, closed:closed, reopened:reopened}));
+      done();
+    }, 80);
+  });
+  ok('模组：看 PDF 时顶部压扁（头部 / 标签条 / 工具条都不占地方），屏幕留给正文', (function(){
+    var flat=cssText.replace(/\s+/g,'');
+    var pane=$('sidePane');
+    return !!pane.querySelector('.sp-head.sp-head-slim') && !!pane.querySelector('.sp-tabs.sp-tabs-slim') &&
+      flat.indexOf('.sp-head-slim{padding:2px8px')>=0 && flat.indexOf('.sp-tabs.sp-tabs-slim{flex:0032px')>=0 &&
+      flat.indexOf('.sp-filebar-pdf')<0;
+  })());
+  ok('PDF：阅读区不再挂「模组 PDF / 规则书」那种悬停小便签（无障碍名字还在）', (function(){
+    var host=$('sidePane').querySelector('#spPdfHost');
+    var src=fs.readFileSync(path.join(__dirname,'..','src','28-side-pane.js'),'utf8');
+    return !!host && !host.getAttribute('title') && !!host.getAttribute('aria-label') &&
+      src.indexOf('id="spPdfHost" title=')<0 && src.indexOf('id="rbFrame" title=')<0 &&
+      src.indexOf('aria-label="模组 PDF 阅读区"')>=0 && src.indexOf('aria-label="COC7th 核心规则书阅读区"')>=0;
+  })());
+  await new Promise(r => setTimeout(r, 60));
+  ok('PDF：画布上盖一层文字层（鼠标能拖选 / Cmd+C 能复制），缩放后坐标仍对齐', (function(){
+    var host=$('sidePane').querySelector('#spPdfHost');
+    var layers=host.querySelectorAll('.pdfv-text');
+    var spans=host.querySelectorAll('.pdfv-text span');
+    var one=spans.length?spans[0].parentNode:host.querySelector('.pdfv-text');  /* 只渲染视口附近那几页，挑真铺了字的那层验 */
+    var z=w.pdfState.zoom;
+    var flat=cssText.replace(/\s+/g,'');
+    var okAll = layers.length===w.pdfState.num && host.querySelectorAll('canvas.pdfv-canvas').length===w.pdfState.num &&
+      !!one && Math.abs(parseFloat(one.style.getPropertyValue('--scale-factor'))-z)<1e-6 &&
+      !!one.querySelector('span') &&
+      flat.indexOf('.pdfv-page{position:relative')>=0 &&
+      flat.indexOf('.pdfv-textspan,.pdfv-textbr{color:transparent')>=0 &&
+      flat.indexOf('.pdfv-text{position:absolute')>=0 &&
+      flat.indexOf('.pdfv-text::selection')>=0;
+    if(!okAll) console.log('   [文字层诊断] ' + JSON.stringify({layers:layers.length, num:w.pdfState.num,
+      canv:host.querySelectorAll('canvas.pdfv-canvas').length, one:!!one, sf:one&&one.style.getPropertyValue('--scale-factor'),
+      z:z, spans:spans.length, host:!!host}));
+    return okAll;
+  })());
+  ok('PDF：缩放 / 看到第几页按「文档」各记各的（写进 state.ui.pdfView，刷新也认）', (function(){
+    w.pdfZoomSet(1.5);
+    w.pdfGoPage(4);
+    var a=(w.state.ui.pdfView||{})['mod:pdfA']||null;
+    if(!a) return false;
+    return a.page===4 && Math.abs(a.zoom-1.5)<0.001 && a.fit===false && a.pi===3;
+  })());
+  ok('PDF：面板重画（切模组 / 切规则书再回来）不重建阅读器 —— 同一棵 DOM 原样挂回去，不闪不跳页', (function(){
+    var before=$('sidePane').querySelector('#spPdfHost');
+    w.renderSidePane();
+    var after=$('sidePane').querySelector('#spPdfHost');
+    return !!before && before===after && w.pdfState.host===after &&
+      w.pdfState.page===4 && Math.abs(w.pdfState.zoom-1.5)<0.001 &&
+      after.querySelectorAll('canvas.pdfv-canvas').length===w.pdfState.num;
+  })());
+  ok('PDF：换一份文档再换回来，页码 / 缩放各归各（模组 A 125% 不会串到模组 B）', (function(){
+    return (w.state.ui.pdfView||{})['mod:pdfA'].page===4 && !(w.state.ui.pdfView||{})['mod:pdfB'];
+  })());
+  await new Promise(function(done){
+    useModulePdf('pdfB','渔村.pdf','blob:coc-mod-b');
+    setTimeout(function(){
+      var b={page:w.pdfState.page, zoom:w.pdfState.zoom, fit:w.pdfState.fit};
+      w.pdfParkForget('spPdfHost');                 /* 假装重新打开（DOM 没了，只剩存档） */
+      useModulePdf('pdfA','废弃医院.pdf','blob:coc-mod-a');
+      setTimeout(function(){
+        done({b:b, a:{page:w.pdfState.page, zoom:w.pdfState.zoom, fit:w.pdfState.fit}});
+      }, 120);
+    }, 120);
+  }).then(function(r){
+    ok('PDF：换文档 → 换回来，各自的页码 / 缩放都还在（B 是新建的，A 回到 25% 那一页）',
+      r.b.page===1 && r.b.fit===true && r.a.page===4 && Math.abs(r.a.zoom-1.5)<0.001);
+  });
+
+  /* ---------- 隐藏彩蛋：花里胡哨 ---------- */
+  ok('彩蛋：桌面端启动时挂上隐藏入口，但不建任何面板 DOM（只在背景连点时才有）', (function(){
+    w.switchTab('surveyors');
+    w.toggleSidePane('module');                      /* 先把右半屏收起来，露出页面背景 */
+    return w.fancyDesktop()===true && !!w.document.__fancyEggBound && !d.getElementById('fancyPanel');
+  })());
+  ok('彩蛋：连点 4 下背景没反应，第 5 下才蹦出「花里胡哨」（第二个页签就是它）', (function(){
+    var body=d.body||d.documentElement;
+    function clickBg(){ body.dispatchEvent(new w.MouseEvent('click', {bubbles:true, cancelable:true})); }
+    var i;
+    for(i=0;i<4;i++) clickBg();
+    var early=!!d.getElementById('fancyPanel');
+    clickBg();
+    var p=d.getElementById('fancyPanel');
+    var tabs=[].slice.call(d.querySelectorAll('#fancyTabs .xp-tab')).map(function(b){ return b.textContent; });
+    return !early && !!p && !p.hidden && tabs.length===2 && /鼠标样式/.test(tabs[0]) && /花里胡哨/.test(tabs[1]);
+  })());
+  ok('彩蛋：选一个鼠标样式立即生效并记在本机（默认那项能一键还原）', (function(){
+    var names=[].slice.call(d.querySelectorAll('.fancy-card .fancy-nm')).map(function(b){ return b.textContent; });
+    w.fancyPick('star');
+    var on=d.body.classList.contains('fancycursor') && /^url\("data:image\/png/.test(d.body.style.getPropertyValue('--fancy-cursor'));
+    var saved=(w.state.ui.fancy||{}).cursor==='star';
+    w.fancyPick('');
+    var off=!d.body.classList.contains('fancycursor') && d.body.style.getPropertyValue('--fancy-cursor')==='';
+    return names.length>=6 && names.join('').indexOf('默认')>=0 && names.join('').indexOf('像素箭头')>=0 &&
+      names.join('').indexOf('十字准星')>=0 && on && saved && off;
+  })());
+  ok('彩蛋：手机 / 触屏完全不挂（连鼠标样式都不生成），窄窗口也一样', (function(){
+    var old=w.isCoarseTouch;
+    w.state.ui.fancy={cursor:'star', fx:''};
+    w.isCoarseTouch=function(){ return true; };
+    w.applyFancy();
+    var coarse=!d.body.classList.contains('fancycursor');
+    w.isCoarseTouch=old;
+    var desc=Object.getOwnPropertyDescriptor(w,'innerWidth');
+    var narrow=false;
+    try{
+      Object.defineProperty(w,'innerWidth',{value:420,configurable:true});
+      w.applyFancy();
+      narrow=!d.body.classList.contains('fancycursor') && w.fancyDesktop()===false;
+    }catch(e){ narrow=false; }
+    try{ if(desc) Object.defineProperty(w,'innerWidth',desc); }catch(e){}
+    w.applyFancy();
+    var back=d.body.classList.contains('fancycursor');
+    w.state.ui.fancy={cursor:'', fx:''};
+    w.applyFancy();
+    return coarse && narrow && back;
+  })());
+  ok('彩蛋：鼠标样式只作用在背景 / 面板 / 卡片上，交互元素保留自己的 cursor（不许用 *{cursor}）', (function(){
+    var flat=cssText.replace(/\s+/g,'');
+    var i=flat.indexOf('cursor:var(--fancy-cursor)');
+    if(i<0) return false;
+    var sel=flat.slice(flat.lastIndexOf('}',i)+1, i);          /* 真·那条规则的选择器（不是切片估算） */
+    return sel.indexOf('body.fancycursor')===0 && sel.indexOf('*')<0 &&
+      sel.indexOf('input')<0 && sel.indexOf('button')<0 && sel.indexOf('textarea')<0 &&
+      sel.indexOf('splitbar')<0 && sel.indexOf('pdfv-text')<0 && sel.indexOf('draggable')<0 &&
+      flat.indexOf('*{cursor')<0 &&
+      flat.indexOf('.fancy-bit{display:none;')>=0;              /* reduced-motion 下不动画 */
+  })());
+  ok('彩蛋：面板不占首屏、也不进正常导航（菜单栏还是 9 个入口）', (function(){
+    return d.querySelectorAll('#nav button').length===9 && !d.getElementById('nav-fancy') &&
+      /fancypanel/.test(fs.readFileSync(path.join(__dirname,'..','src','38-fancy.js'),'utf8'));
+  })());
+  w.fancyClose();
 
   console.log('\n==== RESULT: ' + passed + ' passed, ' + failures.length + ' failed ====');
   if (failures.length){ console.log('FAILURES:\n - ' + failures.join('\n - ')); process.exit(1); }
